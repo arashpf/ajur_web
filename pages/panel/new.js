@@ -266,11 +266,23 @@ const New = (props) => {
       <ThemeProvider theme={mdTheme}>
         <Box sx={{ display: "flex" }}>
           <CssBaseline />
-          <Header data={data} open={open} profileImage={profileImage} />
+          <Header data={data} open={open} onToggle={toggleDrawer} drawerWidth={drawerWidth} profileImage={profileImage} />
 
           {/* start of the componet inside seciotn  */}
 
-          <Container component="main" maxWidth="md" sx={{ mb: 4  }}>
+          <Container
+            component="main"
+            maxWidth="md"
+            sx={{
+              mb: 4,
+              transition: (theme) =>
+                theme.transitions.create(['margin', 'width'], {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.leavingScreen,
+                }),
+              marginRight: open ? `${drawerWidth}px` : 0,
+            }}
+          >
             <Paper
               variant="outlined"
               sx={{ my: { xs: 5, md: 6 }, p: { xs: 3, md: 3 } }}

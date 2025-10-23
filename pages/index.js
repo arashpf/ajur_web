@@ -16,11 +16,11 @@ import FileRequest from "../components/request/FileRequest";
 import Cookies from "js-cookie";
 import { useRouter } from "next/router";
 import LandingPage from "./assistant/G-ads/landing-page";
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 // simplified buttons: using plain HTML buttons instead of animated ActionButton
 import DealButton from "../components/parts/DealButton";
 
@@ -47,6 +47,7 @@ function Home(props) {
   }, []);
 
   const [loading, set_loading] = useState(true);
+  const [error, set_error] = useState(false);
   const [cats, set_cats] = useState();
   const [main_cats, set_main_cats] = useState();
   const [sub_cats, set_sub_cats] = useState();
@@ -120,39 +121,39 @@ function Home(props) {
   // If detected, show a dialog asking user to disable VPN. Respect a cookie "hide_vpn_warning" when set.
   async function detectVpn() {
     try {
-      const res = await fetch('https://ipapi.co/json/');
+      const res = await fetch("https://ipapi.co/json/");
       if (!res.ok) return false;
       const data = await res.json();
 
-      const org = (data.org || data.asn || '').toString().toLowerCase();
+      const org = (data.org || data.asn || "").toString().toLowerCase();
       // Keywords that commonly indicate VPN / proxy / datacenter providers.
       const vpnKeywords = [
-        'vpn',
-        'proxy',
-        'vpn service',
-        'expressvpn',
-        'nordvpn',
-        'surfshark',
-        'private internet access',
-        'pia',
-        'ipvanish',
-        'purevpn',
-        'windscribe',
-        'protonvpn',
-        'torguard',
-        'openvpn',
-        'digitalocean',
-        'amazon',
-        'amazon.com',
-        'amazon web services',
-        'google cloud',
-        'google llc',
-        'microsoft',
-        'linode',
-        'hetzner',
-        'ovh',
-        'vultr',
-        'cloudflare',
+        "vpn",
+        "proxy",
+        "vpn service",
+        "expressvpn",
+        "nordvpn",
+        "surfshark",
+        "private internet access",
+        "pia",
+        "ipvanish",
+        "purevpn",
+        "windscribe",
+        "protonvpn",
+        "torguard",
+        "openvpn",
+        "digitalocean",
+        "amazon",
+        "amazon.com",
+        "amazon web services",
+        "google cloud",
+        "google llc",
+        "microsoft",
+        "linode",
+        "hetzner",
+        "ovh",
+        "vultr",
+        "cloudflare",
       ];
 
       for (const k of vpnKeywords) {
@@ -169,8 +170,8 @@ function Home(props) {
 
   useEffect(() => {
     // run detection once on client when not hidden by cookie
-    if (typeof window === 'undefined') return;
-    if (Cookies.get('hide_vpn_warning')) {
+    if (typeof window === "undefined") return;
+    if (Cookies.get("hide_vpn_warning")) {
       setVpnChecked(true);
       return;
     }
@@ -192,9 +193,16 @@ function Home(props) {
   };
 
   useEffect(() => {
-    //  Cookies.set('selected_city','');
+    // Set up timeout first
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.error("Loading timeout - showing error state");
+        set_loading(false);
+        set_error(true);
+      }
+    }, 10000); // 10 second timeout
 
-    //  var selected_city = Cookies.get('selected_city');
+    //  Cookies.set('selected_city','');
     var selected_city = props.trigeredcity;
 
     //  if(props.url_city){
@@ -216,16 +224,17 @@ function Home(props) {
       params: {
         city: props.url_city ? props.url_city : selected_city,
       },
-    }).then(function (response) {
+    })
+    .then(function (response) {
+      // Clear timeout on success
+      clearTimeout(timeoutId);
+      
       set_cats(response.data.cats);
       set_the_city(response.data.the_city);
       set_the_neighborhoods(response.data.the_neighborhoods);
-
       set_main_cats(response.data.main_cats);
       set_sub_cats(response.data.sub_cats);
-
       set_realestates(response.data.realstates);
-
       setDealCats(response.data.sub_cats);
 
       console.log("the maincat data in base is --------------------");
@@ -251,7 +260,20 @@ function Home(props) {
       set_collection3(response.data.collection3);
 
       set_loading(false);
+      set_error(false);
+    })
+    .catch(function (error) {
+      // Clear timeout on error
+      clearTimeout(timeoutId);
+      console.error("API request failed:", error);
+      set_loading(false);
+      set_error(true);
     });
+
+    // Cleanup function
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [props.trigeredcity]);
 
   useEffect(() => {
@@ -270,7 +292,8 @@ function Home(props) {
       params: {
         workers_holder: newProduct,
       },
-    }).then(function (response) {
+    })
+    .then(function (response) {
       set_favorite_workers(response.data);
 
       if (response.data.length == 0) {
@@ -281,6 +304,10 @@ function Home(props) {
       }
       console.log("the data now is+++++++++++++++++++++ ");
       console.log(response.data);
+    })
+    .catch(function (error) {
+      console.error("Error loading favorite workers:", error);
+      set_is_have_favorited(false);
     });
 
     // alert(newProduct);
@@ -302,7 +329,8 @@ function Home(props) {
       params: {
         workers_holder: newProduct,
       },
-    }).then(function (response) {
+    })
+    .then(function (response) {
       set_history_workers(response.data);
 
       if (response.data.length == 0) {
@@ -313,6 +341,10 @@ function Home(props) {
       }
       console.log("the data now is+++++++++++++++++++++ ");
       console.log(response.data);
+    })
+    .catch(function (error) {
+      console.error("Error loading history workers:", error);
+      set_is_have_history(false);
     });
 
     // alert(newProduct);
@@ -463,14 +495,14 @@ function Home(props) {
                 },
 
                 640: {
-                  slidesPerView: 3,
+                  slidesPerView: 2,
                   spaceBetween: 20,
                   navigation: {
                     enabled: true,
                   },
                 },
                 768: {
-                  slidesPerView: 3,
+                  slidesPerView: 2,
                   spaceBetween: 20,
                   navigation: {
                     enabled: true,
@@ -556,6 +588,27 @@ function Home(props) {
   };
 
   const renderOrSpinner = () => {
+    if (error) {
+      return (
+        <div style={{ textAlign: "center", padding: "50px 20px" }}>
+          <h2>مشکلی در بارگذاری داده‌ها پیش آمده است</h2>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 20px",
+              margin: "10px",
+              backgroundColor: "#0070f3",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+            }}
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      );
+    }
     if (loading) {
       return (
         <div className="spinnerImageView">
@@ -576,7 +629,6 @@ function Home(props) {
                 animState === "pushed" ? styles.pushed : ""
               } ${animState === "pullIn" ? styles.pullIn : ""}`}
             >
-
               <div className={styles.actionBtnWrap}>
                 {rentVisible && (
                   <div
@@ -598,7 +650,6 @@ function Home(props) {
                         height: "auto",
                         display: "block",
                         padding: "30px 20px",
-                       
                       }}
                     />
                   </div>
@@ -625,7 +676,7 @@ function Home(props) {
                         width: "100%",
                         height: "auto",
                         display: "block",
-                        padding: "30px 20px"
+                        padding: "30px 20px",
                       }}
                     />
                   </div>
@@ -937,14 +988,14 @@ function Home(props) {
                       },
 
                       640: {
-                        slidesPerView: 3,
+                        slidesPerView: 2,
                         spaceBetween: 10,
                         navigation: {
                           enabled: true,
                         },
                       },
                       768: {
-                        slidesPerView: 3,
+                        slidesPerView: 2,
                         spaceBetween: 20,
                         navigation: {
                           enabled: true,
@@ -1014,7 +1065,7 @@ function Home(props) {
                       spaceBetween: 20,
                     },
                     768: {
-                      slidesPerView: 6,
+                      slidesPerView: 4,
                       spaceBetween: 25,
                     },
                     1400: {
@@ -1050,7 +1101,7 @@ function Home(props) {
                       spaceBetween: 20,
                     },
                     768: {
-                      slidesPerView: 5,
+                      slidesPerView: 4,
                       spaceBetween: 25,
                     },
                     1400: {
@@ -1128,7 +1179,7 @@ function Home(props) {
         open={showVpnDialog}
         onClose={(event, reason) => {
           // ignore backdrop clicks (we hide backdrop) so clicks on page don't close it
-          if (reason === 'backdropClick') return;
+          if (reason === "backdropClick") return;
           setShowVpnDialog(false);
         }}
         aria-labelledby="vpn-warning-title"
@@ -1142,18 +1193,18 @@ function Home(props) {
           disableEnforceFocus: true,
           disableAutoFocus: true,
           // make container ignore pointer events so clicks go through to the page
-          style: { pointerEvents: 'none' },
+          style: { pointerEvents: "none" },
         }}
         // PaperProps: position fixed bottom-left and accept pointer events
         PaperProps={{
           style: {
-            pointerEvents: 'auto',
-            position: 'fixed',
+            pointerEvents: "auto",
+            position: "fixed",
             bottom: 16,
             left: 16,
             margin: 0,
             borderRadius: 12,
-            padding: '10px 14px',
+            padding: "10px 14px",
             minWidth: 220,
             zIndex: 1400,
           },
@@ -1164,7 +1215,7 @@ function Home(props) {
         <DialogContent>
           برای استفاده بهتر از آجر، لطفا فیلترشکن خود را خاموش کنید
         </DialogContent>
-          <DialogActions>
+        <DialogActions>
           <Button
             onClick={() => {
               // hide for the rest of today (until local midnight)
@@ -1175,10 +1226,10 @@ function Home(props) {
                   now.getMonth(),
                   now.getDate() + 1
                 );
-                Cookies.set('hide_vpn_warning', '1', { expires: endOfDay });
+                Cookies.set("hide_vpn_warning", "1", { expires: endOfDay });
               } catch (e) {
                 // fallback to 1 day expiry if Date isn't accepted
-                Cookies.set('hide_vpn_warning', '1', { expires: 1 });
+                Cookies.set("hide_vpn_warning", "1", { expires: 1 });
               }
               setShowVpnDialog(false);
             }}
@@ -1189,7 +1240,7 @@ function Home(props) {
           <Button
             onClick={() => {
               // set cookie to hide future warnings for 365 days
-              Cookies.set('hide_vpn_warning', '1', { expires: 365 });
+              Cookies.set("hide_vpn_warning", "1", { expires: 365 });
               setShowVpnDialog(false);
             }}
             color="primary"

@@ -33,8 +33,8 @@ function Header() {
 
   const router = useRouter();
   const expand = "false";
-  // show the scrolled-down header (search box) by default
-  const [nav_kind, set_nav_kind] = useState("secondary");
+  // State to control search visibility
+  const [showSearch, setShowSearch] = useState(false);
 
   const [location_li, set_location_li] = useState(false);
   const [search, set_search] = useState("");
@@ -88,8 +88,6 @@ function Header() {
 
   const renderInstallButton = () => {
     if (installPrompt && /Mobi|Android/i.test(navigator.userAgent)) {
-      // if ( /Mobi|Android/i.test(navigator.userAgent)) {
-      // if (1) {
       return (
         <Button
           variant="primary"
@@ -120,8 +118,16 @@ function Header() {
     window.addEventListener("scroll", changeBackground);
   }, []);
 
-  // We no longer switch header variant on scroll. The scrolled/secondary
-  // header (with search) is shown by default via initial state above.
+  const handleSearchClick = () => {
+    setShowSearch(true);
+  };
+
+  const handleSearchClose = () => {
+    setShowSearch(false);
+    set_search("");
+    set_search_places([]);
+    set_location_li(false);
+  };
 
   const handleOnclickInput = () => {
     console.log("form clicked");
@@ -136,20 +142,16 @@ function Header() {
 
   const renderSearchPlaces = () => {
     return search_places.map((place) => (
-      // <Link
-      //   href={`/categories/فروش%20خانه?city=${selected_city}`}
-      //   key={place.id}
-      // >
       <div
         className={styles.ingleSearchResault}
         onClick={() => handleSingleLocationClicked({ place })}
+        key={place.id}
       >
         <p>
           {place.title} ({place.region})
         </p>
         <p></p>
       </div>
-      // </Link>
     ));
   };
 
@@ -294,8 +296,6 @@ function Header() {
     router.push("/download");
   };
 
-
-
   const onClickCounseling = () => {
     router.push("/Counseling");
   };
@@ -327,28 +327,12 @@ function Header() {
     }
   };
 
-  // const onClickMarketing = () => {
-
-  //   var token = Cookies.get("id_token");
-  //   if (token) {
-  //     router.push("/marketing/single");
-  //   } else {
-  //     router.push("/marketing");
-  //   }
-  // };
-
-
-
   const onClickLogout = () => {
     console.log("you press logout");
 
     setOpenAlert(true);
     setProblem("با موفقیت خارج شدید");
     set_alert_type("success");
-
-
-
-
 
     // remove all cookies before logout and im the god guy respect others privacy !!!
     Cookies.remove("id_token");
@@ -357,14 +341,11 @@ function Header() {
     Cookies.remove("phone");
     Cookies.remove("star");
     Cookies.remove("user_phone");
-    // Cookies.remove("user_city");
     Cookies.remove("user_realstate");
     Cookies.remove("user_description");
     Cookies.remove("user_profile_url");
     Cookies.remove("user_realstate_url");
-    // Cookies.remove("selected_city");
 
-    // router.push("/panel/auth/login");
     router.push("/");
   };
 
@@ -390,11 +371,9 @@ function Header() {
   };
 
   const onClickSelectCity = () => {
-
     set_loading(true);
     const promise = new Promise((resolve, reject) => {
       setTimeout(() => {
-
         const result = true;
         resolve(result);
       }, 3000);
@@ -402,16 +381,10 @@ function Header() {
 
     promise.then((result) => {
       if (result) {
-        // router.push("/city-selection");
-
-
         router.push("/city-selection");
         set_loading(false);
-        //  set_loading(false);
       }
     });
-
-    // router.push("/city-selection").then(set_loading(false));
   };
 
   const renderLogoutButton = () => {
@@ -430,7 +403,45 @@ function Header() {
     }
   };
 
-  const navabrOrSearch = () => {
+  const renderCitySelector = () => {
+    return (
+      <Tooltip
+        arrow
+        title={<p>از اینجا میتوانید شهر خود را انتخاب کنید</p>}
+        open={selected_city ? false : true}
+      >
+        {!loading ? (
+          <Nav.Link
+            style={{
+              background: "#bc323a",
+              color: "#f9f9f9",
+              padding: "5px 12px",
+              boxShadow: "0 3px 14px rgba(0, 0, 0, 0.4)",
+              marginLeft: "10px",
+            }}
+            onClick={onClickSelectCity}
+          >
+            شهر : {selected_city}
+          </Nav.Link>
+        ) : (
+          <Nav.Link
+            style={{
+              background: "#333",
+              color: "#f9f9f9",
+              padding: "5px 12px",
+              boxShadow: "0 3px 14px rgba(0, 0, 0, 0.4)",
+              borderRadius: 5,
+              marginLeft: "10px",
+            }}
+          >
+            در حال انتقال
+          </Nav.Link>
+        )}
+      </Tooltip>
+    );
+  };
+
+  const renderHeaderContent = () => {
     if (loading) {
       return (
         <div className="spinnerImageView">
@@ -443,77 +454,76 @@ function Header() {
       );
     }
 
-    if (nav_kind == "main") {
+    if (showSearch) {
+      // Search mode - show search box and hide logo, but keep city selector
       return (
         <Container fluid className={styles.navbar}>
-          <Navbar.Brand className={styles.navar_brand_center} href="/">
-            <Link href={`/${selected_city !== undefined ? selected_city : ""}`}>
-              <img
-                className={styles.image_logo_small}
-                src="/logo/web-logo-text.png"
-                alt="لوگوی آجر"
+          <div className={styles.searchHeader}>
+            {/* City Selector on the left */}
+            <div className={styles.citySelectorContainer}>
+              {renderCitySelector()}
+            </div>
+
+            {/* Search box in the middle */}
+            <Form className={styles.navbar_search_full}>
+              <Form.Control
+                type="search"
+                placeholder={"جستجو شهر و منظقه"}
+                className={`'me-2' ${styles["search-input"]} 'form-control-lg'`}
+                aria-label="Search"
+                onChange={handleChangeInput}
+                onClick={handleOnclickInput}
+                value={search}
+                autoFocus
               />
-            </Link>
-          </Navbar.Brand>
-          <Tooltip
-            arrow
-            title={<p>از اینجا میتوانید شهر خود را انتخاب کنید</p>}
-            open={selected_city ? false : true}
-          >
-            {!loading ? (
-              <>
+            </Form>
 
+            {/* Close button on the right */}
+            <Button 
+              variant="link" 
+              onClick={handleSearchClose}
+              className={styles.searchCloseButton}
+            >
+              ✕
+            </Button>
 
-                <Nav.Link
-                  style={{
-                    background: "#bc323a",
-                    color: "#f9f9f9",
-                    padding: "5px 12px",
-                    boxShadow: "0 3px 14px rgba(0, 0, 0, 0.4)",
-                  }}
-                  onClick={onClickSelectCity}
-                >
-                  شهر : {selected_city}
-                </Nav.Link>
+            {searchResults()}
+          </div>
+        </Container>
+      );
+    } else {
+      // Normal mode - show logo, search button, and city selector
+      return (
+        <Container fluid className={styles.navbar}>
+          <div className={styles.normalHeader}>
+            {/* Search Button on Top Right */}
+            <Button
+              variant="link"
+              onClick={handleSearchClick}
+              className={styles.searchButton}
+            >
+              <i className="fa fa-search"></i>
+            </Button>
 
-              </>
-            ) : (
-              <Nav.Link
-                style={{
-                  background: "#333",
-                  color: "#f9f9f9",
-                  padding: "5px 12px",
-                  boxShadow: "0 3px 14px rgba(0, 0, 0, 0.4)",
-                  borderRadius: 5,
-                }}
-              // onClick={onClickSelectCity}
-              >
-                در حال انتقال
-              </Nav.Link>
+            {/* Logo in Middle */}
+            <Navbar.Brand className={styles.navbar_brand_center} href="/">
+              <Link href="/">
+                <img
+                  className={styles.image_logo}
+                  src="/logo/web-logo-text.png"
+                  alt="لوگوی آجر"
+                />
+              </Link>
+            </Navbar.Brand>
 
+            {/* City Selector on Left */}
+            <div className={styles.citySelectorContainer}>
+              {renderCitySelector()}
+            </div>
 
-            )}
-          </Tooltip>
+            {/* <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} /> */}
+          </div>
 
-          {/* <NavDropdown
-                  title=}
-                  id={`offcanvasNavbarDropdown-expand-${expand}`}
-                >
-                    <NavDropdown.Item
-                      onClick={onClickSelectCity}
-                      href="#action3" className={styles['nav-dropdown-item']}>
-                       انتخاب شهر جدید
-                    </NavDropdown.Item>
-                   
-                   
-
-                    {renderLogoutButton()}
-
-                
-
-          </NavDropdown> */}
-
-          <Navbar.Toggle aria-controls={`offcanvasNavbar-expand-${expand}`} />
           <Navbar.Offcanvas
             id={`offcanvasNavbar-expand-${expand}`}
             aria-labelledby={`offcanvasNavbarLabel-expand-${expand}`}
@@ -530,7 +540,6 @@ function Header() {
                     textAlign: "center",
                     color: 'white',
                     borderRadius: '5px',
-
                   }}
                 >
                   <img
@@ -540,16 +549,14 @@ function Header() {
                     width={45}
                     height={45}
                     style={{ marginRight: '5px' }}
-
                   />
                   مشاور املاک هوشمند آجر
-
                 </p>
               </Offcanvas.Title>
             </Offcanvas.Header>
             <Offcanvas.Body>
               <Nav
-                className={`flex-grow-1 pe-3 ${styles["nav-link-wrapper-end"]}  `}
+                className={`flex-grow-1 pe-3 ${styles["nav-link-wrapper-end"]}`}
               >
                 <Nav.Link href={"/"} onClick={onClickHome}>
                   <p>خانه</p>
@@ -567,32 +574,6 @@ function Header() {
                 <Nav.Link href="/download" onClick={onClickDownlaod}>
                   <p>دانلود اپلیکیشن</p>
                 </Nav.Link>
-
-
-                {/* <NavDropdown
-                  title= {<bold>حساب من</bold>}
-                  id={`offcanvasNavbarDropdown-expand-${expand}`}
-                  
-                  className={styles["nav-dropdown-myaccount"]}
-                >
-                  <NavDropdown.Item
-                    onClick={onClickLogin}
-                    href="#"
-                    className={styles["nav-dropdown-item"]}
-                  >
-                    <p>ورود به پنل</p>
-                  </NavDropdown.Item>
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item
-                    onClick={onClickMarketing}
-                    href="#"
-                    className={styles["nav-dropdown-item"]}
-                  >
-                     <p>بازاریابی</p>
-                  </NavDropdown.Item>
-
-                  {renderLogoutButton()}
-                </NavDropdown> */}
               </Nav>
 
               <Nav className={` ${styles["nav-link-wrapper-start"]} pe-3 `}>
@@ -605,48 +586,13 @@ function Header() {
                 </Nav.Link>
               </Nav>
               {renderInstallButton()}
-
-              {/* <div className={styles["logo-just-mobile"]}>
-                
-              </div> */}
             </Offcanvas.Body>
           </Navbar.Offcanvas>
         </Container>
       );
-    } else {
-      return (
-        <Container className={styles.navbar_second}>
-          <Nav.Link
-            style={{
-              background: "#bc323a",
-              color: "#f9f9f9",
-              padding: "5px 12px",
-              boxShadow: "0 3px 14px rgba(0, 0, 0, 0.4)",
-            }}
-            onClick={onClickSelectCity}
-          >
-            شهر : {selected_city}
-          </Nav.Link>
-          <Form
-            className={`${styles.d_flex} ${styles.navar_brand_center} ${styles.navbar_serach}`}
-          >
-            <Form.Control
-              type="search"
-              placeholder={"جستجو شهر و منظقه"}
-              className={`'me-2' ${styles["search-input"]}  'form-control-lg' `}
-              aria-label="Search"
-              onChange={handleChangeInput}
-              onClick={handleOnclickInput}
-              value={search}
-            />
-          </Form>
-
-          {/* {locationLi()} */}
-          {searchResults()}
-        </Container>
-      );
     }
   };
+
   return (
     <>
       <Navbar
@@ -657,7 +603,7 @@ function Header() {
         className={styles.mb_1}
         sticky="top"
       >
-        {navabrOrSearch()}
+        {renderHeaderContent()}
         {renderSnackBarAlert()}
       </Navbar>
     </>

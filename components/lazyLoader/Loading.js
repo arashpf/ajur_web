@@ -3,11 +3,12 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Grid from "@mui/material/Grid";
+import { useTheme } from "@mui/material";
+import { useMediaQuery } from "@mui/material";
 
 const LazyLoader = ({
   items,
   renderItem,
-  itemsPerPage = 10,
   delay = 0,
   loadingComponent = <p>در حال بارگذاری...</p>,
   endComponent = <p>تمام آیتم‌ها بارگذاری شدند!</p>,
@@ -19,8 +20,23 @@ const LazyLoader = ({
   // make default item width 3 (12/4) on medium+ so we get 4 columns
   itemProps = { xl: 3, lg: 3, md: 3, sm: 6, xs: 12 },
   emptyComponent = <p>متاسفانه موردی یافت نشد ❌</p>,
-  className = ""
+  className = "",
 }) => {
+  const theme = useTheme();
+  const isMd = useMediaQuery(theme.breakpoints.only("md"));
+  const isSm = useMediaQuery(theme.breakpoints.only("sm"));
+  const isXs = useMediaQuery(theme.breakpoints.down("sm"));
+  const isLg = useMediaQuery(theme.breakpoints.up("lg"));
+
+  const getItemsPerPage = () => {
+    if (isXs) return 4; // Mobile
+    if (isSm) return 4; // Small tablets
+    if (isMd) return 6; // Medium screens
+    if (isLg) return 6; // Large screens
+    return 6; // Default
+  };
+
+  const itemsPerPage = getItemsPerPage();
   const [visibleItems, setVisibleItems] = useState([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +50,7 @@ const LazyLoader = ({
 
   const loadMoreItems = useCallback(() => {
     if (isLoading || visibleItems.length >= items.length) return;
-    
+
     setIsLoading(true);
     const nextPage = page + 1;
 
@@ -64,7 +80,9 @@ const LazyLoader = ({
   // Handle empty state
   if (!items || items.length === 0) {
     if (grid) {
-      const paddingStyle = gridPadding ? { paddingLeft: gridPadding, paddingRight: gridPadding } : {};
+      const paddingStyle = gridPadding
+        ? { paddingLeft: gridPadding, paddingRight: gridPadding }
+        : {};
       return (
         <div className={className} style={{ width: "100%", ...paddingStyle }}>
           <Grid container className={`lazy-grid-inner`} {...gridProps}>
@@ -86,7 +104,9 @@ const LazyLoader = ({
   ));
 
   if (grid) {
-    const paddingStyle = gridPadding ? { paddingLeft: gridPadding, paddingRight: gridPadding } : {};
+    const paddingStyle = gridPadding
+      ? { paddingLeft: gridPadding, paddingRight: gridPadding }
+      : {};
 
     return (
       <div className={className} style={{ width: "100%", ...paddingStyle }}>
@@ -110,7 +130,11 @@ const LazyLoader = ({
               textAlign: "center",
             }}
           >
-            {visibleItems.length < (items || []).length ? (isLoading ? loadingComponent : null) : endComponent}
+            {visibleItems.length < (items || []).length
+              ? isLoading
+                ? loadingComponent
+                : null
+              : endComponent}
           </Grid>
         </Grid>
       </div>
@@ -130,7 +154,11 @@ const LazyLoader = ({
           textAlign: "center",
         }}
       >
-        {visibleItems.length < items.length ? (isLoading ? loadingComponent : null) : endComponent}
+        {visibleItems.length < items.length
+          ? isLoading
+            ? loadingComponent
+            : null
+          : endComponent}
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ import Box from "@mui/material/Box";
 import LazyLoader from "../../components/lazyLoader/Loading";
 
 import WorkerCard from "../../components/cards/WorkerCard";
+import { useTheme } from "@emotion/react";
+import { useMediaQuery } from "@mui/material";
 
 const favoritesIndex = (props) => {
   const router = useRouter();
@@ -57,72 +59,78 @@ const favoritesIndex = (props) => {
     router.push("/");
   };
 
- const renderFavoritedWorkers = () => {
-  if (Array.isArray(workers) && workers.length > 0) {
-    return (
-      <LazyLoader
-        items={workers}             // whole array of workers
-        itemsPerPage={8}            // adjust as needed
-        delay={800}
-        renderItem={(worker) => (
-          <Link
-            href={`/worker/${worker.id}?slug=${worker.slug}`}
-            key={worker.id}
-          >
-            <Grid item md={4} xs={12} key={worker.id}>
-            <WorkerCard worker={worker} />
-            </Grid>
-          </Link>
-        )}
-        loadingComponent={
-          <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
-        }
-        endComponent={
-          <p style={{ textAlign: "center" }}>همه فایل‌ها بارگذاری شدند✅</p>
-        }
-        grid={true}
-        gridProps={{ spacing: 2 }}
-        itemProps={{ xl: 3, md: 4, xs: 12 }}
-      />
-    );
-  } else {
-    return (
-      <Grid item md={12} xs={12} style={{ background: "white" }}>
-        <p style={{ textAlign: "center", padding: 20 }}>
-          متاسفانه موردی یافت نشد
-        </p>
-        <div className="not-found-wrapper">
-          <img
-            className="not-found-image"
-            src="/logo/not-found.png"
-            alt="ملکی پیدا نشد"
-            width={200}
-            height={120}
-          />
-        </div>
-      </Grid>
-    );
-  }
-};
+  const renderFavoritedWorkers = () => {
+    if (Array.isArray(workers) && workers.length > 0) {
+      return (
+        <LazyLoader
+          items={workers} // whole array of workers
+          itemsPerPage={getItemsPerPage} // adjust as needed
+          delay={800}
+          renderItem={(worker) => (
+            <Link
+              href={`/worker/${worker.id}?slug=${worker.slug}`}
+              key={worker.id}
+            >
+              <Grid item md={4} xs={12} key={worker.id}>
+                <WorkerCard worker={worker} />
+              </Grid>
+            </Link>
+          )}
+          loadingComponent={
+            <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
+          }
+          endComponent={
+            <p style={{ textAlign: "center" }}>همه فایل‌ها بارگذاری شدند✅</p>
+          }
+          grid={true}
+          gridProps={{ spacing: 2 }}
+          itemProps={{ xl: 3, md: 4, xs: 12 }}
+        />
+      );
+    } else {
+      return (
+        <Grid item md={12} xs={12} style={{ background: "white" }}>
+          <p style={{ textAlign: "center", padding: 20 }}>
+            متاسفانه موردی یافت نشد
+          </p>
+          <div className="not-found-wrapper">
+            <img
+              className="not-found-image"
+              src="/logo/not-found.png"
+              alt="ملکی پیدا نشد"
+              width={200}
+              height={120}
+            />
+          </div>
+        </Grid>
+      );
+    }
+  };
 
   const renderFavotited = () => {
     if (is_have_favorited) {
       return (
-        <Box sx={{ padding: '10px 2px', flexGrow: 1, marginBottom:'70px'}}>
-          <h1 style={{textAlign:'right',padding:10,color:'#555',fontSize:22,fontFamily:'iransans',padding:20}}>فایل های مورد پسند شما در آجر</h1>
+        <Box sx={{ padding: "10px 2px", flexGrow: 1, marginBottom: "70px" }}>
+          <h1
+            style={{
+              textAlign: "right",
+              padding: 10,
+              color: "#555",
+              fontSize: 22,
+              fontFamily: "iransans",
+              padding: 20,
+            }}
+          >
+            فایل های مورد پسند شما در آجر
+          </h1>
           <Grid container spacing={2}>
-
-            <Box sx={{ flexGrow: 1, py: 3,px:3 }}>
-                            <Grid container spacing={2}>
-                               {renderFavoritedWorkers()}
-                            </Grid>
-                            {/* <FileRequest /> */}
-                          </Box>
-
-         
-           
+            <Box sx={{ flexGrow: 1, py: 3, px: 3 }}>
+              <Grid container spacing={2}>
+                {renderFavoritedWorkers()}
+              </Grid>
+              {/* <FileRequest /> */}
+            </Box>
           </Grid>
-          
         </Box>
       );
     } else {
@@ -159,16 +167,16 @@ const favoritesIndex = (props) => {
       );
     }
   };
-  return <div>
-
-<Head>
+  return (
+    <div>
+      <Head>
         <meta charset="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         ></meta>
-        <title> آجر :  فایل های مورد پسند شما </title>
+        <title> آجر : فایل های مورد پسند شما </title>
         <meta
           name="description"
           content="فایل های مورد پسند شما در آجر در این صفحه نمایش داده میشوند"
@@ -208,10 +216,10 @@ const favoritesIndex = (props) => {
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://ajur.app" />
       </Head>
-      
-    {renderFavotited()}
-    
-    </div>;
+
+      {renderFavotited()}
+    </div>
+  );
 };
 
 export default favoritesIndex;

@@ -15,7 +15,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import SpinnerLoader from "../panel/SpinnerLoader";
 
 
-const ASPECT_RATIO = 1;
 const MIN_DIMENSION = 250;
 
 const ImageCropper = (props) => {
@@ -80,8 +79,6 @@ const ImageCropper = (props) => {
       const imageUrl = reader.result?.toString() || "";
       imageElement.src = imageUrl;
 
-      
-
       imageElement.addEventListener("load", (e) => {
         if (error) setError("");
         const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -101,22 +98,20 @@ const ImageCropper = (props) => {
     
     const { width, height } = e.currentTarget;
     const cropWidthInPercent = (MIN_DIMENSION / width) * 100;
+    const cropHeightInPercent = (MIN_DIMENSION / height) * 100;
+    
     props.handleParentLoading(false);
-    const crop = makeAspectCrop(
-      {
-        unit: "%",
-        width: cropWidthInPercent,
-      },
-      ASPECT_RATIO,
-      width,
-      height
-    );
-    const centeredCrop = centerCrop(crop, width, height);
-    setCrop(centeredCrop);
     
-   
+    // Create a free-form crop without aspect ratio constraint
+    const crop = {
+      unit: "%",
+      x: 25, // Start at 25% from left
+      y: 25, // Start at 25% from top
+      width: Math.min(50, cropWidthInPercent * 2), // Default to 50% width or 2x min dimension
+      height: Math.min(50, cropHeightInPercent * 2), // Default to 50% height or 2x min dimension
+    };
     
-    
+    setCrop(crop);
   };
 
   const renderAvatarOrCroper = () => {
@@ -126,10 +121,11 @@ const ImageCropper = (props) => {
           <ReactCrop
             crop={crop}
             onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
-            circularCrop
+            circularCrop={false} // Remove circular crop for free form
             keepSelection
-            aspect={ASPECT_RATIO}
+            aspect={undefined} // Remove aspect ratio constraint for free resizing
             minWidth={MIN_DIMENSION}
+            minHeight={MIN_DIMENSION}
           >
             <img
               ref={imgRef}
@@ -152,13 +148,7 @@ const ImageCropper = (props) => {
                   :
                  
                     <SpinnerLoader />
-                  
-                  
-                  
-
-                  
-                    
-                }
+                  }
                   onClick={() => {
 
                     if(loading){
@@ -166,10 +156,6 @@ const ImageCropper = (props) => {
                     }
 
                     set_loading(true);
-
-
-
-
 
                     const promise = new Promise((resolve, reject) => {
                       setTimeout(() => {
@@ -204,24 +190,8 @@ const ImageCropper = (props) => {
                         closeModal();
 
                         set_loading(false);
-                        //  set_loading(false);
                       }
                     });
-                   
-               
-                
-                  
-
-
-
-
-
-
-
-
-
-
-
                    
                   }}
                   FabProps={{
@@ -261,7 +231,6 @@ const ImageCropper = (props) => {
 
         </Badge>
         </div>
-            //  <Avatar style={{background:'#eee'}} alt="pr-pic" src={old_imgage} sx={{ width: 300, height: 300 }}/>
         )
       
     }
@@ -270,8 +239,6 @@ const ImageCropper = (props) => {
   return (
     <>
       
-
-      
       {error && <p className="text-red-400 text-xs">{error}</p>}
       <div style={{justifyContent:'center',textAlign:'center',display:'flex'}}>
       
@@ -279,9 +246,6 @@ const ImageCropper = (props) => {
       { renderAvatarOrCroper() }
      
       </div>
-      {/* {imgSrc && (
-
-      )} */}
       {crop && (
         <canvas
           ref={previewCanvasRef}

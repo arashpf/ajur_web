@@ -505,9 +505,8 @@ export default function ImgMediaCard(props) {
         <div className={Styles["price-wrapper"]}> {rednerPrice()} </div>
         <div className={Styles["properties-wrapper"]}>{rednerProperties()}</div>
         <div style={{marginBottom: '-15px'}} className={Styles["properties-hint"]}> {renderQuickHint()} </div>
-        
       </CardContent>
     </Card>
     </div>
-  );
+  );                     
 }

@@ -360,8 +360,14 @@ const DashboardContent = (props) => {
         id="controlled-tab-example"
         activeKey={key}
         onSelect={(k) => setKey(k)}
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: open ? `${drawerWidth}px` : 0,
+          width: open ? `calc(100% - ${drawerWidth}px)` : '100%',
+          bottom: 0,
+        }}
         tabItemContainerStyle={{position: "fixed", bottom:"0"}}
-        
         
         >
 
@@ -392,7 +398,7 @@ const DashboardContent = (props) => {
       <ThemeProvider theme={mdTheme}>
         <Box sx={{ display: "flex" }}>
           <CssBaseline />
-          <Header data={data} open={open} profileImage={profileImage} />
+          <Header data={data} open={open} onToggle={toggleDrawer} drawerWidth={drawerWidth} profileImage={profileImage} />
 
           <Box
             component="main"
@@ -404,6 +410,12 @@ const DashboardContent = (props) => {
               flexGrow: 1,
               height: "100vh",
               overflow: "auto",
+              transition: (theme) =>
+                theme.transitions.create(['margin', 'width', 'transform'], {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.leavingScreen,
+                }),
+              marginRight: open ? `${drawerWidth}px` : 0,
             }}
           >
             <Toolbar />

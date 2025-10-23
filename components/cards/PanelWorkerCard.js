@@ -256,6 +256,27 @@ export default function ImgMediaCard(props) {
     }
   };
 
+  const daysSinceUpdate = (dateString) => {
+    try {
+      const updated = new Date(dateString);
+      const now = new Date();
+      const diff = now.getTime() - updated.getTime();
+      return Math.floor(diff / (1000 * 60 * 60 * 24));
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const renderNeedsUpdateBadge = () => {
+    const days = daysSinceUpdate(worker.updated_at);
+    if (days >= 22) {
+      return (
+        <div style={{borderRadius:'20px'}} className={Styles['needs-update-badge']}>نیاز به بروزرسانی</div>
+      );
+    }
+    return null;
+  };
+
   const renderWorkerStatus = () => {
     if (worker.status == 1) { 
       return (
@@ -473,7 +494,7 @@ export default function ImgMediaCard(props) {
       className={Styles["card-wrapper"]}
       onClick={() => onClickCard(worker)}
     >
-      {renderNeighborHoodRibbon()}
+  {renderNeighborHoodRibbon()}
       <CardMedia
         component="img"
         alt={worker.name}
@@ -484,6 +505,7 @@ export default function ImgMediaCard(props) {
         <p className={Styles["inside-top-left"]}>{renderVideoOrImageIcon()}</p>
         <div className={Styles["inside-top-right"]}>
           <p>{worker.name}</p>
+          {renderNeedsUpdateBadge()}
         </div>
       </div>
 

@@ -28,6 +28,7 @@ import Orders from "../../components/panel/Orders";
 import SpinnerLoader from "../../components/panel/SpinnerLoader";
 import Footer from "../../components/parts/Footer";
 import SpeedDial from "../../components/panel/SpeedDial";
+import WorkerFilter from "../../components/WorkerFilter";
 
 import CatCard2 from "../../components/cards/CatCard2";
 // import WorkerCard from "../../components/cards/WorkerCard";
@@ -117,6 +118,7 @@ const DashboardContent = (props) => {
   const [nopost, set_nopost] = useState(false);
   const [key, setKey] = React.useState("personal");
   const [department, set_department] = React.useState([]);
+  const [filteredWorkers, setFilteredWorkers] = useState([]);
 
   useEffect(() => {
     var cookie_key = Cookies.get("cookie_key");
@@ -124,6 +126,10 @@ const DashboardContent = (props) => {
       setKey(cookie_key);
     }
   }, []);
+
+  useEffect(() => {
+    setFilteredWorkers(workers);
+  }, [workers]);
 
   useEffect(() => {
     Cookies.set("cookie_key", key, { expires: 200 });
@@ -256,7 +262,7 @@ const DashboardContent = (props) => {
   const renderWorkers = () => {
     if (workers.length > 0) {
       // Sort workers by date (newest first)
-      const sortedWorkers = [...workers].sort(
+      const sortedWorkers = [...filteredWorkers].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
 
@@ -349,6 +355,12 @@ const DashboardContent = (props) => {
           sx={{ mt: 7, mb: 4, paddingTop: 5, textAlign: "center" }}
         >
           <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <WorkerFilter
+                workers={workers}
+                onFilteredWorkersChange={setFilteredWorkers}
+              />
+            </Grid>
             {/* Chart */}
             {/* <Grid item xs={12} md={8} lg={9}>
                   <Paper
@@ -363,7 +375,7 @@ const DashboardContent = (props) => {
                   </Paper>
                 </Grid> */}
             {/* Recent Deposits */}
-            <Grid container>
+            {/* <Grid container>
               <Grid key={41} item xs={12} md={3} lg={2}>
                 {workers.length > 0 && (
                   <CatCard2
@@ -374,7 +386,7 @@ const DashboardContent = (props) => {
                 )}
               </Grid>
               {renderSliderCategories()}
-            </Grid>
+            </Grid> */}
 
             {/* Recent Orders */}
             <Grid item xs={12}>
@@ -399,7 +411,9 @@ const DashboardContent = (props) => {
           variant="tabs"
           style={{
             position: "fixed",
-            width: "100%",
+            left: 0,
+            right: open ? `${drawerWidth}px` : 0,
+            width: open ? `calc(100% - ${drawerWidth}px)` : "100%",
             background: "white",
             zIndex: 100,
             boxShadow: "0 4px 2px -2px gray",
@@ -435,7 +449,13 @@ const DashboardContent = (props) => {
       <ThemeProvider theme={mdTheme}>
         <Box sx={{ display: "flex" }}>
           <CssBaseline />
-          <Header data={data} open={open} profileImage={profileImage} />
+          <Header
+            data={data}
+            open={open}
+            onToggle={toggleDrawer}
+            drawerWidth={drawerWidth}
+            profileImage={profileImage}
+          />
 
           <Box
             component="main"
@@ -447,6 +467,13 @@ const DashboardContent = (props) => {
               flexGrow: 1,
               height: "100vh",
               overflow: "auto",
+              transition: (theme) =>
+                theme.transitions.create(["margin", "width", "transform"], {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.leavingScreen,
+                }),
+              // when drawer opens we push the main content to the left by the drawer width
+              marginRight: open ? `${drawerWidth}px` : 0,
             }}
           >
             <Toolbar />

@@ -329,3 +329,79 @@ justify-content: flex-end;
   cursor: pointer;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
+
+/* Add these to your existing Header.module.css */
+
+.normalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+}
+
+.searchHeader {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.searchButton {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #333;
+  font-size: 1.2rem;
+  z-index: 10;
+}
+
+.searchCloseButton {
+  color: #333;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.navbar_brand_center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.image_logo {
+  height: 40px;
+  width: auto;
+  cursor: pointer;
+}
+
+.navbar_search_full {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.navbar_search_full .search-input {
+  width: 100%;
+}
+
+.citySelectorContainer {
+  flex-shrink: 0;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .searchHeader {
+    flex-wrap: nowrap;
+  }
+  
+  .citySelectorContainer {
+    flex-shrink: 0;
+  }
+  
+  .navbar_search_full {
+    min-width: 0; /* Allow flex item to shrink */
+  }
+}
+
+/* Keep your existing styles and add these new ones */

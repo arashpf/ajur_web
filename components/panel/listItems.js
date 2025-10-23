@@ -1,176 +1,311 @@
-import * as React from 'react';
-import Typography from '@mui/material/Typography';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import ListSubheader from '@mui/material/ListSubheader';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PeopleIcon from '@mui/icons-material/People';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import LayersIcon from '@mui/icons-material/Layers';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import LogoutIcon from '@mui/icons-material/Logout';
-import FilterNone from '@mui/icons-material/FilterNone';
-import Portrait from '@mui/icons-material/Portrait';
+import * as React from "react";
+import Typography from "@mui/material/Typography";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import ListSubheader from "@mui/material/ListSubheader";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import PeopleIcon from "@mui/icons-material/People";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import LayersIcon from "@mui/icons-material/Layers";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import LogoutIcon from "@mui/icons-material/Logout";
+import FilterNone from "@mui/icons-material/FilterNone";
+import Portrait from "@mui/icons-material/Portrait";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import Desk from '@mui/icons-material/Desk';
-import LibraryAdd from '@mui/icons-material/LibraryAdd';
-import SupportAgent from '@mui/icons-material/SupportAgent';
-import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
-import { useRouter } from 'next/router';
-import Cookies from 'js-cookie';
-import Diversity1Icon from '@mui/icons-material/Diversity1';
+import { InfoIcon } from "lucide-react";
+import Desk from "@mui/icons-material/Desk";
+import LibraryAdd from "@mui/icons-material/LibraryAdd";
+import SupportAgent from "@mui/icons-material/SupportAgent";
+import Avatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
+import { useRouter } from "next/router";
+import Cookies from "js-cookie";
+import Diversity1Icon from "@mui/icons-material/Diversity1";
+import { Clock10Icon, Download, DownloadIcon, TimerIcon } from "lucide-react";
+import { LibraryBooks, PrivacyTip } from "@mui/icons-material";
 
+const MainListItems = (props) => {
+  const router = useRouter();
 
-  const MainListItems = (props) =>  {
-      const router = useRouter();
+  const onClickDownload = () => {
+    router.push("/download");
+  };
 
-    const onClickLogout = () => {
-      console.log('you press logout');
+  const onClickAbout = () => {
+    router.push("/about");
+  };
 
+  const onClickPrivacy = () => {
+    router.push("/privacy-policy");
+  };
 
-      Cookies.remove('id_token');
+  const onClickTerms = () => {
+    router.push("/terms");
+  };
 
+  const onClickLatest = () => {
+    router.push("/download");
+  };
 
-      router.push("/panel/auth/login");
-    }
+  const onClickLogout = () => {
+    console.log("you press logout");
 
-    const onClickHome = () => {
-      router.push("/panel");
-    }
+    Cookies.remove("id_token");
 
-    const onClickNew = () => {
+    router.push("/panel/auth/login");
+  };
 
-      router.push("/panel/new");
-      props.onGrabClicked('new item call it');
-    }
+  const onClickHome = () => {
+    router.push("/panel");
+  };
 
-    const onClickProfile= () => {
+  const onClickNew = () => {
+    router.push("/panel/new");
+    props.onGrabClicked("new item call it");
+  };
 
-      router.push("/panel/profile");
+  const onClickProfile = () => {
+    router.push("/panel/profile");
+  };
 
-    }
+  const onClickMarketing = () => {
+    router.push("/marketing/single");
+  };
+  const onClickSupport = () => {
+    router.push("/support");
+  };
 
-    const onClickMarketing = () => {
+  const onClickDepartment = () => {
+    router.push("/panel/department-entro");
+  };
 
-      router.push("/marketing/single");
-
-    }
-    const onClickSupport= () => {
-
-      router.push("/panel/support");
-
-    }
-
-    const onClickDepartment = () => {
-      router.push("/panel/department-entro");
-    }
-
-  return(
-      <React.Fragment>
+  return (
+    <React.Fragment>
       <ListItemButton>
-      <ListItemText
-      onClick={onClickHome}
+        <ListItemText
+          onClick={onClickDownload}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              دانلود اپلیکیشن
+            </p>
+          }
+        />
+        <ListItemIcon>
+          <DownloadIcon />
+        </ListItemIcon>
+      </ListItemButton>
 
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>میز کار</Typography>}
-       />
+      <Divider sx={{ my: 1 }} />
+
+      <ListItemButton>
+        <ListItemText
+          onClick={onClickLatest}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              بازدیدهای اخیر
+            </p>
+          }
+        />
+        <ListItemIcon>
+          <Clock10Icon />
+        </ListItemIcon>
+      </ListItemButton>
+
+      <Divider sx={{ my: 1 }} />
+
+      <ListItemButton>
+        <ListItemText
+          onClick={onClickHome}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              میز کار
+            </p>
+          }
+        />
         <ListItemIcon>
           <Desk />
         </ListItemIcon>
       </ListItemButton>
-
-
-
-
+      {/* 
       <ListItemButton>
-      <ListItemText
-        onClick={onClickNew}
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>ثبت فایل جدید</Typography>}
-       />
+        <ListItemText
+          onClick={onClickNew}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              ثبت فایل جدید
+            </p>
+          }
+        />
         <ListItemIcon>
           <LibraryAdd />
         </ListItemIcon>
-      </ListItemButton>
+      </ListItemButton> */}
 
-      <ListSubheader component="div" inset>
-
-      </ListSubheader>
+      <ListSubheader component="div" inset></ListSubheader>
       <ListItemButton>
-      <ListItemText
-         disableTypography
-           onClick={onClickProfile}
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>پروفایل</Typography>} 
-       />
+        <ListItemText
+          onClick={onClickProfile}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              پروفایل
+            </p>
+          }
+        />
         <ListItemIcon>
           <Portrait />
         </ListItemIcon>
       </ListItemButton>
 
-      <Divider sx={{ my: 2 }} />
-
-      <ListItemButton>
-      <ListItemText
-         disableTypography
-           onClick={onClickMarketing}
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>بخش بازاریابی</Typography>} 
-       />
+      {/* <ListItemButton>
+        <ListItemText
+          onClick={onClickMarketing}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              بخش بازاریابی
+            </p>
+          }
+        />
         <ListItemIcon>
           <CampaignIcon />
         </ListItemIcon>
-      </ListItemButton>
+      </ListItemButton> */}
 
+      <ListSubheader component="div" inset></ListSubheader>
 
-    
-
-      <ListSubheader component="div" inset>
-      </ListSubheader>
-
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 1 }} />
 
       <ListItemButton>
-      <ListItemText
-         disableTypography
-           onClick={onClickSupport}
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>پشتیبانی آجر</Typography>}
-       />
+        <ListItemText
+          onClick={onClickAbout}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              درباره آجر
+            </p>
+          }
+        />
+        <ListItemIcon>
+          <InfoIcon />
+        </ListItemIcon>
+      </ListItemButton>
+
+      {/* <ListItemButton>
+        <ListItemText
+          onClick={onClickTerms}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              قوانین کاربری
+            </p>
+          }
+        />
+        <ListItemIcon>
+          <LibraryBooks />
+        </ListItemIcon>
+      </ListItemButton> */}
+
+      <ListItemButton>
+        <ListItemText
+          onClick={onClickPrivacy}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              حریم خصوصی
+            </p>
+          }
+        />
+        <ListItemIcon>
+          <PrivacyTip />
+        </ListItemIcon>
+      </ListItemButton>
+
+      <ListItemButton>
+        <ListItemText
+          onClick={onClickSupport}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              پشتیبانی آجر
+            </p>
+          }
+        />
         <ListItemIcon>
           <SupportAgent />
         </ListItemIcon>
       </ListItemButton>
 
-      <Divider sx={{ my: 2 }} />
-
-      <ListItemButton>
-      <ListItemText
-         disableTypography
-           onClick={onClickDepartment}
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>دپارتمان مجازی</Typography>}
-       />
+      {/* <ListItemButton>
+        <ListItemText
+          onClick={onClickDepartment}
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#555", textAlign: "right", paddingRight: 20 }}
+            >
+              دپارتمان مجازی
+            </p>
+          }
+        />
         <ListItemIcon>
           <Diversity1Icon />
         </ListItemIcon>
-      </ListItemButton>
+      </ListItemButton> */}
 
       <Divider sx={{ my: 3 }} />
 
-      <ListItemButton onClick={onClickLogout}>
-      <ListItemText
-         disableTypography
-         primary={<Typography type="body2" style={{ color: '#555',textAlign:'right',paddingRight:20 }}>خروج از حساب</Typography>}
-       />
+      <ListItemButton
+        onClick={onClickLogout}
+        sx={{
+          backgroundColor: "brown",
+          "&:hover": {
+            backgroundColor: "#a83232", // custom hover color
+          },
+        }}
+      >
+        <ListItemText
+          primary={
+            <p
+              type="body2"
+              style={{ color: "#fff", textAlign: "right", paddingRight: 20 }}
+            >
+              خروج از حساب
+            </p>
+          }
+        />
         <ListItemIcon>
-          <LogoutIcon />
+          <LogoutIcon sx={{ color: "white" }} />
         </ListItemIcon>
       </ListItemButton>
-
-
-
-      </React.Fragment>
-    )
-
-
-}
+    </React.Fragment>
+  );
+};
 
 export default MainListItems;

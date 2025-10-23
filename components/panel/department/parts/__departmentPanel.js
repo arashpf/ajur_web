@@ -34,6 +34,10 @@ import RealStateSmalCard from "../../../cards/realestate/RealStateSmalCard";
 import RealStateInDepartmentCard from "../../../cards/realestate/RealStateInDepartmentCard";
 import WorkerCard from "../../../cards/WorkerCard";
 
+
+// import LazyLoader from "../../../components/lazyLoader/Loading";
+import LazyLoader from "../../../lazyLoader/Loading.js";
+
 // import PanelWorkerCard from "../../../cards/PanelWorkerCard";
 // import DepartmentWorkerCard from "../../../cards/DepartmentWorkerCard";
 import dynamic from 'next/dynamic';
@@ -129,6 +133,7 @@ const DepartmentPanel = (props) => {
   const [properties, set_properties] = useState([]);
   const [tick_properties, set_tick_properties] = useState([]);
   const [neighborhoods, set_neighborhoods] = useState([]);
+  const [y_ofset, set_y_ofset] = useState(0);
 
   const [neighbor, set_neighbor] = useState();
   const [selected_neighborhoods, set_selected_neighborhoods] = useState([]);
@@ -140,23 +145,47 @@ const DepartmentPanel = (props) => {
     []
   );
 
+  // const trigerEndofScroll = () => {
+  //   set_y_ofset(window.scrollY);
+  //   alert(window.scrollY);
+  //   if (window.scrollY >= 300) {
+  //     console.log('window.scrollY is ----------');
+
+
+  //     console.log(window.scrollY);
+
+  //     alert("secondary");
+  //   } else if (window.scrollY <= 270) {
+  //     console.log('window.scrollY is ----------');
+  //     alert("main");
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   trigerEndofScroll();
+  //   alert('need to scroll');
+
+
+  //   window.addEventListener("scroll", trigerEndofScroll);
+  // }, [y_ofset]);
+
   useEffect(() => {
-    
+
     var cookie_key = Cookies.get("cookie_secound_key");
     if (cookie_key) {
-      setKey(cookie_key); 
-    } 
+      setKey(cookie_key);
+    }
 
   }, []);
 
   useEffect(() => {
 
-  Cookies.set('cookie_secound_key', key , { expires: 200 });
+    Cookies.set('cookie_secound_key', key, { expires: 200 });
   }, [key]);
 
   useEffect(() => {
-   
-     
+
+
     var selected_normal_field = normal_fields.filter((field) => {
       if (field.low !== 0 || field.high === properties) return field;
     });
@@ -184,7 +213,7 @@ const DepartmentPanel = (props) => {
           return false;
       }
 
-     
+
 
       return worker;
     });
@@ -197,8 +226,8 @@ const DepartmentPanel = (props) => {
 
     set_department_workers(fitering_on_range);
 
-   
-  }, [selectedcat, selected_neighborhoods_array, properties,tick_properties]);
+
+  }, [selectedcat, selected_neighborhoods_array, properties, tick_properties]);
 
   const is_worker_in_range = (worker) => {
     const is_googd_to_go = true;
@@ -228,22 +257,22 @@ const DepartmentPanel = (props) => {
       }
     });
 
-    
+
     tick_properties.map((ps) => {
-      
+
       var selected_decoded_pr = decoded_pr.filter((pr) => {
         if (pr.kind == 2) return pr;
       });
-          const matched_pr_tk = selected_decoded_pr.find(function (pr) {
-            return pr.name == ps.name;
-          });
-          if (!matched_pr_tk) {
+      const matched_pr_tk = selected_decoded_pr.find(function (pr) {
+        return pr.name == ps.name;
+      });
+      if (!matched_pr_tk) {
 
-            is_googd_to_go = false;
+        is_googd_to_go = false;
 
-            
-          
-          }
+
+
+      }
     });
 
     return is_googd_to_go;
@@ -452,7 +481,7 @@ const DepartmentPanel = (props) => {
             title={
               <p style={{ fontSize: 15 }}>
                 {"درخواست "} {"("} {department_waited_colleagues.length} {")"}
-                 
+
               </p>
             }
             className={Styles["personal-tab"]}
@@ -530,7 +559,7 @@ const DepartmentPanel = (props) => {
               onClick={onClickSearchBox}
               sx={{ ml: 1, flex: 1, direction: "rtl", fontFamily: "iransans" }}
               placeholder="جستجو منطقه ,مشاور، عنوان فایل  و ... "
-              inputProps={{ "aria-label": "جستجو منطقه" }} 
+              inputProps={{ "aria-label": "جستجو منطقه" }}
               onChange={handleChangeInput}
             />
             {/* <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
@@ -564,10 +593,10 @@ const DepartmentPanel = (props) => {
 
   const renderDepartmentWorkersTabContent = () => {
     return (
-      <Grid item xs={12}>
+      <Grid item xs={12} >
         <Box sx={{ flexGrow: 1 }}>
           <Grid container spacing={3}>
-            <Grid item xs={6}>
+            <Grid item xs={6} >
               <Button
                 onClick={clickToOpenSortSelection}
                 endIcon={<KeyboardArrowDownIcon />}
@@ -783,16 +812,16 @@ const DepartmentPanel = (props) => {
             </div>
           </Tab>
 
-         
+
 
           {
-      ( department_waited_colleagues.length > 0  && (role == "رییس" || role =='مدیر') ) &&
+            (department_waited_colleagues.length > 0 && (role == "رییس" || role == 'مدیر')) &&
             <Tab
               eventKey="jountrequest"
               title={
                 <p style={{ fontSize: 15 }}>
-                 <CircleIcon style={{color:'red',fontSize:'12px'}}/>  {"درخواست "} 
-                 
+                  <CircleIcon style={{ color: 'red', fontSize: '12px' }} />  {"درخواست "}
+
                 </p>
               }
               className={Styles["personal-tab"]}
@@ -814,19 +843,19 @@ const DepartmentPanel = (props) => {
   };
 
   const renderhowmanydaylisted = (day) => {
-    
-    if(day == 0){
+
+    if (day == 0) {
       return 'امروز'
-    }else{
-     return  day+ ' روز پیش '
+    } else {
+      return day + ' روز پیش '
     }
   }
 
   const renderListedByBox = (worker) => {
     var listed_colleague = department_colleagues.filter((x) => {
       // return x.phone === worker.cellphone;
-       return x.id == worker.user_id;
-      
+      return x.id == worker.user_id;
+
       // return x.phone === worker.cellphone;
     });
 
@@ -841,11 +870,11 @@ const DepartmentPanel = (props) => {
             display: "flex",
             flexDirection: "row",
             justifyContent: "space-between",
-            
+
             padding: "1px 5px",
             margin: "0px 8px",
             background: "white",
-            boxShadow: "rgba(0, 0, 0, 0.35) 0px 5px 15px"
+
           }}
         >
           <div
@@ -857,11 +886,11 @@ const DepartmentPanel = (props) => {
           >
             <p style={{ fontSize: "10px", padding: "1px 10px" }}>
               <Button
-              style={{ marginTop:5 }}
+                style={{ marginTop: 5 }}
                 variant="outlined"
                 href={`tel:${cl && cl.phone}`}
                 startIcon={
-                  <CallIcon style={{ color: "green", fontSize: "12px"  }} />
+                  <CallIcon style={{ color: "green", fontSize: "12px" }} />
                 }
               >
                 تماس
@@ -874,7 +903,8 @@ const DepartmentPanel = (props) => {
               display: "flex",
               flexDirection: "row",
               justifyContent: "space-between",
-              fontSize: 12,
+              fontSize: 14,
+
             }}
           >
             <Link href={`/realestates/${cl.id}?slug=${cl.name}`}>
@@ -909,15 +939,31 @@ const DepartmentPanel = (props) => {
   };
 
   const renderDepartmentWorkers = () => {
-    return department_workers.map((worker,key) => (
-      // key <10 &&
-      <Grid item md={6} xs={12} key={worker.id}>
+
+    return(
+      <LazyLoader
+                items={department_workers}
+                itemsPerPage={8}
+                delay={800}
+                renderItem={(worker,key) => (
+                  <Grid item md={4} xs={12} key={worker.id}>
         {/* <WorkerCard key={worker.id} worker={worker} /> */}
-        <DepartmentWorkerCard key={worker.id} worker={worker} priority={key< 4} />
-          {renderListedByBox(worker)}
+        <DepartmentWorkerCard key={worker.id} worker={worker} priority={key < 4} />
+        {renderListedByBox(worker)}
         {/* <WorkerCard key={worker.id} worker={worker} /> */}
       </Grid>
-    ));
+                )}
+                loadingComponent={
+                  <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
+                }
+                endComponent={
+                  <p style={{ textAlign: "center" }}>همه فایل‌ها بارگذاری شدند✅</p>
+                }
+                grid={true}
+                gridProps={{ spacing: 3 }}
+              />
+    )
+  
   };
 
   const onclickSortAgent = (filter) => {
@@ -984,9 +1030,12 @@ const DepartmentPanel = (props) => {
         realstate.status == 1 && (
           <Grid
             item
-            md={6}
+            md={4}
             xs={12}
             key={realstate.id}
+
+            // style={{'box-shadow': 'rgba(149, 157, 165, 0.2) 0px 8px 24px'}}
+            style={{ 'box-shadow': 'rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px' }}
             className={` animate__animated animate__flipInY    `}
           >
             <RealStateInDepartmentCard
@@ -1035,9 +1084,9 @@ const DepartmentPanel = (props) => {
     console.log("realestateMarketingLinkClick toched");
     copyToClipBoard(
       "https://ajur.app/department/" +
-        department.id +
-        "?invite_from=" +
-        user_from.phone
+      department.id +
+      "?invite_from=" +
+      user_from.phone
     );
   };
 
@@ -1060,8 +1109,8 @@ const DepartmentPanel = (props) => {
     } else {
       alert(
         "مرورگر شما اجازه دسترسی به کلیپ بورد را نمیدهد" +
-          "\n" +
-          "لطفا متن لینک را به صورت دستی انتخاب و کپی کنید"
+        "\n" +
+        "لطفا متن لینک را به صورت دستی انتخاب و کپی کنید"
       );
     }
   };
@@ -1107,12 +1156,12 @@ const DepartmentPanel = (props) => {
             <div className={Styles.single_icon}>
               <p>
                 {filter_selected_category_name == cat.name ? (
-                  
-                 
-                   < RadioButtonCheckedIcon />
+
+
+                  < RadioButtonCheckedIcon />
                 ) : (
-                  
-                  
+
+
                   <RadioButtonUncheckedIcon />
                 )}
               </p>
@@ -1283,7 +1332,7 @@ const DepartmentPanel = (props) => {
       return (
         <div>
           <Grid container spacing={1}>
-            <Grid item xs={12} md={12} lg={12} style={{ textAlign: "center",padding:'20px'}}>
+            <Grid item xs={12} md={12} lg={12} style={{ textAlign: "center", padding: '20px' }}>
               <div>
                 <p>مشاور جدید باید بارکد زیر را اسکن کند </p>
                 <div style={{ padding: 10 }}>
@@ -1334,7 +1383,7 @@ const DepartmentPanel = (props) => {
                 </FormControl>
               </div>
             </Grid>
-            <Grid item xs={12} md={12} lg={12} style={{ textAlign: "right",padding:'20px',background:'white',fontSize:14 }} >
+            <Grid item xs={12} md={12} lg={12} style={{ textAlign: "right", padding: '20px', background: 'white', fontSize: 14 }} >
               <p>
                 مشاور جدید بعد از ارسال درخواست باید توسط رییس یا مدیر دپارتمان
                 تایید شود{" "}
@@ -1531,7 +1580,7 @@ const DepartmentPanel = (props) => {
     // );
   };
 
-  const onPressingSingleTickFieldCheckbox = (fl) => { 
+  const onPressingSingleTickFieldCheckbox = (fl) => {
 
     // alert('fl is expected to be fill right now ' + fl.value);
     let prop = {
@@ -1544,7 +1593,7 @@ const DepartmentPanel = (props) => {
 
     set_tick_properties([...tick_properties, prop]);
 
-    
+
   };
 
   const onDeletingSingleTickFieldCheckbox = (fl) => {
@@ -1552,113 +1601,113 @@ const DepartmentPanel = (props) => {
   };
 
   const renderCheckboxForTickField = (fl) => {
-    if(1){
+    if (1) {
       return (
-        
 
-          <CheckBoxOutlineBlankIcon />
-          // fl.ticked ?  <CheckBoxOutlineBlankIcon /> : <CheckBoxIcon/>
-       
+
+        <CheckBoxOutlineBlankIcon />
+        // fl.ticked ?  <CheckBoxOutlineBlankIcon /> : <CheckBoxIcon/>
+
       )
     }
   }
 
-  const renderOnOff = (fl)=> {
+  const renderOnOff = (fl) => {
 
 
-    
-   
-    
+
+
+
     const x = tick_properties.find(function (item) {
       return item.name == fl.value;
     });
     if (x) {
-      
-        return (
-          <div
-                    style={{ width: "100%" }}
-                    onClick={() => onDeletingSingleTickFieldCheckbox(fl)}
-                  >
-                    <p
-                      style={{
-                        // direction: "rtl",
-                        textAlign: "right",
-                        marginRight: 10,
-                        color: "#555",
-                        fontSize: 14,
-                        padding: "5px 5px",
-  
-                        marginLeft: 2,
-                        width: "100%",
-                      }}
-                    >
-                      دارای <strong> {fl.value}</strong> باشد
-                      {/* <CheckBoxIcon />  */}
-                     {/* { renderCheckboxForTickField(fl) }  */}
-                     <CheckBoxIcon />
-                     
-                    </p>
-  
-                    <Divider
-                      sx={{
-                        borderBottomWidth: 1,
-                        background: "#555",
-                        margin: 1,
-                      }}
-                      // fullWidth
-                    />
-                  </div>
-        );
+
+      return (
+        <div
+          style={{ width: "100%" }}
+          onClick={() => onDeletingSingleTickFieldCheckbox(fl)}
+        >
+          <p
+            style={{
+              // direction: "rtl",
+              textAlign: "right",
+              marginRight: 10,
+              color: "#555",
+              fontSize: 14,
+              padding: "5px 5px",
+
+              marginLeft: 2,
+              width: "100%",
+            }}
+          >
+            دارای <strong> {fl.value}</strong> باشد
+            {/* <CheckBoxIcon />  */}
+            {/* { renderCheckboxForTickField(fl) }  */}
+            <CheckBoxIcon />
+
+          </p>
+
+          <Divider
+            sx={{
+              borderBottomWidth: 1,
+              background: "#555",
+              margin: 1,
+            }}
+          // fullWidth
+          />
+        </div>
+      );
 
 
-        
 
-     
+
+
     } else {
 
-      return(
+      return (
         <div
-                  style={{ width: "100%" }}
-                  onClick={() => onPressingSingleTickFieldCheckbox(fl)}
-                >
-                  <p
-                    style={{
-                      // direction: "rtl",
-                      textAlign: "right",
-                      marginRight: 10,
-                      color: "#555",
-                      fontSize: 14,
-                      padding: "5px 5px",
+          style={{ width: "100%" }}
+          onClick={() => onPressingSingleTickFieldCheckbox(fl)}
+        >
+          <p
+            style={{
+              // direction: "rtl",
+              textAlign: "right",
+              marginRight: 10,
+              color: "#555",
+              fontSize: 14,
+              padding: "5px 5px",
 
-                      marginLeft: 2,
-                      width: "100%",
-                    }}
-                  >
-                    دارای <strong> {fl.value}</strong> باشد
-                    {/* <CheckBoxIcon />  */}
-                   {/* { renderCheckboxForTickField(fl) }  */}
-                   <CheckBoxOutlineBlankIcon />
-                   
-                  </p>
+              marginLeft: 2,
+              width: "100%",
+            }}
+          >
+            دارای <strong> {fl.value}</strong> باشد
+            {/* <CheckBoxIcon />  */}
+            {/* { renderCheckboxForTickField(fl) }  */}
+            <CheckBoxOutlineBlankIcon />
 
-                  <Divider
-                    sx={{
-                      borderBottomWidth: 1,
-                      background: "#555",
-                      margin: 1,
-                    }}
-                    // fullWidth
-                  />
-                </div>
+          </p>
+
+          <Divider
+            sx={{
+              borderBottomWidth: 1,
+              background: "#555",
+              margin: 1,
+            }}
+          // fullWidth
+          />
+        </div>
 
       )
-      
-    
+
+
     }
 
-  
-   
-    
+
+
+
   }
 
   const renderFiltersBasedOnCategorySelected = () => {
@@ -1666,11 +1715,11 @@ const DepartmentPanel = (props) => {
       return (
         <>
           {/* tick_fields filter loop here _this is a new feature */}
-         
+
           {tick_fields.map(
             (fl, index) =>
               fl.special == 1 && (
-              renderOnOff(fl)
+                renderOnOff(fl)
               )
           )}
 
@@ -1761,8 +1810,8 @@ const DepartmentPanel = (props) => {
 
                           min={parseInt(fl.min_range)}
                           max={parseInt(fl.max_range)}
-                          // min={0}
-                          // max={500}
+                        // min={0}
+                        // max={500}
                         />
                       </div>
                     </AccordionDetails>
@@ -1774,7 +1823,7 @@ const DepartmentPanel = (props) => {
                       background: "#555",
                       margin: 1,
                     }}
-                    // fullWidth
+                  // fullWidth
                   />
                 </div>
               )
@@ -1900,6 +1949,8 @@ const DepartmentPanel = (props) => {
 
       set_user(response.data.user);
       set_department(response.data.department);
+
+      // alert(response.data.department.name);
       set_total_department_workers(response.data.total_department_workers);
       set_department_workers(response.data.department_workers);
       set_all_department_workers(response.data.department_workers);
@@ -1937,12 +1988,20 @@ const DepartmentPanel = (props) => {
 
           <Grid item md={8} xs={12}>
             <div className={Styles["new-wrapper"]}>
-              {(role == "رییس" ||role == "مدیر" ) && (
+              {(role == "رییس" || role == "مدیر") && (
                 <SpeedDial
                   ariaLabel="مشاور جدید"
-                  sx={{ position: "fixed", bottom: 100, right: 16 }}
+                  sx={{ position: "fixed", bottom: 150, right: 16 }}
                   icon={<PersonAddIcon />}
                   onClick={renderNewAgentModal}
+                  FabProps={{
+                    sx: {
+                      bgcolor: '#b92a31',
+                      '&:hover': {
+                        bgcolor: 'primary.main',
+                      }
+                    }
+                  }}
                 ></SpeedDial>
               )}
 
@@ -1973,14 +2032,14 @@ const DepartmentPanel = (props) => {
           </Grid>
           <Grid item md={2} xs={0}></Grid>
 
-          <Grid item md={2} xs={0}></Grid>
 
-          <Grid item md={8} xs={12}>
+
+          <Grid item md={12} xs={12}>
             {renderTabs()}
             {/* <div style={{ marginTop: 16 }}>{renderTabContent()}</div> */}
           </Grid>
 
-          <Grid item md={2} xs={0}></Grid>
+
           {renderModal()}
 
           <Snackbar
