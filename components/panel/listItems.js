@@ -46,7 +46,7 @@ const MainListItems = (props) => {
   };
 
   const onClickLatest = () => {
-    router.push("/download");
+    router.push("/recents");
   };
 
   const onClickLogout = () => {

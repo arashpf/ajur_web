@@ -20,8 +20,8 @@ import WorkerFilter from "../../components/WorkerFilter";
 
 const SingleCategory = (props) => {
   const router = useRouter();
-  const { slug, id, categories } = router.query;
-
+  const { slug, id, categories, subcat, neighbor } = router.query;
+  const [selectedCat, setSelectedCat] = useState(null);
   const [loading, set_loading] = useState(true);
   const [name, set_name] = useState(false);
   const [city, set_city] = useState(false);
@@ -31,7 +31,7 @@ const SingleCategory = (props) => {
   const [details, set_details] = useState([]);
   const [all_workers, set_all_workers] = useState([]);
   const [cats, set_cats] = useState([]);
-  const [main_cats, set_main_cats] = useState();
+  const [main_cats, set_main_cats] = useState(null);
   const [y_scroll, set_y_scroll] = useState(0);
 
   const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
@@ -47,6 +47,27 @@ const SingleCategory = (props) => {
     set_y_scroll(window.scrollY);
   };
 
+  // Add this function to handle category changes
+  const handleCategoryChange = (newCategory) => {
+    if (newCategory) {
+      // Preserve all existing query parameters
+      const query = {
+        ...router.query, // Keep all existing query params
+        name: newCategory.name,
+        id: newCategory.id,
+      };
+
+      // Redirect to the new category page with all parameters
+      router.push({
+        pathname: `/${city}/${newCategory.name}`,
+        query: query,
+      });
+    } else {
+      // If category is cleared, redirect to main categories page
+      router.push(`/${city}`);
+    }
+  };
+
   /* fetch single worker data and Images */
   useEffect(() => {
     if (props.workers) {
@@ -55,13 +76,21 @@ const SingleCategory = (props) => {
 
     set_workers(props.workers);
     set_all_workers(props.workers);
-    setFilteredWorkers(props.workers); // Initialize filtered workers
+    setFilteredWorkers(props.workers);
     set_details(props.details);
     set_cats(props.subcategories);
     set_main_cats(props.main_cats);
     set_neighborhoods(props.neighborhoods);
     set_name(props.name);
     set_city(props.city);
+
+    // Set the selected category from details
+    if (props.details && props.details.id) {
+      setSelectedCat({
+        id: props.details.id,
+        name: props.details.name,
+      });
+    }
   }, [props]);
 
   function AlterLoading() {
@@ -157,30 +186,25 @@ const SingleCategory = (props) => {
 
   const renderHeader = () => {
     return (
-      <div className={y_scroll > 250 ? Styles["header-wrapper"] : ""} style={{ padding: y_scroll > 250 ? "10px 0" : "0", backgroundColor: "white" }}>
+      <div
+        className={y_scroll > 250 ? Styles["header-wrapper"] : ""}
+        style={{
+          padding: y_scroll > 250 ? "10px 0" : "0",
+          backgroundColor: "white",
+        }}
+      >
         <Box sx={{ flexGrow: 0 }}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <WorkerFilter
                 workers={all_workers}
                 onFilteredWorkersChange={setFilteredWorkers}
+                initialCategory={selectedCat}
+                onCategoryChange={handleCategoryChange}
               />
             </Grid>
           </Grid>
         </Box>
-      </div>
-    );
-  };
-
-  const renderBreadCrumb = () => {
-    return (
-      <div className={Styles["breadcrumb-wrapper"]}>
-        <p className={Styles["breadcrumb-p"]}>
-          <h1 style={{ fontSize: 20 }}>
-            {name} در {city}
-          </h1>
-          <span> ({filteredWorkers.length} مورد یافت شد)</span>
-        </p>
       </div>
     );
   };
@@ -191,7 +215,6 @@ const SingleCategory = (props) => {
         <div>
           <div className={Styles["realstate-items-wrapper"]}>
             <div className={Styles["main-wrapper"]}>
-              {renderBreadCrumb()}
               {renderHeader()}
               <Box sx={{ flexGrow: 1, py: 3, px: 3 }}>
                 <Grid container spacing={2}>
@@ -291,7 +314,7 @@ export async function getServerSideProps(context) {
     `https://api.ajur.app/api/main-category-workers?subcat=${subcat}&catname=${name}&city=${city}`
   );
   const data = await res.json();
-  
+
   return {
     props: {
       details: data.details,
