@@ -357,31 +357,11 @@ const DepartmentPanel = (props) => {
   const renderDepartmentWorkersTabContent = () => {
     return (
       <Grid item xs={12}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={6}>
-              <Button
-                onClick={clickToOpenSortSelection}
-                endIcon={<KeyboardArrowDownIcon />}
-                variant="contained"
-                size="medium"
-                fullWidth
-              >
-                {renderSortButtonTitle()}
-                <SortIcon />
-              </Button>
-            </Grid>
-
-            <Grid item xs={6}>
-              <WorkerFilter
-                workers={all_department_workers}
-                onFilteredWorkersChange={setFilteredWorkers}
-              />
-            </Grid>
-
+            <WorkerFilter
+              workers={all_department_workers}
+              onFilteredWorkersChange={setFilteredWorkers}
+            />
             {renderDepartmentWorkers()}
-          </Grid>
-        </Box>
       </Grid>
     );
   };

@@ -6,6 +6,7 @@ import MuiAppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import ProfilePicker from "../../pickers/ProfilePicker";
@@ -24,18 +25,12 @@ const Header = (props) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // default open state: open on desktop, closed on mobile
-  const [internalOpen, setInternalOpen] = React.useState(!isMobile);
-  const open = typeof props.open === "boolean" ? props.open : internalOpen;
-
-  // update drawer open state when breakpoint changes
-  React.useEffect(() => {
-    setInternalOpen(!isMobile);
-  }, [isMobile]);
+  const [internalOpen, setInternalOpen] = React.useState(true); // Always start as open
 
   const AppBar = styled(MuiAppBar, {
     shouldForwardProp: (prop) => prop !== "open",
   })(({ theme, open }) => ({
-    zIndex: theme.zIndex.drawer + 1,
+    zIndex: theme.zIndex.drawer + 10,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -55,7 +50,7 @@ const Header = (props) => {
     if (props.onToggle && typeof props.onToggle === "function") {
       props.onToggle();
     } else {
-      setInternalOpen(!internalOpen);
+      setInternalOpen(!open);
     }
   };
 
@@ -107,17 +102,18 @@ const Header = (props) => {
             {data.name} {data.family}
           </Typography>
 
-          {/* Menu button on the right */}
+          {/* Menu button on the right - changes between hamburger and X */}
           <IconButton
             edge="end"
             color="inherit"
-            aria-label="open drawer"
+            aria-label={open ? "close drawer" : "open drawer"}
             onClick={toggleDrawer}
             sx={{
+              // Only hide on desktop when open, always show on mobile
               ...(open && !isMobile && { display: "none" }),
             }}
           >
-            <MenuIcon />
+            {open ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
         </Toolbar>
       </AppBar>
