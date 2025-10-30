@@ -355,10 +355,12 @@ const DashboardContent = (props) => {
           sx={{ mt: 7, mb: 4, paddingTop: 5, textAlign: "center" }}
         >
           <Grid container spacing={3}>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <WorkerFilter
                 workers={workers}
                 onFilteredWorkersChange={setFilteredWorkers}
+                enableLocalCategoryFilter={true}
+                availableCategories={subcategories}
               />
             </Grid>
             {/* Chart */}

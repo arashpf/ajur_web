@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MuiDrawer from "@mui/material/Drawer";
@@ -24,8 +24,17 @@ const Header = (props) => {
   // detect mobile vs desktop
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  // default open state: open on desktop, closed on mobile
-  const [internalOpen, setInternalOpen] = React.useState(true); // Always start as open
+  // Use localStorage to persist the drawer state
+  const [open, setOpen] = useState(() => {
+    // Check if there's a saved state in localStorage
+    const savedState = localStorage.getItem('header-drawer-open');
+    return savedState ? JSON.parse(savedState) : true;
+  });
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('header-drawer-open', JSON.stringify(open));
+  }, [open]);
 
   const AppBar = styled(MuiAppBar, {
     shouldForwardProp: (prop) => prop !== "open",
@@ -47,11 +56,7 @@ const Header = (props) => {
   }));
 
   const toggleDrawer = () => {
-    if (props.onToggle && typeof props.onToggle === "function") {
-      props.onToggle();
-    } else {
-      setInternalOpen(!open);
-    }
+    setOpen(!open);
   };
 
   const Drawer = styled(MuiDrawer, {
@@ -102,16 +107,12 @@ const Header = (props) => {
             {data.name} {data.family}
           </Typography>
 
-          {/* Menu button on the right - changes between hamburger and X */}
+          {/* Menu button on the right */}
           <IconButton
             edge="end"
             color="inherit"
             aria-label={open ? "close drawer" : "open drawer"}
             onClick={toggleDrawer}
-            sx={{
-              // Only hide on desktop when open, always show on mobile
-              ...(open && !isMobile && { display: "none" }),
-            }}
           >
             {open ? <CloseIcon /> : <MenuIcon />}
           </IconButton>
@@ -140,23 +141,23 @@ const Header = (props) => {
           <IconButton onClick={toggleDrawer}>
             <ChevronRightIcon />
           </IconButton>
-          <a href="/panel/profile" style={{ textDecoration: "none", color: "inherit" }}>
+          <a
+            href="/panel/profile"
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
             "{data.name}" | {data.phone}
           </a>
         </Toolbar>
         <Divider />
         <List component="nav">
           <MainListItems
+            onCloseMenu={() => setOpen(false)}
             onGrabClicked={(value) => {
               console.log(
                 "clicked from mainlist item and trigered in parent controll",
                 value
               );
-              if (props.onToggle && typeof props.onToggle === "function") {
-                props.onToggle();
-              } else {
-                setInternalOpen(false);
-              }
+              setOpen(false);
             }}
           />
         </List>

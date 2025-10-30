@@ -10,7 +10,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import WorkerCard from "../../components/cards/WorkerCard";
 import CallIcon from "@mui/icons-material/Call";
-import AddReactionIcon from '@mui/icons-material/AddReaction';
+import AddReactionIcon from "@mui/icons-material/AddReaction";
 import RealstateSkeleton from "../../components/skeleton/RealstateSkeleton";
 import Link from "next/link";
 import { Navigation, Pagination } from "swiper";
@@ -46,7 +46,7 @@ const singleDeparment = (props) => {
   // Scroll detection for sticky filter
   useEffect(() => {
     const handleScroll = () => {
-      const filterSection = document.getElementById('filter-section');
+      const filterSection = document.getElementById("filter-section");
       if (filterSection) {
         const rect = filterSection.getBoundingClientRect();
         // When filter section reaches top of viewport, make it sticky
@@ -54,8 +54,8 @@ const singleDeparment = (props) => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ const singleDeparment = (props) => {
 
   const handleParentClick = (cat) => {
     console.log("Category selected:", cat);
-    
+
     if (cat === "all") {
       set_selectedcat("all");
       set_selected_cat_name("همه فایل ها");
@@ -104,7 +104,9 @@ const singleDeparment = (props) => {
       return (
         <Grid item xs={12}>
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <p style={{ fontSize: "18px", color: "#666" }}>متاسفانه موردی یافت نشد ❌</p>
+            <p style={{ fontSize: "18px", color: "#666" }}>
+              متاسفانه موردی یافت نشد ❌
+            </p>
             <img
               src="/logo/not-found.png"
               alt="موردی یافت نشد"
@@ -162,25 +164,27 @@ const singleDeparment = (props) => {
   // Sticky filter section
   const renderFilterSection = () => {
     return (
-      <Box 
+      <Box
         id="filter-section"
-        sx={{ 
-          mb: 3, 
+        sx={{
+          mb: 3,
           mt: 2,
-          position: isFilterSticky ? 'fixed' : 'relative',
-          top: isFilterSticky ? 0 : 'auto',
+          position: isFilterSticky ? "fixed" : "relative",
+          top: isFilterSticky ? 0 : "auto",
           left: 0,
           right: 0,
-          zIndex: isFilterSticky ? 1000 : 'auto',
-          backgroundColor: isFilterSticky ? 'white' : 'transparent',
-          padding: isFilterSticky ? '12px 16px' : '0',
-          boxShadow: isFilterSticky ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-          borderBottom: isFilterSticky ? '1px solid #e0e0e0' : 'none'
+          zIndex: isFilterSticky ? 1000 : "auto",
+          backgroundColor: isFilterSticky ? "white" : "transparent",
+          padding: isFilterSticky ? "12px 16px" : "0",
+          boxShadow: isFilterSticky ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+          borderBottom: isFilterSticky ? "1px solid #e0e0e0" : "none",
         }}
       >
         <WorkerFilter
           workers={selectedcat === "all" ? all_workers : workers}
           onFilteredWorkersChange={setFilteredWorkers}
+          enableLocalCategoryFilter={true}
+          availableCategories={cats}
         />
       </Box>
     );
@@ -190,7 +194,7 @@ const singleDeparment = (props) => {
   const renderStickySpacer = () => {
     if (isFilterSticky) {
       return (
-        <Box sx={{ height: '70px' }} /> // Adjust height based on your filter button height
+        <Box sx={{ height: "70px" }} /> // Adjust height based on your filter button height
       );
     }
     return null;
@@ -200,7 +204,11 @@ const singleDeparment = (props) => {
     if (department_agents && department_agents.length > 0) {
       return department_agents.map((realstate) => (
         <SwiperSlide key={realstate.id}>
-          <Link href={`/realestates/${realstate.user_id ? realstate.user_id : realstate.id}?slug=${realstate.slug}`}>
+          <Link
+            href={`/realestates/${
+              realstate.user_id ? realstate.user_id : realstate.id
+            }?slug=${realstate.slug}`}
+          >
             <a>
               <RealStateSmalCard key={realstate.id} realstate={realstate} />
             </a>
@@ -213,7 +221,7 @@ const singleDeparment = (props) => {
 
   const onclickJoinRequest = () => {
     set_loading(true);
-  }
+  };
 
   const renderOrSpinner = () => {
     if (!loading) {
@@ -230,7 +238,7 @@ const singleDeparment = (props) => {
                 <Grid item md={2} xs={0}></Grid>
               </Grid>
             </Box>
-            
+
             {/* Contact Buttons */}
             <div className={Styles["contact-wrapper"]}>
               <Box
@@ -240,7 +248,7 @@ const singleDeparment = (props) => {
                   border: "1px dashed grey",
                   margin: "5px",
                   textAlign: "center",
-                  mb: 4
+                  mb: 4,
                 }}
               >
                 <Grid container spacing={1}>
@@ -271,12 +279,15 @@ const singleDeparment = (props) => {
                 </Grid>
               </Box>
             </div>
-            
+
             {/* Department Agents */}
             {department_agents && department_agents.length > 0 && (
               <>
                 <div className={Styles["title"]}>
-                  <h2> مشاورین {department.name} ({department_agents.length} عضو)</h2>
+                  <h2>
+                    {" "}
+                    مشاورین {department.name} ({department_agents.length} عضو)
+                  </h2>
                 </div>
 
                 <div>
@@ -299,36 +310,8 @@ const singleDeparment = (props) => {
                 </div>
               </>
             )}
-            
-            {/* Files Categories */}
-            <div className={Styles["title"]} style={{ marginTop: '40px' }}>
-              <h2> فایل های {department.name} ({all_workers.length} فایل)</h2>
-            </div>
 
-            <div>
-              <Swiper
-                slidesPerView={3}
-                spaceBetween={8}
-                navigation
-                breakpoints={{
-                  200: { slidesPerView: 2, spaceBetween: 10 },
-                  640: { slidesPerView: 2, spaceBetween: 10 },
-                  768: { slidesPerView: 4, spaceBetween: 20 },
-                  1024: { slidesPerView: 4, spaceBetween: 5 },
-                }}
-                modules={[Pagination, Navigation]}
-                className={Styles["cat-swiper"]}
-              >
-                {renderSliderCategories()}
-                <SwiperSlide key="all">
-                  <CatCard2
-                    selectedcat={selectedcat}
-                    cat="all"
-                    handleParentClick={handleParentClick}
-                  />
-                </SwiperSlide>
-              </Swiper>
-            </div>
+            {/* Files Categories */}
 
             {/* Filter Section - Always Visible */}
             {renderFilterSection()}
@@ -381,15 +364,28 @@ const singleDeparment = (props) => {
         />
         <meta
           property="og:description"
-          content={" صفحه اختصاصی  " + department.name + " | مشاور املاک هوشمند آجر "}
+          content={
+            " صفحه اختصاصی  " + department.name + " | مشاور املاک هوشمند آجر "
+          }
         />
         <meta
           property="og:url"
-          content={"https://ajur.app/department/" + department.id + "?slug=" + department.slug}
+          content={
+            "https://ajur.app/department/" +
+            department.id +
+            "?slug=" +
+            department.slug
+          }
         />
         <meta property="og:site_name" content="مشاور املاک هوشمند آجر" />
-        <meta property="article:published_time" content="2020-05-19T21:34:43+00:00" />
-        <meta property="article:modified_time" content="2022-01-28T03:47:57+00:00" />
+        <meta
+          property="article:published_time"
+          content="2020-05-19T21:34:43+00:00"
+        />
+        <meta
+          property="article:modified_time"
+          content="2022-01-28T03:47:57+00:00"
+        />
         <meta property="og:image" content={department.profile_url} />
         <meta property="og:image:width" content="840" />
         <meta property="og:image:height" content="840" />
@@ -399,7 +395,12 @@ const singleDeparment = (props) => {
         <link rel="icon" href="/favicon.ico" />
         <link
           rel="canonical"
-          href={"https://ajur.app/department/" + department.id + "?slug=" + department.slug}
+          href={
+            "https://ajur.app/department/" +
+            department.id +
+            "?slug=" +
+            department.slug
+          }
         />
       </Head>
       {renderOrSpinner()}

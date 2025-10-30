@@ -26,7 +26,7 @@ import Diversity1Icon from "@mui/icons-material/Diversity1";
 import { Clock10Icon, Download, DownloadIcon, TimerIcon } from "lucide-react";
 import { LibraryBooks, PrivacyTip } from "@mui/icons-material";
 
-const MainListItems = (props) => {
+const MainListItems = ({props, onCloseMenu}) => {
   const router = useRouter();
 
   const onClickDownload = () => {
@@ -58,7 +58,15 @@ const MainListItems = (props) => {
   };
 
   const onClickHome = () => {
-    router.push("/panel");
+    const currentPath = router.pathname;
+    
+    // If we're not exactly on /panel, redirect to /panel
+    if (currentPath !== "/panel") {
+      router.push("/panel");
+    } else {
+      // If we're already on /panel, just close the menu
+      onCloseMenu();
+    }
   };
 
   const onClickNew = () => {

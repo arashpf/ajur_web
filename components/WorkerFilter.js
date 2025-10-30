@@ -35,7 +35,9 @@ const WorkerFilter = ({
   workers = [], 
   onFilteredWorkersChange,
   initialCategory = null,
-  onCategoryChange = null
+  onCategoryChange = null,
+  enableLocalCategoryFilter = false,
+  availableCategories = []
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -47,7 +49,6 @@ const WorkerFilter = ({
   const [sortBy, setSortBy] = useState("newest");
   const [result, setResult] = useState([]);
   
-  // State for filter options from API
   const [subcategories, setSubcategories] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
   const [tickFields, setTickFields] = useState([
@@ -56,14 +57,14 @@ const WorkerFilter = ({
     { id: 3, name: "انباری", value: "انباری", kind: 2, special: 1 },
   ]);
 
-  // Update selectedCategory when initialCategory prop changes
+  const displayCategories = enableLocalCategoryFilter ? availableCategories : subcategories;
+
   useEffect(() => {
     if (initialCategory) {
       setSelectedCategory(initialCategory);
     }
   }, [initialCategory]);
 
-  // Remove loading state - no API calls needed on mount
   useEffect(() => {
     const fetchOptionalData = async () => {
       try {
@@ -82,10 +83,11 @@ const WorkerFilter = ({
       }
     };
 
-    fetchOptionalData();
-  }, []);
+    if (!enableLocalCategoryFilter) {
+      fetchOptionalData();
+    }
+  }, [enableLocalCategoryFilter]);
 
-  // Fetch category fields when category is selected
   useEffect(() => {
     const fetchCategoryFields = async () => {
       if (selectedCategory?.id) {
@@ -96,7 +98,6 @@ const WorkerFilter = ({
             params: { cat: selectedCategory.id },
           });
 
-          // Set default slider values from min to max
           const fieldsWithDefaults = (response.data.normal_fields || []).map(field => ({
             ...field,
             low: parseInt(field.min_range) || 0,
@@ -116,7 +117,6 @@ const WorkerFilter = ({
     fetchCategoryFields();
   }, [selectedCategory]);
 
-  // Apply filters and sorting, then notify parent
   useEffect(() => {
     console.log("🔍 useEffect triggered - applying filters and sorting");
     console.log("📊 Total workers:", workers.length);
@@ -138,8 +138,10 @@ const WorkerFilter = ({
   ]);
 
   const applyAllFilters = (workersToFilter) => {
-    // REMOVED selectedCategory from condition - server already filters by category
+    const shouldFilterByCategory = enableLocalCategoryFilter && selectedCategory;
+    
     if (
+      !shouldFilterByCategory &&
       selectedNeighborhoods.length === 0 &&
       selectedTickFields.length === 0 &&
       !hasActiveRangeFilters()
@@ -148,9 +150,13 @@ const WorkerFilter = ({
     }
 
     return workersToFilter.filter((worker) => {
-      // REMOVED category filter - server already sends only workers from this category
+      if (shouldFilterByCategory) {
+        const workerCategoryId = parseInt(worker.category_id);
+        if (workerCategoryId !== selectedCategory.id) {
+          return false;
+        }
+      }
 
-      // Neighborhood filter
       if (selectedNeighborhoods.length > 0) {
         const workerNeighborhoodId = parseInt(worker.neighborhood_id);
         if (
@@ -160,7 +166,6 @@ const WorkerFilter = ({
         }
       }
 
-      // Tick fields filter
       if (selectedTickFields.length > 0) {
         try {
           const workerProperties = JSON.parse(worker.json_properties || "[]");
@@ -175,7 +180,6 @@ const WorkerFilter = ({
         }
       }
 
-      // Normal fields range filter
       return isWorkerInRange(worker);
     });
   };
@@ -228,9 +232,11 @@ const WorkerFilter = ({
     );
   };
 
-  // Helper function to check if any filters are active
   const hasActiveFilters = () => {
+    const hasCategoryFilter = enableLocalCategoryFilter && selectedCategory;
+    
     return (
+      hasCategoryFilter ||
       selectedNeighborhoods.length > 0 ||
       selectedTickFields.length > 0 ||
       hasActiveRangeFilters() ||
@@ -263,17 +269,18 @@ const WorkerFilter = ({
     }
   };
 
-  // UPDATED: This function now redirects instead of filtering locally
   const handleCategorySelect = (category) => {
-    // If selecting the same category, do nothing
     if (selectedCategory?.id === category.id) {
       setFilterLevel("base");
       return;
     }
     
-    // Call the parent's category change handler to redirect
-    if (onCategoryChange) {
-      onCategoryChange(category);
+    if (enableLocalCategoryFilter) {
+      setSelectedCategory(category);
+    } else {
+      if (onCategoryChange) {
+        onCategoryChange(category);
+      }
     }
     
     setFilterLevel("base");
@@ -295,20 +302,16 @@ const WorkerFilter = ({
     );
   };
 
-  // UPDATED: Enhanced slider change handler with constraints
   const handleSliderChange = (event, newValue, activeThumb, field) => {
     if (!Array.isArray(newValue)) return;
 
     const minDistance = calculateMinDistance(field);
     let [low, high] = newValue;
 
-    // Prevent thumbs from crossing or getting too close
     if (activeThumb === 0) {
-      // Left thumb is being dragged
       low = Math.min(low, high - minDistance);
       low = Math.max(low, parseInt(field.min_range));
     } else {
-      // Right thumb is being dragged
       high = Math.max(high, low + minDistance);
       high = Math.min(high, parseInt(field.max_range));
     }
@@ -326,15 +329,11 @@ const WorkerFilter = ({
     );
   };
 
-  // Calculate minimum distance between thumbs based on the range
   const calculateMinDistance = (field) => {
     const minRange = parseInt(field.min_range) || 0;
     const maxRange = parseInt(field.max_range) || 100;
     const totalRange = maxRange - minRange;
-    
-    // Calculate minimum distance as 2% of total range, but at least 1
     const minDistance = Math.max(1, Math.floor(totalRange * 0.02));
-    
     return minDistance;
   };
 
@@ -345,7 +344,7 @@ const WorkerFilter = ({
           ? { 
               ...f, 
               low: parseInt(f.min_range) || 0, 
-              high: parseInt(f.max_range) || 100 
+              high: parseInt(field.max_range) || 100 
             } 
           : f
       )
@@ -356,7 +355,6 @@ const WorkerFilter = ({
     setSelectedNeighborhoods([]);
     setSelectedTickFields([]);
     
-    // Reset sliders to full range (min to max)
     setLocalNormalFields(prev => 
       prev.map(field => ({
         ...field,
@@ -367,15 +365,13 @@ const WorkerFilter = ({
     
     setSortBy("newest");
     
-    // If we have onCategoryChange, also clear category and redirect
-    if (onCategoryChange && selectedCategory) {
+    if (!enableLocalCategoryFilter && selectedCategory && onCategoryChange) {
       onCategoryChange(null);
-    } else {
+    } else if (enableLocalCategoryFilter) {
       setSelectedCategory(null);
     }
   };
 
-  // Sort handlers
   const handleSortClick = (event) => {
     setSortAnchorEl(event.currentTarget);
   };
@@ -390,17 +386,17 @@ const WorkerFilter = ({
     handleSortClose();
   };
 
-  // FIXED: Remove category filter without redirecting
   const removeCategoryFilter = () => {
-    // First open the filter modal and navigate to category selection
-    setIsOpen(true);
-    setFilterLevel("category");
+    if (!enableLocalCategoryFilter) {
+      setIsOpen(true);
+      setFilterLevel("category");
+    }
     
-    // Then clear the category locally without redirecting
-    setSelectedCategory(null);
-    
-    // Don't call onCategoryChange(null) here because that causes redirect to home page
-    // We only want to redirect when selecting a new category, not when removing one
+    if (!enableLocalCategoryFilter && onCategoryChange) {
+      onCategoryChange(null);
+    } else {
+      setSelectedCategory(null);
+    }
   };
 
   const removeNeighborhoodFilter = (neighborhoodId) => {
@@ -429,7 +425,6 @@ const WorkerFilter = ({
     );
   };
 
-  // Handle back button click
   const handleBackClick = () => {
     if (filterLevel === "base") {
       setIsOpen(false);
@@ -438,7 +433,6 @@ const WorkerFilter = ({
     }
   };
 
-  // Fixed numFormatter function
   const numFormatter = (num) => {
     if (num >= 1000000000) {
       return (num / 1000000000).toFixed(0) + " میلیارد";
@@ -451,7 +445,6 @@ const WorkerFilter = ({
     }
   };
 
-  // Get sort display text
   const getSortDisplayText = () => {
     switch (sortBy) {
       case "newest":
@@ -465,12 +458,10 @@ const WorkerFilter = ({
     }
   };
 
-  // Check if a field is at default (full range) values
   const isFieldAtDefault = (field) => {
     return field.low === parseInt(field.min_range) && field.high === parseInt(field.max_range);
   };
 
-  // Render selected filter tags (OUTSIDE the modal)
   const renderSelectedFilterTags = () => {
     const hasActiveFilters =
       selectedCategory ||
@@ -482,9 +473,15 @@ const WorkerFilter = ({
     if (!hasActiveFilters) return null;
 
     return (
-      <Box sx={{ mt: 2, p: 2, border: "1px solid", borderColor: "grey.300", borderRadius: 2, bgcolor: "grey.50" }}>
+      <Box sx={{ 
+        mt: 2, 
+        p: 2, 
+        border: "1px solid", 
+        borderColor: "grey.300", 
+        borderRadius: 2, 
+        bgcolor: "grey.50" 
+      }}>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {/* Category Tag - This will now show when initialCategory is passed */}
           {selectedCategory && (
             <Chip
               label={`دسته‌بندی: ${selectedCategory.name}`}
@@ -495,7 +492,6 @@ const WorkerFilter = ({
             />
           )}
 
-          {/* Neighborhood Tags */}
           {selectedNeighborhoods.map((neighborhood) => (
             <Chip
               key={neighborhood.id}
@@ -507,7 +503,6 @@ const WorkerFilter = ({
             />
           ))}
 
-          {/* Tick Field Tags */}
           {selectedTickFields.map((field) => (
             <Chip
               key={field.value}
@@ -519,7 +514,6 @@ const WorkerFilter = ({
             />
           ))}
 
-          {/* Range Filter Tags - Only show if NOT at default values */}
           {localNormalFields
             .filter(
               (field) =>
@@ -536,7 +530,6 @@ const WorkerFilter = ({
               />
             ))}
 
-          {/* Sort Tag */}
           {sortBy !== "newest" && (
             <Chip
               label={`مرتب‌سازی: ${getSortDisplayText()}`}
@@ -547,7 +540,6 @@ const WorkerFilter = ({
             />
           )}
 
-          {/* Clear All Button */}
           <Chip
             label="پاک کردن همه"
             onClick={handleResetAll}
@@ -561,7 +553,6 @@ const WorkerFilter = ({
     );
   };
 
-  // Enhanced Tick Fields rendering with better styling
   const renderTickFields = () => {
     if (tickFields.length === 0) return null;
 
@@ -640,7 +631,6 @@ const WorkerFilter = ({
           })}
         </Grid>
 
-        {/* Reset tick fields button */}
         {selectedTickFields.length > 0 && (
           <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
             <Button
@@ -657,10 +647,8 @@ const WorkerFilter = ({
     );
   };
 
-  // Render methods
   const renderBaseLevel = () => (
     <Box sx={{ p: 2 }}>
-      {/* Sort Button */}
       <Box
         sx={{
           display: "flex",
@@ -681,7 +669,6 @@ const WorkerFilter = ({
       </Box>
       <Divider />
 
-      {/* Category Selection */}
       <Box
         sx={{
           display: "flex",
@@ -705,7 +692,6 @@ const WorkerFilter = ({
       </Box>
       <Divider />
 
-      {/* Neighborhood Selection */}
       <Box
         sx={{
           display: "flex",
@@ -732,10 +718,8 @@ const WorkerFilter = ({
       </Box>
       <Divider />
 
-      {/* Tick Fields - The three specific options */}
       {renderTickFields()}
 
-      {/* Normal Fields */}
       {localNormalFields
         .filter((field) => field.special == 1)
         .map((field) => (
@@ -770,7 +754,7 @@ const WorkerFilter = ({
                 valueLabelDisplay="auto"
                 min={parseInt(field.min_range)}
                 max={parseInt(field.max_range)}
-                disableSwap // Prevents thumbs from swapping positions
+                disableSwap
               />
             </AccordionDetails>
           </Accordion>
@@ -781,7 +765,7 @@ const WorkerFilter = ({
   const renderCategoryLevel = () => (
     <Box sx={{ p: 2 }}>
       <Grid container spacing={1}>
-        {subcategories.map((category) => (
+        {displayCategories.map((category) => (
           <Grid item xs={12} key={category.id}>
             <Box
               sx={{
@@ -865,15 +849,24 @@ const WorkerFilter = ({
     return titles[filterLevel];
   };
 
-  // Get the appropriate icon for the header button
   const getHeaderButtonIcon = () => {
     return filterLevel === "base" ? <Close /> : <ArrowBack />;
   };
 
   return (
     <>
-      {/* Filter Trigger Button - No loading state */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+      {/* Filter Trigger Button with fixed z-index */}
+      <Box sx={{ 
+        display: 'flex', 
+        gap: 1, 
+        mb: 2, 
+        position: 'sticky',
+        top: 0,
+        backgroundColor: 'background.paper',
+        py: 1,
+        borderBottom: '1px solid',
+        borderColor: 'grey.300'
+      }}>
         <Button
           onClick={() => setIsOpen(true)}
           variant="contained"
@@ -881,11 +874,9 @@ const WorkerFilter = ({
           size="medium"
           sx={{ flex: 2 }}
         >
-          {/* UPDATED: Show total count when no filters are active */}
-          فیلترها {/*({hasActiveFilters() ? applyAllFilters(workers).length : workers.length})*/}
+          فیلترها
         </Button>
 
-        {/* Sort Button */}
         <Button
           onClick={handleSortClick}
           variant="outlined"
@@ -896,7 +887,6 @@ const WorkerFilter = ({
           {getSortDisplayText()}
         </Button>
 
-        {/* Sort Menu */}
         <Menu
           anchorEl={sortAnchorEl}
           open={Boolean(sortAnchorEl)}
@@ -914,17 +904,20 @@ const WorkerFilter = ({
           >
             قدیمی ترین
           </MenuItem>
-          {/* <MenuItem 
-            onClick={() => handleSortSelect("most_viewed")}
-            selected={sortBy === "most_viewed"}
-          >
-            پر بازدید ترین
-          </MenuItem> */}
         </Menu>
       </Box>
 
-      {/* Selected Filter Tags - OUTSIDE the modal, beneath the button */}
-      {renderSelectedFilterTags()}
+      {/* Selected Filter Tags with fixed z-index */}
+      {renderSelectedFilterTags() && (
+        <Box sx={{ 
+          position: 'sticky',
+          top: 60,
+          zIndex: 9998,
+          backgroundColor: 'grey.50'
+        }}>
+          {renderSelectedFilterTags()}
+        </Box>
+      )}
 
       {/* Filter Modal */}
       <Modal open={isOpen} onClose={() => setIsOpen(false)}>
@@ -943,7 +936,6 @@ const WorkerFilter = ({
             flexDirection: "column",
           }}
         >
-          {/* Header */}
           <AppBar position="static" color="primary">
             <Box
               sx={{
@@ -953,7 +945,6 @@ const WorkerFilter = ({
                 p: 2,
               }}
             >
-              {/* Back/Close Button - Changes based on filter level */}
               <Button onClick={handleBackClick} color="inherit">
                 {getHeaderButtonIcon()}
               </Button>
@@ -966,12 +957,10 @@ const WorkerFilter = ({
             </Box>
           </AppBar>
 
-          {/* Content */}
           <Box sx={{ flex: 1, overflow: "auto" }}>
             {renderFilterContent()}
           </Box>
 
-          {/* Footer - Only show on base level now */}
           {filterLevel === "base" && (
             <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
               <Button

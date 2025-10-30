@@ -67,7 +67,7 @@
   /* margin: 0 5px; */
   /* padding: 0 10px; */
   border-radius: 6px;
-  z-index: 25;
+  z-index: 1;
 }
 
 .card-inside-date {
@@ -92,7 +92,7 @@
   /* margin: 0 5px; */
   /* padding: 0 10px; */
   border-radius: 6px;
-  z-index: 24;
+  z-index: 1;
 }
 
 .price-wrapper {
