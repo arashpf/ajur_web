@@ -467,13 +467,22 @@ function Home(props) {
     ));
   };
 
+  const handleRecentsClick = () => {
+    router.push('/recents')
+  }
+
+  
+  const handleFavoritesClick = () => {
+    router.push('/favorites')
+  }
+
   const renderHistoryWorkers = () => {
     if (1) {
       return (
         history_workers.length > 0 && (
           <div style={{ paddingBottom: 10 }}>
             <div className={styles["title"]}>
-              <h2>آخرین بازدید های شما</h2>
+              <h2 onClick={handleRecentsClick}>آخرین بازدید های شما</h2>
             </div>
             <Swiper
               slidesPerView={1}
@@ -501,8 +510,8 @@ function Home(props) {
                     enabled: true,
                   },
                 },
-                768: {
-                  slidesPerView: 2,
+                1050: {
+                  slidesPerView: 3,
                   spaceBetween: 20,
                   navigation: {
                     enabled: true,
@@ -527,13 +536,14 @@ function Home(props) {
     }
   };
 
+
   const renderFavoriteWorkers = () => {
     if (1) {
       return (
         favorite_workers.length > 0 && (
           <div style={{ paddingBottom: 20 }}>
             <div className={styles["title"]}>
-              <h2>آخرین مورد پسند های شما</h2>
+              <h2 onClick={handleFavoritesClick}>آخرین مورد پسند های شما</h2>
             </div>
             <Swiper
               slidesPerView={1}
@@ -561,8 +571,8 @@ function Home(props) {
                     enabled: true,
                   },
                 },
-                768: {
-                  slidesPerView: 2,
+                1050: {
+                  slidesPerView: 3,
                   spaceBetween: 20,
                   navigation: {
                     enabled: true,
@@ -643,13 +653,13 @@ function Home(props) {
                     aria-label="اجاره"
                   >
                     <img
-                      src="/buttons/rent.png"
+                      src="/buttons/rent.jpg"
                       alt="اجاره"
                       style={{
                         width: "100%",
                         height: "auto",
                         display: "block",
-                        padding: "30px 20px",
+                        borderRadius: "15px",
                       }}
                     />
                   </div>
@@ -670,13 +680,13 @@ function Home(props) {
                   >
                     {/* Replaced content with single PNG to keep layout & animations but simplify visuals */}
                     <img
-                      src="/buttons/buy.png"
+                      src="/buttons/buy.jpg"
                       alt="خرید"
                       style={{
                         width: "100%",
                         height: "auto",
                         display: "block",
-                        padding: "30px 20px",
+                        borderRadius: "15px",
                       }}
                     />
                   </div>
@@ -790,7 +800,7 @@ function Home(props) {
                     slidesPerView: 2,
                     spaceBetween: 10
                   },
-                  768: {
+                  1050: {
                     slidesPerView: 2,
                     spaceBetween: 20
                   },
@@ -842,7 +852,7 @@ function Home(props) {
                           enabled: true
                         }
                       },
-                      768: {
+                      1050: {
                         slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
@@ -920,7 +930,7 @@ function Home(props) {
                           enabled: true
                         }
                       },
-                      768: {
+                      1050: {
                         slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
@@ -994,8 +1004,8 @@ function Home(props) {
                           enabled: true,
                         },
                       },
-                      768: {
-                        slidesPerView: 2,
+                      1050: {
+                        slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
                           enabled: true,
@@ -1043,7 +1053,7 @@ function Home(props) {
                 <h2>بهترین دپارتمان های املاک آجر {the_city.title}</h2>
               </div>
 
-              <div>
+              <div className="mx-4">
                 <Swiper
                   slidesPerView={1}
                   spaceBetween={8}
@@ -1064,8 +1074,8 @@ function Home(props) {
                       slidesPerView: 4,
                       spaceBetween: 20,
                     },
-                    768: {
-                      slidesPerView: 4,
+                    1050: {
+                      slidesPerView: 6,
                       spaceBetween: 25,
                     },
                     1400: {
@@ -1084,7 +1094,7 @@ function Home(props) {
                 <h2>بهترین مشاورین املاک آجر {the_city.title}</h2>
               </div>
 
-              <div>
+              <div className="mx-4">
                 <Swiper
                   slidesPerView={1}
                   spaceBetween={8}
@@ -1100,8 +1110,8 @@ function Home(props) {
                       slidesPerView: 4,
                       spaceBetween: 20,
                     },
-                    768: {
-                      slidesPerView: 4,
+                    1050: {
+                      slidesPerView: 6,
                       spaceBetween: 25,
                     },
                     1400: {

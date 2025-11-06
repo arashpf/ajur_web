@@ -64,7 +64,7 @@ const favoritesIndex = (props) => {
       return (
         <LazyLoader
           items={workers} // whole array of workers
-          itemsPerPage={getItemsPerPage} // adjust as needed
+          itemsPerPage={6} // adjust as needed
           delay={800}
           renderItem={(worker) => (
             <Link

@@ -17,7 +17,7 @@ class RealStateSmalCard extends React.Component {
   }
 
   render() {
-    return <SmallCard realEstate={this.props.realstate} />
+    return <SmallCard realEstate={this.props.realstate} compact={this.props.compact} />
   }
 }
 

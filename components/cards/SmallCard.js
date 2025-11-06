@@ -2,7 +2,7 @@ import React from "react";
 import Styles from "../styles/SmallCard.module.css";
 import Stars from "../others/Stars";
 
-function SmallCard({ realEstate, profileImageKey = "profile_url" }) {
+function SmallCard({ realEstate, profileImageKey = "profile_url", compact = false }) {
     const onClickCall = () => {
         if (realEstate.phone) {
             window.location.href = `tel:${realEstate.phone}`;
@@ -13,12 +13,21 @@ function SmallCard({ realEstate, profileImageKey = "profile_url" }) {
 
     const profile_url = realEstate[profileImageKey];
 
+    const wrapperStyle = compact
+        ? { margin: "8px 6px 16px" }
+        : {};
+
+    const imgStyle = compact
+        ? { height: 140, objectFit: 'cover' }
+        : {};
+
     return (
-        <div className={Styles["card-wrapper"]}>
+        <div className={Styles["card-wrapper"]} style={wrapperStyle}>
             <img
                 className={Styles["card-image"]}
                 src={profile_url}
                 alt={realEstate.name + " " + realEstate.family}
+                style={imgStyle}
             />
             <div className={Styles["card-info"]}>
                 <div className={Styles["card-name-wrapper"]}>

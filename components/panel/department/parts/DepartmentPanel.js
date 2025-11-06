@@ -360,6 +360,8 @@ const DepartmentPanel = (props) => {
             <WorkerFilter
               workers={all_department_workers}
               onFilteredWorkersChange={setFilteredWorkers}
+              enableLocalCategoryFilter={true}
+              availableCategories={subcategories}
             />
             {renderDepartmentWorkers()}
       </Grid>
