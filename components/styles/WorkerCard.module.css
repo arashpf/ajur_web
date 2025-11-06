@@ -319,3 +319,17 @@
   padding: 0 10px;
   border-radius: 5px;
 }
+
+.properties-hint {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  margin-bottom: -15px;
+}
+
+.no-hints {
+  margin-bottom: 0;
+  min-height: 9px;
+  height: 9px;
+  overflow: hidden;
+}

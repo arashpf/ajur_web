@@ -35,6 +35,7 @@ const SingleCategory = (props) => {
   const [y_scroll, set_y_scroll] = useState(0);
 
   const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+  const [initialNeighborhood, setInitialNeighborhood] = useState(null);
 
   useEffect(() => {
     window.addEventListener("scroll", changeHeader);
@@ -90,6 +91,17 @@ const SingleCategory = (props) => {
         id: props.details.id,
         name: props.details.name,
       });
+    }
+
+    // Handle neighborhood from URL query
+    if (props.neighbor && props.neighborhoods) {
+      // Find the neighborhood object by name
+      const neighborhoodObj = props.neighborhoods.find(
+        (n) => n.name === props.neighbor
+      );
+      if (neighborhoodObj) {
+        setInitialNeighborhood(neighborhoodObj);
+      }
     }
   }, [props]);
 
@@ -201,6 +213,7 @@ const SingleCategory = (props) => {
                 onFilteredWorkersChange={setFilteredWorkers}
                 initialCategory={selectedCat}
                 onCategoryChange={handleCategoryChange}
+                initialNeighborhood={initialNeighborhood}
               />
             </Grid>
           </Grid>

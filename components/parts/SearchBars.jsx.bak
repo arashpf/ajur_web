@@ -1,0 +1,1393 @@
+import React, {useState, useRef, useEffect, useContext} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  Keyboard,
+  Pressable,
+  Modal,
+  TouchableWithoutFeedback,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Dimensions,
+  FlatList,
+  Alert,
+  ActivityIndicator,
+  TouchableOpacity,
+  Linking,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Carousel from 'react-native-reanimated-carousel';
+import CitySelector from '../CitySelector';
+import RealEstateCard from '../cards/RealEstateCard';
+import {useNavigation} from '@react-navigation/native';
+
+import axios from 'axios';
+import NetInfo from '@react-native-community/netinfo';
+import {verticalStackLayout} from 'react-native-reanimated-carousel/lib/typescript/layouts/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import {CityContext} from '../../CityContext';
+
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
+const ITEM_WIDTH = SCREEN_WIDTH * 1;
+const SEARCH_TIMEOUT = 15000; // 15 seconds
+const TYPING_DELAY = 600; // .6 seconds delay for auto-search
+
+const suggestionsMap = {
+  buySell: [
+    'مثلا : خرید خانه ',
+    'مثلا : ویلایی ',
+    'مثلا تجاری ',
+    'مثلا : اجاره آپارتمان',
+  ],
+  agents: [
+    'جستجو مشاور : مثلا محمد دهقان',
+    'جستجو مشاور املاک...',
+    'مشاور املاک متخصص...',
+  ],
+  jobs: [
+    'مثلا : نقاش ساختمان',
+    'دکوراسیون داخلی',
+    'مثلا : بنا',
+    'مثلا : گچ کار',
+  ],
+};
+
+const estateHints = [
+  'آپارتمان',
+  'خانه ویلایی',
+  'زمین مسکونی',
+  'مغازه',
+  'اجاره آپارتمان',
+  'اجاره خانه ویلایی',
+  'باغ و باغچه',
+  'زمین صنعتی',
+];
+
+const SearchBars = ({realstates}) => {
+  const navigation = useNavigation();
+  const {currentCity, isLoading} = useContext(CityContext);
+
+  useEffect(() => {
+    // Reset animation state when component mounts
+    animValue.setValue(0);
+    opacityValue.setValue(1);
+
+    return () => {
+      // Clean up when component unmounts
+      animValue.setValue(0);
+      opacityValue.setValue(1);
+      clearInterval(suggestionIntervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentCity && !isLoading) {
+      // fetchData(currentCity.id);
+      // alert('شهر انتخابی :  ' + currentCity.title);
+    }
+  }, [currentCity, isLoading]);
+  // State management
+  const [activeTab, setActiveTab] = useState('buySell');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [properties, setProperties] = useState([]);
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const [isInputReady, setIsInputReady] = useState(false);
+  const [searchStatus, setSearchStatus] = useState('جستجو...');
+  const [networkStatus, setNetworkStatus] = useState({
+    isConnected: true,
+    isInternetReachable: true,
+  });
+  // const [selectedCity, setSelectedCity] = useState('رباط کریم');
+  const [selectedCityName, setSelectedCityName] = useState();
+  const [selectedCityId, setSelectedCityId] = useState();
+  const [showCityModal, setShowCityModal] = useState(false);
+
+  const [search_category, set_search_category] = useState([]);
+  const [search_neighborhoods, set_search_neighborhoods] = useState([]);
+
+  const [searchHistory, setSearchHistory] = useState([]);
+
+  // Refs
+  const inputRef = useRef(null);
+  const animValue = useRef(new Animated.Value(50)).current;
+  const suggestionIntervalRef = useRef(null);
+  const loadingTimeoutRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+
+  const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+  const opacityValue = useRef(new Animated.Value(1)).current;
+
+  // Network status listener
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setNetworkStatus({
+        isConnected: state.isConnected,
+        isInternetReachable: state.isInternetReachable,
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadSavedCity = async () => {
+      //     await AsyncStorage.multiSet([
+      //     ['selectedCity', JSON.stringify(null)],
+      //     ['selectedCityId', ''],
+      //   ]);
+      //   alert('reset');
+      //   return;
+
+      try {
+        const savedCity = await AsyncStorage.getItem('selectedCity');
+
+        // Check for both null and undefined
+        if (savedCity !== null && savedCity !== undefined) {
+          const parsedCity = JSON.parse(savedCity);
+          // Additional check for valid city object
+          if (parsedCity && parsedCity.id && parsedCity.title) {
+            // alert('the city is here ' + parsedCity.id);
+            setSelectedCityName(parsedCity.title);
+            setSelectedCityId(parsedCity.id);
+          } else {
+            // setShowModal(true);
+            alert('no city');
+          }
+        } else {
+          // setShowModal(true);
+        }
+
+        // setInitialLoad(false);
+      } catch (error) {
+        console.error('Failed to load city from storage', error);
+        alert('error');
+        // setShowModal(true);
+        // setInitialLoad(false);
+      }
+    };
+
+    loadSavedCity();
+  }, []);
+
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+      if (progressIntervalRef.current)
+        clearInterval(progressIntervalRef.current);
+      if (suggestionIntervalRef.current)
+        clearInterval(suggestionIntervalRef.current);
+    };
+  }, []);
+
+  const [lastHintPressed, setLastHintPressed] = useState(null);
+
+  useEffect(() => {
+    if (lastHintPressed) {
+      handleSearch(true);
+    }
+  }, [lastHintPressed]);
+
+  const handleHintPress = hint => {
+    setSearchQuery(hint);
+    setLastHintPressed(hint);
+  };
+
+  // Load history on component mount
+  useEffect(() => {
+    const loadSearchHistory = async () => {
+      try {
+        const history = await AsyncStorage.getItem('realEstateSearchHistory');
+        if (history) {
+          setSearchHistory(JSON.parse(history));
+        }
+      } catch (error) {
+        console.error('Failed to load search history', error);
+      }
+    };
+
+    loadSearchHistory();
+  }, []);
+
+  // Save to history when a search is performed
+  const saveToHistory = async query => {
+    if (!query.trim()) return;
+
+    try {
+      // Avoid duplicates
+      const updatedHistory = [
+        query,
+        ...searchHistory.filter(
+          item => item.toLowerCase() !== query.toLowerCase(),
+        ),
+      ].slice(0, 10); // Keep only last 10 items
+
+      setSearchHistory(updatedHistory);
+      await AsyncStorage.setItem(
+        'realEstateSearchHistory',
+        JSON.stringify(updatedHistory),
+      );
+    } catch (error) {
+      console.error('Failed to save search history', error);
+    }
+  };
+
+  // Animation functions
+  const animateHintIn = () => {
+    animValue.setValue(25);
+    opacityValue.setValue(0); // Start from invisible
+
+    Animated.parallel([
+      Animated.timing(animValue, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityValue, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const animateHintOut = callback => {
+    Animated.parallel([
+      Animated.timing(animValue, {
+        toValue: -25,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityValue, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      callback?.();
+    });
+  };
+
+  // Suggestion cycling effect
+  useEffect(() => {
+    if (activeTab && !searchQuery && !showModal) {
+      animateHintIn();
+      suggestionIntervalRef.current = setInterval(() => {
+        animateHintOut(() => {
+          setCurrentSuggestionIndex(prev =>
+            prev >= suggestionsMap[activeTab].length - 1 ? 0 : prev + 1,
+          );
+          animateHintIn();
+        });
+      }, 3000);
+    } else {
+      clearInterval(suggestionIntervalRef.current);
+      setCurrentSuggestionIndex(0);
+      animValue.setValue(50);
+    }
+    return () => clearInterval(suggestionIntervalRef.current);
+  }, [activeTab, searchQuery, showModal]);
+
+  // Input focus effect
+  useEffect(() => {
+    if (showModal) {
+      const timer = setTimeout(() => {
+        setIsInputReady(true);
+        inputRef.current?.focus();
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setIsInputReady(false);
+    }
+  }, [showModal]);
+
+  const sendToMap = (item, neighborhoodName = null) => {
+    const neighborhoodObj = item.neighborhoods.find(
+      n => n.name === neighborhoodName,
+    );
+    console.log(
+      'Neighborhood Object:',
+      JSON.stringify(neighborhoodObj, null, 2),
+    );
+
+    navigation.navigate('نقشه', {
+      mapFilters: {
+        category: item.category_array,
+        neighborhood: neighborhoodObj,
+      },
+    });
+  };
+
+  // Helper functions
+  const getCurrentSuggestion = () => {
+    if (searchQuery) return searchQuery;
+    if (!activeTab) return 'جستجو...';
+    return suggestionsMap[activeTab][currentSuggestionIndex] || 'جستجو...';
+  };
+
+  const handleTabPress = tabId => {
+    if (tabId == 'agents') {
+     
+        if (!currentCity || isLoading) {
+      Alert.alert('انتخاب شهر', 'لطفاً ابتدا یک شهر را انتخاب کنید', [
+        // {
+        //   text: 'انتخاب شهر',
+        //   onPress: () => setShowCityModal(true)
+        // },
+        {
+          text: 'باشه',
+          style: 'cancel',
+        },
+      ]);
+      return;
+    }
+    
+      getAgentsCall('all', currentCity.id);
+    }
+    setActiveTab(tabId);
+    setSearchQuery('');
+    setSearchStatus('جستجو...');
+  };
+
+  const handleCloseModal = () => {
+    setActiveTab('buySell');
+    setShowModal(false);
+    Keyboard.dismiss();
+    clearTimeout(loadingTimeoutRef.current);
+    clearInterval(progressIntervalRef.current);
+  };
+
+  // Handle first result
+  const handleFirstResult = firstResult => {
+    // Alert.alert(
+    //   'نتیجه اول یافت شد',
+    //   `دسته بندی: ${firstResult.filters.category_name}\nشهر: ${firstResult.filters.city}`,
+    //   [{text: 'متوجه شدم', style: 'cancel'}],
+    // );
+  };
+
+  // API call functions
+  const getAgentsCall = async searchTerm => {
+    try {
+      setLoadingAgents(true);
+      setSearchStatus('در حال جستجوی مشاورین...');
+      const response = await axios.get(
+        'https://api.ajur.app/api/agents-search',
+        {
+          params: {title: searchTerm, limit: 20, city: currentCity.id},
+          timeout: SEARCH_TIMEOUT,
+        },
+      );
+      setAgents(response.data.agents || []);
+
+      setSearchStatus(`${response.data.agents.length} مشاور یافت شد`);
+    } catch (error) {
+      console.error('Agent search failed:', error);
+      setSearchStatus('خطا در جستجوی مشاورین');
+      throw new Error('خطا در دریافت اطلاعات مشاورین');
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  // Text input change handler with auto-search
+  const handleTextChange = text => {
+    setSearchQuery(text);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (text.trim().length > 0) {
+      typingTimeoutRef.current = setTimeout(() => {
+        handleSearch(false);
+      }, TYPING_DELAY);
+    }
+  };
+
+  // Main search handler
+  const handleSearch = async (isManualSearch = true) => {
+    // Add this check at the beginning
+    if (!currentCity || isLoading) {
+      Alert.alert('انتخاب شهر', 'لطفاً ابتدا یک شهر را انتخاب کنید', [
+        // {
+        //   text: 'انتخاب شهر',
+        //   onPress: () => setShowCityModal(true)
+        // },
+        {
+          text: 'باشه',
+          style: 'cancel',
+        },
+      ]);
+      return;
+    }
+    if (!searchQuery.trim()) {
+      // Alert.alert('خطا', 'لطفاً متن جستجو را وارد کنید');
+      return;
+    }
+
+    if (!networkStatus.isInternetReachable) {
+      Alert.alert('اتصال اینترنت', 'برای جستجو نیاز به اتصال اینترنت دارید', [
+        {
+          text: 'تنظیمات شبکه',
+          onPress: () => Linking.openSettings(),
+        },
+        {
+          text: 'تلاش مجدد',
+          onPress: () => handleSearch(isManualSearch),
+        },
+      ]);
+      return;
+    }
+
+    console.log(`Searching for "${searchQuery}" in ${activeTab} tab`);
+
+    try {
+      setLoading(true);
+      setSearchStatus('در حال جستجو...');
+
+      if (isManualSearch) {
+        await saveToHistory(searchQuery);
+      }
+
+      // Setup loading indicators
+      progressIntervalRef.current = setInterval(() => {
+        setSearchStatus(prev =>
+          prev.includes('...') ? 'در حال جستجو' : prev + '.',
+        );
+      }, 500);
+
+      loadingTimeoutRef.current = setTimeout(() => {
+        Alert.alert('در حال جستجو', 'دریافت نتایج کمی طول می‌کشد...', [
+          {text: 'متوجه شدم', style: 'cancel'},
+        ]);
+      }, 5000);
+
+      switch (activeTab) {
+        case 'buySell': {
+          try {
+            const response = await axios.post(
+              'https://api.ajur.app/api/search-intent',
+              {
+                query: searchQuery,
+                cityid: currentCity.id,
+              },
+              {
+                timeout: 10000,
+              },
+            );
+
+            console.log(
+              'Search result------------:',
+              // JSON.stringify(response.data, null, 2),
+              JSON.stringify(response.data, null, 2),
+            );
+            clearTimeout(loadingTimeoutRef.current);
+            clearInterval(progressIntervalRef.current);
+
+            if (!response.data || !Array.isArray(response.data)) {
+              throw new Error('پاسخ نامعتبر از سرور دریافت شد');
+            }
+
+            const categoriesWithNeighborhoods = response.data;
+
+            // Extract all unique neighborhood names (for general display/filtering)
+            const allNeighborhoods =
+              categoriesWithNeighborhoods.length > 0
+                ? [
+                    ...new Set(
+                      categoriesWithNeighborhoods.flatMap(c =>
+                        c.neighborhoods.map(n => n.name),
+                      ),
+                    ),
+                  ]
+                : [];
+
+            set_search_neighborhoods(allNeighborhoods);
+
+            // Process each category with its neighborhoods
+            const displayItems = categoriesWithNeighborhoods.map(
+              (categoryData, index) => {
+                const categoryName = categoryData.category_name;
+                const category_array = categoryData.category;
+                const neighborhoods = categoryData.neighborhoods;
+
+                return {
+                  id: `category-${index}-${Date.now()}`,
+                  category: categoryName,
+                  category_array: category_array,
+                  // neighborhoods: neighborhoods.map(n => n.name),
+                  // neighborhoods: neighborhoods.map(n => n.name),
+                  neighborhoods: neighborhoods, // Keep the full objects
+                  propertyCounts: neighborhoods.reduce((acc, curr) => {
+                    acc[curr.name] = curr.property_count;
+                    return acc;
+                  }, {}),
+                  filters: {
+                    category_name: categoryName,
+                    // Add other filters if needed
+                  },
+                  chips: neighborhoods
+                    .filter(n => n.property_count > 0)
+                    .slice(0, 5)
+                    .map(n => ({
+                      label: `${n.name} (${n.property_count})`,
+                      value: n.name,
+                    })),
+                  isEmpty: neighborhoods.every(n => n.property_count === 0),
+                  isPrimary: index === 0,
+                };
+              },
+            );
+
+            // Fallback for no categories
+            if (displayItems.length === 0) {
+              displayItems.push({
+                id: 'default-category',
+                category: '',
+                neighborhoods: [],
+                propertyCounts: {},
+                filters: {},
+                chips: [],
+                isEmpty: true,
+                isPrimary: true,
+              });
+            }
+
+            setProperties(displayItems);
+
+            // Update search status
+            const statusText =
+              categoriesWithNeighborhoods.length > 0
+                ? `دسته‌بندی‌ها: ${categoriesWithNeighborhoods
+                    .map(c => c.category_name)
+                    .join('، ')} در ${currentCity.title}`
+                : `جستجوی عمومی در ${currentCity.title}`;
+
+            setSearchStatus(statusText);
+
+            if (isManualSearch) {
+              if (displayItems.some(item => !item.isEmpty)) {
+                handleFirstResult(displayItems[0]);
+              } else {
+                Alert.alert(
+                  'نتیجه‌ای یافت نشد',
+                  categoriesWithNeighborhoods.length > 0
+                    ? `جستجوی شما برای ${categoriesWithNeighborhoods
+                        .map(c => c.category_name)
+                        .join(' یا ')} در ${currentCity.title} نتیجه‌ای نداشت`
+                    : `جستجوی شما در ${currentCity.title} نتیجه‌ای نداشت`,
+                );
+              }
+            }
+          } catch (error) {
+            console.error('Search error:', error);
+            Alert.alert('خطا', 'خطایی در دریافت اطلاعات رخ داده است');
+          }
+          break;
+        }
+
+        case 'agents':
+          await getAgentsCall(searchQuery);
+          break;
+
+        case 'jobs':
+          Alert.alert('جستجو', 'جستجوی مشاغل فعال شد');
+          setSearchStatus('جستجوی مشاغل انجام شد');
+          break;
+
+        default:
+          Alert.alert('خطا', 'لطفاً یک تب معتبر را انتخاب کنید');
+          return;
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      clearTimeout(loadingTimeoutRef.current);
+      clearInterval(progressIntervalRef.current);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        'خطای نامشخص در هنگام جستجو';
+
+      if (error.code === 'ECONNABORTED') {
+        Alert.alert(
+          'زمان جستجو به پایان رسید',
+          [
+            'مشکلات احتمالی:',
+            '1. سرور پاسخگو نیست',
+            '2. اینترنت شما ضعیف است',
+            '3. جستجوی شما پیچیده است',
+          ].join('\n'),
+          [
+            {
+              text: 'تلاش مجدد',
+              onPress: () =>
+                setTimeout(() => handleSearch(isManualSearch), 1000),
+            },
+            {
+              text: 'ساده‌تر جستجو کنید',
+              onPress: () => inputRef.current?.focus(),
+            },
+          ],
+        );
+        setSearchStatus('زمان جستجو پایان یافت');
+      } else {
+        Alert.alert('خطا', errorMessage);
+        setSearchStatus('خطا در جستجو');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Render functions
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'buySell':
+        return (
+          <View style={styles.tabContent}>
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color="#ef4444"
+                style={styles.loader}
+              />
+            ) : (
+              <FlatList
+                data={properties}
+                keyExtractor={item => item.id}
+                renderItem={({item}) => (
+                  <View style={styles.categoryContainer}>
+                    <TouchableOpacity
+                      style={styles.categoryHeader}
+                      onPress={() =>
+                        sendToMap(item)
+                      }>
+                      <Text style={styles.categoryTitle}>
+                        {item.category} در {currentCity.title}
+                        <Text style={styles.itemCount}>
+                          {` (${Object.values(item.propertyCounts).reduce(
+                            (sum, count) => sum + count,
+                            0,
+                          )} مورد)`}
+                        </Text>
+                      </Text>
+                      <TouchableOpacity
+                        style={{flexDirection: 'row', alignItems: 'center'}}
+                        onPress={() => sendToMap(item)}>
+                        <Text style={styles.seeAllText}>همه موارد</Text>
+                        <Icon name="chevron-back" size={20} color="#666" />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+
+                    <View style={styles.neighborhoodContainer}>
+                      {(showAllNeighborhoods
+                        ? item.neighborhoods
+                        : item.neighborhoods.slice(0, 10)
+                      ).map((neighborhood, index) => {
+                        const propertyCount = neighborhood.property_count || 0;
+
+                        return (
+                          <TouchableOpacity
+                            key={`${item.id}-${neighborhood.name}-${index}`}
+                            style={[
+                              styles.neighborhoodChip,
+                              propertyCount === 0 &&
+                                styles.emptyNeighborhoodChip,
+                              propertyCount > 0 && styles.hasPropertiesChip,
+                            ]}
+                            onPress={() => sendToMap(item, neighborhood.name)}
+                            // disabled={propertyCount === 0}
+                            >
+                            <Text style={styles.neighborhoodText}>
+                              {neighborhood.name}
+                              {propertyCount > 0 && (
+                                <Text style={styles.neighborhoodCount}>
+                                  {` (${propertyCount} ملک)`}
+                                </Text>
+                              )}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
+                    {item.neighborhoods.length > 10 &&
+                      !showAllNeighborhoods && (
+                        <TouchableOpacity
+                          style={styles.showMoreButton}
+                          onPress={() => setShowAllNeighborhoods(true)}>
+                          <Text style={styles.showMoreText}>
+                            نمایش همه محلات ({item.neighborhoods.length - 10}{' '}
+                            مورد دیگر)
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                  </View>
+                )}
+                ListEmptyComponent={
+                  !loading && (
+                    <View style={{alignItems: 'center', padding: 5}}>
+                      {/* Search History Chips */}
+                      {searchHistory.length > 0 && (
+                        <>
+                          <Text style={styles.historyTitle}>
+                            جستجوهای اخیر:
+                          </Text>
+                          <View style={styles.historyContainer}>
+                            {searchHistory.map((historyItem, index) => (
+                              <TouchableOpacity
+                                key={`history-${index}`}
+                                style={styles.historyChip}
+                                // onPress={() => {
+                                //   setSearchQuery(historyItem); 
+                                //   setLastHintPressed(historyItem);
+                                // }}
+
+                                onPress={() => handleHintPress(historyItem)}
+                                
+                                >
+                                <Text style={styles.historyText}>
+                                  {historyItem}
+                                </Text>
+                                <Icon
+                                  name="close"
+                                  size={16}
+                                  color="#666"
+                                  onPress={async e => {
+                                    e.stopPropagation();
+                                    const updatedHistory = searchHistory.filter(
+                                      (_, i) => i !== index,
+                                    );
+                                    setSearchHistory(updatedHistory);
+                                    await AsyncStorage.setItem(
+                                      'realEstateSearchHistory',
+                                      JSON.stringify(updatedHistory),
+                                    );
+                                  }}
+                                />
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </>
+                      )}
+
+                      {/* Default Hints */}
+                      <Text style={styles.hintsTitle}>
+                        پیشنهادهایی برای جستجو:
+                      </Text>
+                      <View style={styles.hintsContainer}>
+                        {estateHints.map((hint, index) => (
+                          <TouchableOpacity
+                            key={`hint-${index}`}
+                            style={styles.hintChip}
+                            onPress={() => handleHintPress(hint)}>
+                            <Text style={styles.hintText}>{hint}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  )
+                }
+              />
+            )}
+          </View>
+        );
+
+      case 'agents':
+        return (
+          <View style={styles.tabContent}>
+            {/* <Text style={styles.statusText}>{searchStatus}</Text>  */}
+            {loadingAgents ? (
+              <ActivityIndicator
+                size="large"
+                color="#ef4444"
+                style={styles.loader}
+              />
+            ) : (
+              <FlatList
+                data={agents}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({item}) => (
+                  <RealEstateCard realstate={item} circle_size={140} />
+                )}
+                ListEmptyComponent={
+                  !loadingAgents && (
+                    <Text style={styles.noResults}>مشاوری یافت نشد</Text>
+                  )
+                }
+              />
+            )}
+          </View>
+        );
+
+      case 'jobs':
+        return (
+          <View style={styles.tabContent}>
+            <Text style={styles.statusText}>{searchStatus}</Text>
+            <Text style={styles.jobText}>
+              اگر شما فعال در زمینه‌های مختلف مشاغل مرتبط با ساخت و ساز هستید،
+              با شماره زیر تماس بگیرید تا از شرایط ثبت پروفایل خود در آجر آگاه
+              شوید
+            </Text>
+            <Text style={styles.jobContact}>09382740488</Text>
+          </View>
+        );
+
+      default:
+        return (
+          <View style={styles.tabContent}>
+            <Text style={styles.defaultText}>لطفاً یک تب را انتخاب کنید</Text>
+          </View>
+        );
+    }
+  };
+
+  const handleChangeCity = () => {
+    alert('city must be changed');
+  };
+
+  const tryToAutoFocus = () => {
+    if (1) {
+      const timer = setTimeout(() => {
+        setIsInputReady(true);
+        inputRef.current?.focus();
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsInputReady(false);
+    }
+  };
+
+  const set_modal_active = status => {
+    setShowAllNeighborhoods(false);
+    setProperties([]);
+    setSearchQuery('');
+    setShowModal(true);
+
+    tryToAutoFocus();
+  };
+
+  return (
+    <View style={styles.wrapper}>
+      <View style={styles.searchRow}>
+        <CitySelector
+          handleCitySelect={city => {
+            setShowAllNeighborhoods(false);
+          }}
+        />
+
+        <Pressable
+          style={styles.fakesearchContainer}
+          onPress={() => set_modal_active(true)}>
+          {searchQuery ? (
+            <Animated.Text
+              style={[styles.fakeSearchText, {opacity: 1}]}
+              numberOfLines={1}>
+              {getCurrentSuggestion()}
+            </Animated.Text>
+          ) : (
+            <Animated.Text
+              style={[
+                styles.fakeSearchText,
+                {
+                  transform: [{translateY: animValue}],
+                  opacity: opacityValue,
+                },
+              ]}
+              numberOfLines={1}>
+              {getCurrentSuggestion()}
+            </Animated.Text>
+          )}
+          <TouchableOpacity style={styles.searchButton}>
+            <Icon
+              name="search"
+              size={20}
+              color="gray"
+              onPress={() => set_modal_active(true)}
+            />
+          </TouchableOpacity>
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCloseModal}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay} />
+        </TouchableWithoutFeedback>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{flex: 1}}>
+          <View style={styles.modalContainer}>
+            <View style={styles.tabHeaderContainer}>
+              <Pressable onPress={handleCloseModal} style={styles.arrowButton}>
+                <Icon name="arrow-forward" size={24} color="#64748b" />
+              </Pressable>
+              <View style={styles.tabContainer}>
+                {Object.entries(suggestionsMap).map(([tabId]) => (
+                  <Pressable
+                    key={tabId}
+                    style={({pressed}) => [
+                      styles.tab,
+                      activeTab === tabId && styles.activeTab,
+                      pressed && {opacity: 0.8},
+                    ]}
+                    onPress={() => handleTabPress(tabId)}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === tabId && styles.activeTabText,
+                      ]}>
+                      {tabId === 'buySell'
+                        ? 'املاک'
+                        : tabId === 'agents'
+                        ? 'مشاورین'
+                        : 'مشاغل'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View style={[styles.searchContainer, styles.modalSearchContainer]}>
+              <TextInput
+                ref={inputRef}
+                style={styles.searchInput}
+                placeholder={getCurrentSuggestion()}
+                placeholderTextColor="#94a3b8"
+                value={searchQuery}
+                onChangeText={handleTextChange}
+                onSubmitEditing={() => handleSearch(true)}
+                returnKeyType="search"
+                autoFocus={isInputReady}
+              />
+
+              <View style={styles.citySelectorWrapper}>
+                <CitySelector
+                  handleCitySelect={city => {
+                    // alert('city changed trigered in searchbars.js');
+                    set_modal_active();
+                    setShowAllNeighborhoods(false); // Reset neighborhood display when city changes
+                  }}
+                />
+              </View>
+            </View>
+
+            <ScrollView style={styles.modalContent}>
+              {renderTabContent()}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  citySelectorWrapper: {
+    marginLeft: -10, // Space between input and city selector
+    marginRight: -4, // Compensate for internal padding
+    height: 30, // Match your search input height
+    justifyContent: 'center',
+    margin: 10,
+  },
+
+  citySelectorButton: {
+    marginLeft: 8,
+    paddingHorizontal: 10,
+    height: 48,
+    justifyContent: 'center',
+    minWidth: 60, // Ensure enough space for city name
+  },
+  citySelectorContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+  },
+  cityIcon: {
+    marginLeft: 6,
+  },
+  cityText: {
+    fontSize: 12,
+    color: '#334155',
+    fontFamily: 'iransans',
+    maxWidth: 100, // Prevent too long city names
+  },
+  chevronIcon: {
+    marginRight: 4,
+  },
+
+  categoryContainer: {
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    elevation: 2,
+  },
+  categoryHeader: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  categoryTitle: {
+    fontSize: 14,
+    fontFamily: 'iransans',
+    color: '#1e40af',
+    fontWeight: 'bold',
+  },
+  itemCount: {
+    color: '#64748b',
+    fontSize: 14,
+  },
+  neighborhoodContainer: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  neighborhoodChip: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginLeft: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  neighborhoodText: {
+    fontFamily: 'iransans',
+    fontSize: 14,
+    color: '#334155',
+  },
+  neighborhoodCount: {
+    color: '#64748b',
+    fontSize: 12,
+  },
+
+  wrapper: {
+    width: '100%',
+    paddingHorizontal: 5,
+    paddingTop: 12,
+    backgroundColor: 'white',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cityButton: {
+    marginLeft: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    maxWidth: 120,
+    height: 48,
+    justifyContent: 'center',
+  },
+  cityButton: {
+    marginLeft: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    maxWidth: 120,
+    height: 48,
+    justifyContent: 'center',
+  },
+  cityButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cityIcon: {
+    marginRight: 4, // Adjust spacing between icon and text
+  },
+  cityText: {
+    fontSize: 14,
+    color: '#334155',
+    textAlign: 'right',
+    fontFamily: 'iransans',
+    includeFontPadding: false, // This helps with vertical alignment
+    textAlignVertical: 'center', // This helps with vertical alignment
+  },
+  searchContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    paddingRight: 4,
+    paddingLeft: 10,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 16,
+  },
+
+  fakesearchContainer: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    paddingRight: 4,
+    paddingLeft: 10,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  fakeSearchText: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: 17,
+    color: '#555',
+    fontFamily: 'iransans',
+  },
+  searchButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 1,
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+    padding: 20,
+    flex: 1,
+    justifyContent: 'flex-start',
+  },
+  tabHeaderContainer: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  arrowButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  tabContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    backgroundColor: '#f1f5f9',
+  },
+  activeTab: {
+    backgroundColor: '#ef4444',
+  },
+  tabText: {
+    fontSize: 14,
+    fontFamily: 'iransans',
+    fontWeight: '500',
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  activeTabText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  modalSearchContainer: {
+    marginBottom: 20,
+    backgroundColor: 'white',
+    borderColor: '#ef4444',
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    color: '#0f172a',
+    paddingRight: 8,
+    textAlign: 'right',
+    fontFamily: 'iransans',
+  },
+  modalContent: {
+    flex: 1,
+  },
+  tabContent: {
+    flex: 1,
+    paddingVertical: 10,
+  },
+  statusText: {
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 14,
+    color: '#64748b',
+    fontFamily: 'iransans',
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  noResults: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#64748b',
+    fontFamily: 'iransans',
+  },
+  jobText: {
+    fontFamily: 'iransans',
+    padding: 10,
+    fontSize: 18,
+    textAlign: 'right',
+    lineHeight: 30,
+  },
+  jobContact: {
+    textAlign: 'center',
+    padding: 10,
+    fontSize: 18,
+    fontFamily: 'iransans',
+    color: '#ef4444',
+  },
+  defaultText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontFamily: 'iransans',
+  },
+  filterContainer: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  filterHeader: {
+    fontSize: 16,
+    // fontWeight: 'bold',
+    textAlign: 'right',
+    marginBottom: 5,
+    color: '#334155',
+  },
+  filterText: {
+    fontSize: 16,
+    marginBottom: 8,
+    textAlign: 'right',
+    color: '#475569',
+  },
+  chipsContainer: {
+    flexDirection: 'row-reverse',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  chip: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 8,
+    marginBottom: 8,
+  },
+  chipText: {
+    fontSize: 14,
+    color: '#334155',
+  },
+  filterHeaderContainer: {
+    paddingVertical: 2,
+  },
+  filterHeaderContent: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  arrowIcon: {
+    transform: [{rotate: '180deg'}],
+    marginLeft: 8,
+  },
+
+  hasPropertiesChip: {
+    backgroundColor: '#e8f5e9', // Light green background for neighborhoods with properties
+  },
+  showMoreButton: {
+    padding: 10,
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  showMoreText: {
+    color: '#2196f3', // Blue text
+    fontSize: 14,
+  },
+
+  historyTitle: {
+  alignSelf: 'flex-end',
+  marginBottom: 8,
+  fontSize: 14,
+  color: '#64748b',
+},
+historyContainer: {
+  flexDirection: 'row-reverse',
+  flexWrap: 'wrap',
+  marginBottom: 16,
+  alignSelf: 'flex-end',
+},
+historyChip: {
+  flexDirection: 'row-reverse',
+  alignItems: 'center',
+  backgroundColor: '#e2e8f0',
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  borderRadius: 16,
+  margin: 4,
+},
+historyText: {
+  color: '#334155',
+  fontSize: 14,
+  marginLeft: 8,
+},
+hintsTitle: {
+  alignSelf: 'flex-end',
+  marginBottom: 8,
+  fontSize: 14,
+  color: '#64748b',
+  textAlign:'right'
+},
+hintsContainer: {
+  flexDirection: 'row-reverse',
+  flexWrap: 'wrap',
+  alignSelf: 'flex-start',
+},
+hintChip: {
+  backgroundColor: '#969291ff',
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  borderRadius: 16,
+  margin: 4,
+},
+hintText: {
+  color: '#fff',
+  fontSize: 14,
+},
+});
+
+export default SearchBars;

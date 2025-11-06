@@ -31,13 +31,14 @@ import {
   Sort,
 } from "@mui/icons-material";
 
-const WorkerFilter = ({ 
-  workers = [], 
+const WorkerFilter = ({
+  workers = [],
   onFilteredWorkersChange,
   initialCategory = null,
   onCategoryChange = null,
   enableLocalCategoryFilter = false,
-  availableCategories = []
+  availableCategories = [],
+  initialNeighborhood = null,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -48,7 +49,7 @@ const WorkerFilter = ({
   const [sortAnchorEl, setSortAnchorEl] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
   const [result, setResult] = useState([]);
-  
+
   const [subcategories, setSubcategories] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
   const [tickFields, setTickFields] = useState([
@@ -57,8 +58,21 @@ const WorkerFilter = ({
     { id: 3, name: "انباری", value: "انباری", kind: 2, special: 1 },
   ]);
 
-  const displayCategories = enableLocalCategoryFilter ? availableCategories : subcategories;
+  const displayCategories = enableLocalCategoryFilter
+    ? availableCategories
+    : subcategories;
 
+  useEffect(() => {
+    if (initialNeighborhood) {
+      setSelectedNeighborhoods([initialNeighborhood]);
+    }
+  }, [initialNeighborhood]);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategory(initialCategory);
+    }
+  }, [initialCategory]);
   useEffect(() => {
     if (initialCategory) {
       setSelectedCategory(initialCategory);
@@ -77,7 +91,7 @@ const WorkerFilter = ({
 
         setSubcategories(response.data.subcategories || []);
         setNeighborhoods(response.data.neighborhoods || []);
-        setResult(response.data)
+        setResult(response.data);
       } catch (error) {
         console.error("Error fetching optional filter data:", error);
       }
@@ -98,12 +112,14 @@ const WorkerFilter = ({
             params: { cat: selectedCategory.id },
           });
 
-          const fieldsWithDefaults = (response.data.normal_fields || []).map(field => ({
-            ...field,
-            low: parseInt(field.min_range) || 0,
-            high: parseInt(field.max_range) || 100
-          }));
-          
+          const fieldsWithDefaults = (response.data.normal_fields || []).map(
+            (field) => ({
+              ...field,
+              low: parseInt(field.min_range) || 0,
+              high: parseInt(field.max_range) || 100,
+            })
+          );
+
           setLocalNormalFields(fieldsWithDefaults);
         } catch (error) {
           console.error("Error fetching category fields:", error);
@@ -121,13 +137,13 @@ const WorkerFilter = ({
     console.log("🔍 useEffect triggered - applying filters and sorting");
     console.log("📊 Total workers:", workers.length);
     console.log("🎯 Current sort:", sortBy);
-    
+
     const filtered = applyAllFilters(workers);
     console.log("✅ After filtering:", filtered.length);
     const sorted = applySorting(filtered);
     console.log("🔄 After sorting:", sorted.length);
-    
-    onFilteredWorkersChange(sorted); 
+
+    onFilteredWorkersChange(sorted);
   }, [
     workers,
     selectedCategory,
@@ -138,8 +154,9 @@ const WorkerFilter = ({
   ]);
 
   const applyAllFilters = (workersToFilter) => {
-    const shouldFilterByCategory = enableLocalCategoryFilter && selectedCategory;
-    
+    const shouldFilterByCategory =
+      enableLocalCategoryFilter && selectedCategory;
+
     if (
       !shouldFilterByCategory &&
       selectedNeighborhoods.length === 0 &&
@@ -192,7 +209,7 @@ const WorkerFilter = ({
 
     console.log("🔄 Starting sort with type:", sortBy);
     const workersCopy = [...workersToSort];
-    
+
     try {
       switch (sortBy) {
         case "newest":
@@ -201,21 +218,21 @@ const WorkerFilter = ({
             const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
             return dateB.getTime() - dateA.getTime();
           });
-          
+
         case "oldest":
           return workersCopy.sort((a, b) => {
             const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
             const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
             return dateA.getTime() - dateB.getTime();
           });
-          
+
         case "most_viewed":
           return workersCopy.sort((a, b) => {
             const viewsA = parseInt(a.total_view) || 0;
             const viewsB = parseInt(b.total_view) || 0;
             return viewsB - viewsA;
           });
-          
+
         default:
           return workersCopy;
       }
@@ -227,14 +244,16 @@ const WorkerFilter = ({
 
   const hasActiveRangeFilters = () => {
     return localNormalFields.some(
-      (field) => field.special == 1 && 
-        (field.low !== parseInt(field.min_range) || field.high !== parseInt(field.max_range))
+      (field) =>
+        field.special == 1 &&
+        (field.low !== parseInt(field.min_range) ||
+          field.high !== parseInt(field.max_range))
     );
   };
 
   const hasActiveFilters = () => {
     const hasCategoryFilter = enableLocalCategoryFilter && selectedCategory;
-    
+
     return (
       hasCategoryFilter ||
       selectedNeighborhoods.length > 0 ||
@@ -274,7 +293,7 @@ const WorkerFilter = ({
       setFilterLevel("base");
       return;
     }
-    
+
     if (enableLocalCategoryFilter) {
       setSelectedCategory(category);
     } else {
@@ -282,7 +301,7 @@ const WorkerFilter = ({
         onCategoryChange(category);
       }
     }
-    
+
     setFilterLevel("base");
   };
 
@@ -339,13 +358,13 @@ const WorkerFilter = ({
 
   const handleDeleteFilter = (field) => {
     setLocalNormalFields((prev) =>
-      prev.map((f) => 
-        f.id === field.id 
-          ? { 
-              ...f, 
-              low: parseInt(f.min_range) || 0, 
-              high: parseInt(field.max_range) || 100 
-            } 
+      prev.map((f) =>
+        f.id === field.id
+          ? {
+              ...f,
+              low: parseInt(f.min_range) || 0,
+              high: parseInt(field.max_range) || 100,
+            }
           : f
       )
     );
@@ -354,17 +373,17 @@ const WorkerFilter = ({
   const handleResetAll = () => {
     setSelectedNeighborhoods([]);
     setSelectedTickFields([]);
-    
-    setLocalNormalFields(prev => 
-      prev.map(field => ({
+
+    setLocalNormalFields((prev) =>
+      prev.map((field) => ({
         ...field,
         low: parseInt(field.min_range) || 0,
-        high: parseInt(field.max_range) || 100
+        high: parseInt(field.max_range) || 100,
       }))
     );
-    
+
     setSortBy("newest");
-    
+
     if (!enableLocalCategoryFilter && selectedCategory && onCategoryChange) {
       onCategoryChange(null);
     } else if (enableLocalCategoryFilter) {
@@ -391,7 +410,7 @@ const WorkerFilter = ({
       setIsOpen(true);
       setFilterLevel("category");
     }
-    
+
     if (!enableLocalCategoryFilter && onCategoryChange) {
       onCategoryChange(null);
     } else {
@@ -406,20 +425,18 @@ const WorkerFilter = ({
   };
 
   const removeTickFieldFilter = (fieldValue) => {
-    setSelectedTickFields((prev) =>
-      prev.filter((f) => f.value !== fieldValue)
-    );
+    setSelectedTickFields((prev) => prev.filter((f) => f.value !== fieldValue));
   };
 
   const removeRangeFilter = (fieldId) => {
     setLocalNormalFields((prev) =>
-      prev.map((f) => 
-        f.id === fieldId 
-          ? { 
-              ...f, 
-              low: parseInt(f.min_range) || 0, 
-              high: parseInt(field.max_range) || 100 
-            } 
+      prev.map((f) =>
+        f.id === fieldId
+          ? {
+              ...f,
+              low: parseInt(f.min_range) || 0,
+              high: parseInt(field.max_range) || 100,
+            }
           : f
       )
     );
@@ -459,7 +476,10 @@ const WorkerFilter = ({
   };
 
   const isFieldAtDefault = (field) => {
-    return field.low === parseInt(field.min_range) && field.high === parseInt(field.max_range);
+    return (
+      field.low === parseInt(field.min_range) &&
+      field.high === parseInt(field.max_range)
+    );
   };
 
   const renderSelectedFilterTags = () => {
@@ -473,14 +493,16 @@ const WorkerFilter = ({
     if (!hasActiveFilters) return null;
 
     return (
-      <Box sx={{ 
-        mt: 2, 
-        p: 2, 
-        border: "1px solid", 
-        borderColor: "grey.300", 
-        borderRadius: 2, 
-        bgcolor: "grey.50" 
-      }}>
+      <Box
+        sx={{
+          mt: 2,
+          p: 2,
+          border: "1px solid",
+          borderColor: "grey.300",
+          borderRadius: 2,
+          bgcolor: "grey.50",
+        }}
+      >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {selectedCategory && (
             <Chip
@@ -515,14 +537,13 @@ const WorkerFilter = ({
           ))}
 
           {localNormalFields
-            .filter(
-              (field) =>
-                field.special == 1 && !isFieldAtDefault(field)
-            )
+            .filter((field) => field.special == 1 && !isFieldAtDefault(field))
             .map((field) => (
               <Chip
                 key={field.id}
-                label={`${field.value}: ${numFormatter(field.low)} - ${numFormatter(field.high)}`}
+                label={`${field.value}: ${numFormatter(
+                  field.low
+                )} - ${numFormatter(field.high)}`}
                 onDelete={() => removeRangeFilter(field.id)}
                 color="warning"
                 variant="outlined"
@@ -856,17 +877,19 @@ const WorkerFilter = ({
   return (
     <>
       {/* Filter Trigger Button with fixed z-index */}
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 1, 
-        mb: 2, 
-        position: 'sticky',
-        top: 0,
-        backgroundColor: 'background.paper',
-        py: 1,
-        borderBottom: '1px solid',
-        borderColor: 'grey.300'
-      }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1,
+          mb: 2,
+          position: "sticky",
+          top: 0,
+          backgroundColor: "background.paper",
+          py: 1,
+          borderBottom: "1px solid",
+          borderColor: "grey.300",
+        }}
+      >
         <Button
           onClick={() => setIsOpen(true)}
           variant="contained"
@@ -892,13 +915,13 @@ const WorkerFilter = ({
           open={Boolean(sortAnchorEl)}
           onClose={handleSortClose}
         >
-          <MenuItem 
+          <MenuItem
             onClick={() => handleSortSelect("newest")}
             selected={sortBy === "newest"}
           >
             جدیدترین
           </MenuItem>
-          <MenuItem 
+          <MenuItem
             onClick={() => handleSortSelect("oldest")}
             selected={sortBy === "oldest"}
           >
@@ -909,12 +932,14 @@ const WorkerFilter = ({
 
       {/* Selected Filter Tags with fixed z-index */}
       {renderSelectedFilterTags() && (
-        <Box sx={{ 
-          position: 'sticky',
-          top: 60,
-          zIndex: 9998,
-          backgroundColor: 'grey.50'
-        }}>
+        <Box
+          sx={{
+            position: "sticky",
+            top: 60,
+            zIndex: 30,
+            backgroundColor: "grey.50",
+          }}
+        >
           {renderSelectedFilterTags()}
         </Box>
       )}
@@ -948,18 +973,16 @@ const WorkerFilter = ({
               <Button onClick={handleBackClick} color="inherit">
                 {getHeaderButtonIcon()}
               </Button>
-              
+
               <strong>{getFilterTitle()}</strong>
-              
+
               <Button onClick={handleResetAll} color="inherit" size="small">
                 حذف همه
               </Button>
             </Box>
           </AppBar>
 
-          <Box sx={{ flex: 1, overflow: "auto" }}>
-            {renderFilterContent()}
-          </Box>
+          <Box sx={{ flex: 1, overflow: "auto" }}>{renderFilterContent()}</Box>
 
           {filterLevel === "base" && (
             <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
@@ -977,5 +1000,5 @@ const WorkerFilter = ({
     </>
   );
 };
- 
+
 export default WorkerFilter;

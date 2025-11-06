@@ -20,15 +20,21 @@ export default function ImgMediaCard(props) {
   const worker = props.worker;
   const [imageLoaded, setImageLoaded] = useState(false);
   const [properties, set_properties] = useState([]);
+  const [hasQuickHints, setHasQuickHints] = useState(false);
 
   const [isfavorite, set_isfavorite] = useState("off");
 
   useEffect(() => {
-    // set_properties( JSON.stringify(worker.json_properties[0]));
     set_properties(JSON.parse(worker.json_properties));
   }, [worker.json_properties]);
 
-  useEffect(() => {}, [properties]);
+  useEffect(() => {
+    // Check if there are any quick hint tags to show
+    const hints = properties.filter(pr => 
+      pr.special === "1" && pr.kind === 2 && pr.value == 1
+    );
+    setHasQuickHints(hints.length > 0);
+  }, [properties]);
 
   useEffect(() => {
     var faviorited = Cookies.get("favorited");
@@ -39,7 +45,6 @@ export default function ImgMediaCard(props) {
 
     const productToBeSaved = worker.id;
 
-    // const newProduct = JSON.parse(faviorited);
     var newProduct = JSON.parse(faviorited);
     if (!newProduct) {
       newProduct = [];
@@ -69,10 +74,6 @@ export default function ImgMediaCard(props) {
     } else {
       var newProduct = [];
     }
-
-    // if (!newProduct) {
-    //   newProduct = [];
-    // }
 
     const length = newProduct.length;
 
@@ -145,23 +146,7 @@ export default function ImgMediaCard(props) {
   const renderDate = (worker) => {
     if (1) {
       return (
-        // <View style={styles.dateWrapper}>
-        //   {showDistance(worker.distance)}
-
-        //   <Text>{calculateDaysPast(worker.updated_at)} </Text>
-        //   <Icon
-        //     name="access-time"
-        //     size={18}
-        //     color="gray"
-        //     style={{marginLeft: 2}}
-        //   />
-        // </View>
-
-        <div
-          
-          className={Styles["card-inside-date"]}
-        >
-          {/* <FavoriteIcon style={{ color: "#b92a31" }} /> */}
+        <div className={Styles["card-inside-date"]}>
              تاریخ  :  {calculateDaysPast(worker.updated_at)}
         </div>
       );
@@ -354,20 +339,6 @@ export default function ImgMediaCard(props) {
         )}
       </>
     );
-
-    if (worker.video_count > 0) {
-      return (
-        <div className={Styles["card-top-icon-wrapper"]}>
-          <CameraIndoorIcon />
-        </div>
-      );
-    } else if (worker.image_count > 0) {
-      return (
-        <div className={Styles["card-top-icon-wrapper"]}>
-          {worker.image_count} <CollectionsIcon />
-        </div>
-      );
-    }
   };
 
   const short = (name, amount) => {
@@ -379,19 +350,13 @@ export default function ImgMediaCard(props) {
     }
   };
 
-  const rednerDate = () => {
-    return <>test</>;
-  };
-
   const renderAddress = () => {
     if (worker.formatted) {
       return (
-        // <div> {short(worker.neighbourhood ,40)}   </div>
         <div style={{ direction: "rtl" }}> {short(worker.formatted, 40)} </div>
       );
     } else if (worker.neighbourhood) {
       return (
-        // <div> {short(worker.neighbourhood ,40)}   </div>
         <p> {short(worker.neighbourhood, 40)} </p>
       );
     } else if (worker.region) {
@@ -433,14 +398,6 @@ export default function ImgMediaCard(props) {
   };
 
   const renderQickHintCustomized = (pr, index) => {
-    // Skip specific property names
-    // if (
-    //   pr.name !== "پارکینگ" ||
-    //   pr.name !== "انباری"
-    // ) {
-    //   return null;
-    // }
-
     if (pr.kind === 2) {
       return (
         <Box
@@ -462,10 +419,13 @@ export default function ImgMediaCard(props) {
 
   const renderQuickHint = () => {
     if (properties) {
-      return properties.map(
+      const hints = properties.map(
         (pr, index) => pr.special === "1" && renderQickHintCustomized(pr, index)
-      );
+      ).filter(Boolean);
+      
+      return hints.length > 0 ? hints : null;
     }
+    return null;
   };
 
   const renderWorkercategory = () => {
@@ -473,6 +433,7 @@ export default function ImgMediaCard(props) {
       return <p style={{ fontSize: 16 }}> {worker.category_name} </p>;
     }
   };
+  
   return (
     <div>
     <Card
@@ -504,7 +465,10 @@ export default function ImgMediaCard(props) {
       <CardContent className={Styles['card-content']}>
         <div className={Styles["price-wrapper"]}> {rednerPrice()} </div>
         <div className={Styles["properties-wrapper"]}>{rednerProperties()}</div>
-        <div style={{marginBottom: '-15px'}} className={Styles["properties-hint"]}> {renderQuickHint()} </div>
+        {/* Always render the container but conditionally apply margin and content */}
+        <div className={`${Styles["properties-hint"]} ${!hasQuickHints ? Styles["no-hints"] : ''}`}>
+          {hasQuickHints && renderQuickHint()}
+        </div>
       </CardContent>
     </Card>
     </div>

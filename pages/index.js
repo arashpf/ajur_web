@@ -510,7 +510,7 @@ function Home(props) {
                     enabled: true,
                   },
                 },
-                768: {
+                1050: {
                   slidesPerView: 3,
                   spaceBetween: 20,
                   navigation: {
@@ -571,7 +571,7 @@ function Home(props) {
                     enabled: true,
                   },
                 },
-                768: {
+                1050: {
                   slidesPerView: 3,
                   spaceBetween: 20,
                   navigation: {
@@ -653,13 +653,13 @@ function Home(props) {
                     aria-label="اجاره"
                   >
                     <img
-                      src="/buttons/rent.png"
+                      src="/buttons/rent.jpg"
                       alt="اجاره"
                       style={{
                         width: "100%",
                         height: "auto",
                         display: "block",
-                        padding: "30px 20px",
+                        borderRadius: "15px",
                       }}
                     />
                   </div>
@@ -680,13 +680,13 @@ function Home(props) {
                   >
                     {/* Replaced content with single PNG to keep layout & animations but simplify visuals */}
                     <img
-                      src="/buttons/buy.png"
+                      src="/buttons/buy.jpg"
                       alt="خرید"
                       style={{
                         width: "100%",
                         height: "auto",
                         display: "block",
-                        padding: "30px 20px",
+                        borderRadius: "15px",
                       }}
                     />
                   </div>
@@ -800,7 +800,7 @@ function Home(props) {
                     slidesPerView: 2,
                     spaceBetween: 10
                   },
-                  768: {
+                  1050: {
                     slidesPerView: 2,
                     spaceBetween: 20
                   },
@@ -852,7 +852,7 @@ function Home(props) {
                           enabled: true
                         }
                       },
-                      768: {
+                      1050: {
                         slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
@@ -930,7 +930,7 @@ function Home(props) {
                           enabled: true
                         }
                       },
-                      768: {
+                      1050: {
                         slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
@@ -1004,7 +1004,7 @@ function Home(props) {
                           enabled: true,
                         },
                       },
-                      768: {
+                      1050: {
                         slidesPerView: 3,
                         spaceBetween: 20,
                         navigation: {
@@ -1074,7 +1074,7 @@ function Home(props) {
                       slidesPerView: 4,
                       spaceBetween: 20,
                     },
-                    768: {
+                    1050: {
                       slidesPerView: 6,
                       spaceBetween: 25,
                     },
@@ -1110,7 +1110,7 @@ function Home(props) {
                       slidesPerView: 4,
                       spaceBetween: 20,
                     },
-                    768: {
+                    1050: {
                       slidesPerView: 6,
                       spaceBetween: 25,
                     },
