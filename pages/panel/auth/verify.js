@@ -28,7 +28,6 @@ function Verify() {
 
     const [cooldown, setCooldown] = useState(RESEND_INTERVAL);
 
-
     useEffect(() => {
         const phone = Cookies.get('phone');
         const refCookie = Cookies.get('ref');
@@ -43,7 +42,6 @@ function Verify() {
             setCooldown(0);
         }
     }, []);
-
 
     useEffect(() => {
         if (cooldown <= 0) return;
@@ -85,8 +83,20 @@ function Verify() {
                 // ✅ Clear cooldown so user can re-register cleanly later
                 localStorage.removeItem('code_requested_at');
 
-                // Redirect to next param if present, else to /panel
-                if (next) {
+                // ✅ Check if there's a pending download and redirect accordingly
+                const pendingDownload = localStorage.getItem('pendingDownload');
+                if (pendingDownload) {
+                    const downloadData = JSON.parse(pendingDownload);
+                    localStorage.removeItem('pendingDownload');
+                    
+                    if (downloadData.url) {
+                        // Redirect to the intended download URL
+                        window.open(downloadData.url, '_blank');
+                    }
+                    
+                    // Always redirect to panel after successful verification
+                    router.push('/panel');
+                } else if (next) {
                     router.replace(next);
                 } else {
                     router.push('/panel');
@@ -124,7 +134,6 @@ function Verify() {
             setError('خطایی در ارسال مجدد کد رخ داد');
         }
     };
-
 
     return (
         <Container

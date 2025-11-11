@@ -1,196 +1,299 @@
 import React, { useState, useEffect } from "react";
-import ContactUs from '../components/parts/ContactUs';
-import AboutUs from '../components/parts/AboutUs';
-import WorkTime from '../components/parts/WorkTime';
 import Head from "next/head";
-import AndroidIcon from '@mui/icons-material/Android';
-import AppleIcon from '@mui/icons-material/Apple';
-import DownloadIcon from '@mui/icons-material/Download';
-import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
-import { Button, Grid, Box, Typography, Paper } from '@mui/material';
+import { useRouter } from "next/router";
+import Cookies from "js-cookie";
+import {
+  Box,
+  Button,
+  Typography,
+  Paper,
+  Grid,
+  IconButton,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import AndroidIcon from "@mui/icons-material/Android";
+import AppleIcon from "@mui/icons-material/Apple";
+import DownloadIcon from "@mui/icons-material/Download";
+import AddToHomeScreenIcon from "@mui/icons-material/AddToHomeScreen";
+import ShareIcon from "@mui/icons-material/Share";
 
- // PWA Install Button Logic
-let deferredPrompt;
+const DownloadPage = () => {
+  const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-const Contact = (props) => {
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-    const [installPrompt, setInstallPrompt] = useState(false);
-    useEffect(() => {
-        
-        // Detect if the app can be installed (only on mobile)
-        const handler = (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-          setInstallPrompt(true);
-        };
-        
-        window.addEventListener('beforeinstallprompt', handler);
-        return () => window.removeEventListener('beforeinstallprompt', handler);
-      }, []);
+  // ✅ Handle referral detection
+  useEffect(() => {
+    if (router.isReady) {
+      const { ref } = router.query;
+      if (ref) {
+        Cookies.set("ref", ref, { expires: 7 });
+        router.push("/panel/auth/login");
+      }
+    }
+  }, [router.isReady]);
 
-    const handleInstallClick = () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          deferredPrompt.userChoice.then((choiceResult) => {
-            console.log(choiceResult.outcome);
-            setInstallPrompt(false); // Hide the button after installation prompt is shown
-          });
-        }
-      };
+  // ✅ Detect iOS, PWA support, etc.
+  useEffect(() => {
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    setIsIOS(ios);
+
+    const checkStandalone = () => {
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone ||
+        document.referrer.includes("android-app://")
+      );
+    };
+    setIsStandalone(checkStandalone());
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      showSnackbar("اپلیکیشن قابل نصب است");
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const showSnackbar = (message) => {
+    setSnackbarMessage(message);
+    setSnackbarOpen(true);
+  };
+
+  const handleInstallClick = async () => {
+    if (isIOS) {
+      showIOSInstallInstructions();
+      return;
+    }
+
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") showSnackbar("در حال نصب اپلیکیشن...");
+      setDeferredPrompt(null);
+      return;
+    }
+
+    showSnackbar("مرورگر شما از نصب خودکار پشتیبانی نمی‌کند");
+  };
+
+  const showIOSInstallInstructions = () => {
+    setShowIOSInstructions(true);
+  };
+
+  const handleCloseIOSInstructions = () => setShowIOSInstructions(false);
+  const handleCloseSnackbar = () => setSnackbarOpen(false);
+
   return (
-    <div>
+    <Box
+      sx={{
+        backgroundColor: "#fafafa",
+        minHeight: "100vh",
+        py: 6,
+        direction: "rtl",
+        fontFamily: "iransans",
+      }}
+    >
       <Head>
-        <meta charSet="UTF-8" />
-        <meta name="robots" content="max-image-preview:large" />
-        <title>دانلود اپلیکیشن آجر | مشاور املاک هوشمند آجر</title>
-        <meta name="description" content="دانلود اپلیکیشن آجر برای اندروید و iOS | مشاور املاک هوشمند آجر" />
-        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-        <meta property="og:locale" content="fa_IR" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="دانلود اپلیکیشن آجر | مشاور املاک هوشمند آجر" />
-        <meta property="og:description" content="دانلود اپلیکیشن آجر برای اندروید و iOS | مشاور املاک هوشمند آجر" />
-        <meta property="og:url" content="https://ajur.app/download" />
-        <meta property="og:site_name" content="مشاور املاک هوشمند آجر" />
-        <meta property="og:image" content="https://ajur.app/logo/ajour-meta-image.jpg" />
-        <meta property="og:image:width" content="800" />
-        <meta property="og:image:height" content="533" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="canonical" href="https://ajur.app/download" />
+        <title>دانلود اپلیکیشن آجر | Ajur</title>
+        <meta name="description" content="دانلود اپلیکیشن آجر برای اندروید و iOS" />
       </Head>
 
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 4 ,background:'#f9f9f9'}}>
-        {/* Download Section */}
-        <Box sx={{ mb: 6 }}>
-          <h1 variant="h3" component="h1" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
-             دانلود اپلیکیشن آجر
-          </h1>
-          
-          {/* Android Download */}
-          <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-            <div sx={{ display: 'flex', alignItems: 'center', mb: 3,textAlign:'center' }}>
-              
-              <p variant="h5" align="center" component="h2" sx={{ fontWeight: 'medium',textAlign:'center',align:'center' }}>
-                نسخه اندروید
-                <AndroidIcon color="success" sx={{ fontSize: 32, ml: 1,textAlign:'center' }} />
-              </p>
-            </div>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  href="https://api.ajur.app/download/ajur.apk"
-                  startIcon={<DownloadIcon />}
-                  sx={{ py: 2 }}
-                >
-                  دانلود مستقیم (APK)
-                </Button>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: '#FF5722',
-                    '&:hover': { backgroundColor: '#E64A19' },
-                    py: 2
-                  }}
-                  size="large"
-                  href="https://cafebazaar.ir/app/com.Ajour"
-                  startIcon={
-                    <Box component="img" src="/logo/bazaar.png"  alt="Café Bazaar" sx={{ height: 24, ml: 1 }} />
-                  }
-                >
-                  دانلود از بازار
-                </Button>
-              </Grid>
-              
-              <Grid item xs={12} md={4}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: '#9C27B0',
-                    '&:hover': { backgroundColor: '#7B1FA2' },
-                    py: 2
-                  }}
-                  size="large"
-                  href="https://myket.ir/app/com.Ajour"
-                  startIcon={
-                    <Box component="img" src="/logo/myket.png" alt="Myket" sx={{ height: 24, ml: 1 }} />
-                  }
-                >
-                  دانلود از مایکت
-                </Button>
-              </Grid>
-            </Grid>
-            
-          
-          </Paper>
-          
-          {/* iOS Download */}
-          <Paper elevation={3} sx={{ p: 4 }} >
-            
+      <Box sx={{ maxWidth: 900, mx: "auto", px: 3 }}>
+        <Typography
+          variant="h4"
+          align="center"
+          fontWeight="bold"
+          sx={{ color: "#a92b31", mb: 4 }}
+        >
+          دانلود اپلیکیشن آجر
+        </Typography>
 
-            <div sx={{ display: 'flex', alignItems: 'center', mb: 3,textAlign:'center' }}>
-              
-              <p variant="h5" align="center" component="h2" sx={{ fontWeight: 'medium',textAlign:'center',align:'center' }}>
-              iOS  نسخه 
-              <AppleIcon sx={{ fontSize: 32, ml: 1 }} />
-              </p>
-            </div>
-            
-            <Grid container spacing={3}>
-              {/* <Grid item xs={12} md={6}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  sx={{ 
-                    backgroundColor: 'black',
-                    '&:hover': { backgroundColor: '#333' },
-                    py: 2
-                  }}
-                  size="large"
-                  href="YOUR_APPSTORE_LINK"
-                  startIcon={<AppleIcon />}
-                >
-                  دانلود از اپ استور
-                </Button>
-              </Grid> */}
-              
-              <Grid item xs={12} md={6}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                //   href="YOUR_PWA_LINK"
-                  onClick={handleInstallClick}
-                  startIcon={<PhoneIphoneIcon />}
-                  sx={{ py: 2 }}
-                >
-                PWA  نصب نسخه  ( وب اپلیکیشن)
-                </Button>
-              </Grid>
+        {/* --- Android Section --- */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            mb: 5,
+            borderRadius: 4,
+            textAlign: "center",
+            backgroundColor: "#fff",
+          }}
+        >
+          <Typography variant="h5" fontWeight="500" sx={{ mb: 3 }}>
+            نسخه اندروید <AndroidIcon color="success" sx={{ verticalAlign: "middle", ml: 1 }} />
+          </Typography>
+
+          <Grid container spacing={3} justifyContent="center">
+            <Grid item xs={12} md={4}>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                href="https://api.ajur.app/download/ajur.apk"
+                startIcon={<DownloadIcon />}
+                sx={{
+                  py: 1.5,
+                  backgroundColor: "#a92b31",
+                  "&:hover": { backgroundColor: "#8e2529" },
+                }}
+              >
+                دانلود مستقیم (APK)
+              </Button>
             </Grid>
-            
-         
-          </Paper>
-        </Box>
-        
-        
+
+            <Grid item xs={12} md={4}>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                href="https://cafebazaar.ir/app/com.Ajour"
+                sx={{
+                  py: 1.5,
+                  backgroundColor: "#43a047",
+                  "&:hover": { backgroundColor: "#388e3c" },
+                }}
+              >
+                <Box component="img" src="/logo/bazaar.png" alt="bazaar" sx={{ height: 24, ml: 1 }} />
+                بازار
+              </Button>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                href="https://myket.ir/app/com.Ajour"
+                sx={{
+                  py: 1.5,
+                  backgroundColor: "#673ab7",
+                  "&:hover": { backgroundColor: "#5e35b1" },
+                }}
+              >
+                <Box component="img" src="/logo/myket.png" alt="myket" sx={{ height: 24, ml: 1 }} />
+                مایکت
+              </Button>
+            </Grid>
+          </Grid>
+        </Paper>
+
+        {/* --- iOS / PWA Section --- */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            textAlign: "center",
+            backgroundColor: "#fff",
+          }}
+        >
+          <Typography variant="h5" fontWeight="500" sx={{ mb: 3 }}>
+            نسخه {isIOS ? "iOS" : "PWA"}{" "}
+            <AppleIcon color="action" sx={{ verticalAlign: "middle", ml: 1 }} />
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            onClick={handleInstallClick}
+            startIcon={isIOS ? <ShareIcon /> : <AddToHomeScreenIcon />}
+            disabled={isStandalone}
+            sx={{
+              py: 1.5,
+              px: 6,
+              backgroundColor: "#a92b31",
+              "&:hover": { backgroundColor: "#8e2529" },
+            }}
+          >
+            {isStandalone ? "اپلیکیشن نصب شده است" : "نصب اپلیکیشن"}
+          </Button>
+
+          {isIOS && !isStandalone && (
+            <Typography
+              variant="body2"
+              sx={{ mt: 3, color: "text.secondary", fontSize: "14px" }}
+            >
+              در iOS لطفاً از Safari استفاده کرده و گزینه "Add to Home Screen" را بزنید.
+            </Typography>
+          )}
+        </Paper>
       </Box>
 
-      {/* <ContactUs />
-      <WorkTime />
-      <AboutUs /> */}
-    </div>
-  )
-}
+      {/* --- iOS Instruction Dialog --- */}
+      <Dialog open={showIOSInstructions} onClose={handleCloseIOSInstructions} fullScreen={isMobile}>
+        <DialogTitle
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontFamily: "iransans",
+          }}
+        >
+          <Typography fontWeight="bold">راهنمای نصب در iOS</Typography>
+          <IconButton onClick={handleCloseIOSInstructions}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ direction: "rtl" }}>
+          <Typography variant="body1" gutterBottom>
+            برای نصب اپلیکیشن آجر بر روی دستگاه iOS:
+          </Typography>
+          <ol style={{ paddingRight: 20 }}>
+            <li>در مرورگر Safari روی دکمه "اشتراک‌گذاری" بزنید.</li>
+            <li>گزینه "Add to Home Screen" را انتخاب کنید.</li>
+            <li>روی "Add" در بالای صفحه بزنید.</li>
+          </ol>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseIOSInstructions}
+            variant="contained"
+            sx={{
+              backgroundColor: "#a92b31",
+              "&:hover": { backgroundColor: "#8e2529" },
+            }}
+          >
+            فهمیدم
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-export default Contact
+      {/* --- Snackbar --- */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        action={
+          <IconButton size="small" color="inherit" onClick={handleCloseSnackbar}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      />
+    </Box>
+  );
+};
+
+export default DownloadPage;

@@ -639,32 +639,7 @@ function Home(props) {
                 animState === "pushed" ? styles.pushed : ""
               } ${animState === "pullIn" ? styles.pullIn : ""}`}
             >
-              <div className={styles.actionBtnWrap}>
-                {rentVisible && (
-                  <div
-                    className={styles.actionCard}
-                    onClick={() => selectAction("rent")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        selectAction("rent");
-                    }}
-                    aria-label="اجاره"
-                  >
-                    <img
-                      src="/buttons/rent.jpg"
-                      alt="اجاره"
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        display: "block",
-                        borderRadius: "15px",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+
               <div className={styles.actionBtnWrap}>
                 {buyVisible && (
                   <div
@@ -680,7 +655,7 @@ function Home(props) {
                   >
                     {/* Replaced content with single PNG to keep layout & animations but simplify visuals */}
                     <img
-                      src="/buttons/buy.jpg"
+                      src="/buttons/buy-button.jpg"
                       alt="خرید"
                       style={{
                         width: "100%",
@@ -692,6 +667,35 @@ function Home(props) {
                   </div>
                 )}
               </div>
+
+              
+              <div className={styles.actionBtnWrap}>
+                {rentVisible && (
+                  <div
+                    className={styles.actionCard}
+                    onClick={() => selectAction("rent")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        selectAction("rent");
+                    }}
+                    aria-label="اجاره"
+                  >
+                    <img
+                      src="/buttons/rent-button.jpg"
+                      alt="اجاره"
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        display: "block",
+                        borderRadius: "15px",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              
             </div>
 
             {/* Deal categories grid when buy or rent is selected */}
