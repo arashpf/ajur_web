@@ -170,13 +170,13 @@ const Footer = () => {
   <div onClick={() => { setValue(0); onClickHome(); }} role="button" aria-label="خانه" style={{ position: 'relative', zIndex: 3, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <HomeIcon style={{ color: value === 0 ? '#fff' : 'rgba(0,0,0,0.50)', fontSize: 26 }} />
-        <span style={{ fontSize: 12, color: value === 0 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>خانه</span>
+        {/* <span style={{ fontSize: 12, color: value === 0 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>خانه</span> */}
             </div>
           </div>
   <div onClick={() => { setValue(1); onClickMap(); }} role="button" aria-label="نقشه" style={{ position: 'relative', zIndex: 3, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <ShareLocationIcon style={{ color: value === 1 ? '#fff' : 'rgba(0,0,0,0.50)', fontSize: 26 }} />
-              <span style={{ fontSize: 12, color: value === 1 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>نقشه</span>
+              {/* <span style={{ fontSize: 12, color: value === 1 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>نقشه</span> */}
             </div>
       </div>
       <div
@@ -236,19 +236,19 @@ const Footer = () => {
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <AutoAwesomeIcon style={{ color: value === 2 ? '#fff' : 'rgba(0,0,0,0.50)', fontSize: 30 }} />
-              <span style={{ fontSize: 12, color: value === 2 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>دستیار هوشمند</span>
+              {/* <span style={{ fontSize: 12, color: value === 2 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>دستیار هوشمند</span> */}
             </div>
           </div>
           <div onClick={() => { setValue(3); onClickFavorites(); }} role="button" aria-label="موردعلاقه ها" style={{ position: 'relative', zIndex: 3, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <FavoriteBorderIcon style={{ color: value === 3 ? '#fff' : 'rgba(0,0,0,0.50)', fontSize: 26 }} />
-              <span style={{ fontSize: 12, color: value === 3 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>موردعلاقه ها</span>
+              {/* <span style={{ fontSize: 12, color: value === 3 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>موردعلاقه ها</span> */}
             </div>
           </div>
           <div onClick={() => { setValue(4); onClickMyDashboard(); }} role="button" aria-label="املاک من" style={{ position: 'relative', zIndex: 3, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px 0' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <PersonIcon style={{ color: value === 4 ? '#fff' : 'rgba(0,0,0,0.50)', fontSize: 26 }} />
-              <span style={{ fontSize: 12, color: value === 4 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>املاک من</span>
+              {/* <span style={{ fontSize: 12, color: value === 4 ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.70)' }}>املاک من</span> */}
 
             </div>
           </div>
