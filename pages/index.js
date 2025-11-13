@@ -23,6 +23,7 @@ import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
 // simplified buttons: using plain HTML buttons instead of animated ActionButton
 import DealButton from "../components/parts/DealButton";
+import ActionCard from "../components/ActionButton";
 
 import ForwardIcon from "@mui/icons-material/Forward";
 
@@ -34,6 +35,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { display, style } from "@mui/system";
+import ActionButtons from "../components/ActionButton";
 // import "./styles.css";
 // import required modules
 
@@ -225,50 +227,50 @@ function Home(props) {
         city: props.url_city ? props.url_city : selected_city,
       },
     })
-    .then(function (response) {
-      // Clear timeout on success
-      clearTimeout(timeoutId);
-      
-      set_cats(response.data.cats);
-      set_the_city(response.data.the_city);
-      set_the_neighborhoods(response.data.the_neighborhoods);
-      set_main_cats(response.data.main_cats);
-      set_sub_cats(response.data.sub_cats);
-      set_realestates(response.data.realstates);
-      setDealCats(response.data.sub_cats);
+      .then(function (response) {
+        // Clear timeout on success
+        clearTimeout(timeoutId);
 
-      console.log("the maincat data in base is --------------------");
-      console.log(response.data.main_cats);
+        set_cats(response.data.cats);
+        set_the_city(response.data.the_city);
+        set_the_neighborhoods(response.data.the_neighborhoods);
+        set_main_cats(response.data.main_cats);
+        set_sub_cats(response.data.sub_cats);
+        set_realestates(response.data.realstates);
+        setDealCats(response.data.sub_cats);
 
-      console.log(response.data.sub_cats);
+        console.log("the maincat data in base is --------------------");
+        console.log(response.data.main_cats);
 
-      set_realestates(response.data.realstates);
+        console.log(response.data.sub_cats);
 
-      console.log("the departments data in base is --------------------");
-      console.log(response.data.departments);
+        set_realestates(response.data.realstates);
 
-      set_departments(response.data.departments);
+        console.log("the departments data in base is --------------------");
+        console.log(response.data.departments);
 
-      set_title1(response.data.title1);
+        set_departments(response.data.departments);
 
-      set_title2(response.data.title2);
+        set_title1(response.data.title1);
 
-      set_title3(response.data.title3);
+        set_title2(response.data.title2);
 
-      set_collection1(response.data.collection1);
-      set_collection2(response.data.collection2);
-      set_collection3(response.data.collection3);
+        set_title3(response.data.title3);
 
-      set_loading(false);
-      set_error(false);
-    })
-    .catch(function (error) {
-      // Clear timeout on error
-      clearTimeout(timeoutId);
-      console.error("API request failed:", error);
-      set_loading(false);
-      set_error(true);
-    });
+        set_collection1(response.data.collection1);
+        set_collection2(response.data.collection2);
+        set_collection3(response.data.collection3);
+
+        set_loading(false);
+        set_error(false);
+      })
+      .catch(function (error) {
+        // Clear timeout on error
+        clearTimeout(timeoutId);
+        console.error("API request failed:", error);
+        set_loading(false);
+        set_error(true);
+      });
 
     // Cleanup function
     return () => {
@@ -293,22 +295,22 @@ function Home(props) {
         workers_holder: newProduct,
       },
     })
-    .then(function (response) {
-      set_favorite_workers(response.data);
+      .then(function (response) {
+        set_favorite_workers(response.data);
 
-      if (response.data.length == 0) {
-        console.log("trigered no post error");
+        if (response.data.length == 0) {
+          console.log("trigered no post error");
+          set_is_have_favorited(false);
+        } else {
+          set_is_have_favorited(true);
+        }
+        console.log("the data now is+++++++++++++++++++++ ");
+        console.log(response.data);
+      })
+      .catch(function (error) {
+        console.error("Error loading favorite workers:", error);
         set_is_have_favorited(false);
-      } else {
-        set_is_have_favorited(true);
-      }
-      console.log("the data now is+++++++++++++++++++++ ");
-      console.log(response.data);
-    })
-    .catch(function (error) {
-      console.error("Error loading favorite workers:", error);
-      set_is_have_favorited(false);
-    });
+      });
 
     // alert(newProduct);
   }, []);
@@ -330,22 +332,22 @@ function Home(props) {
         workers_holder: newProduct,
       },
     })
-    .then(function (response) {
-      set_history_workers(response.data);
+      .then(function (response) {
+        set_history_workers(response.data);
 
-      if (response.data.length == 0) {
-        console.log("trigered no post error");
+        if (response.data.length == 0) {
+          console.log("trigered no post error");
+          set_is_have_history(false);
+        } else {
+          set_is_have_history(true);
+        }
+        console.log("the data now is+++++++++++++++++++++ ");
+        console.log(response.data);
+      })
+      .catch(function (error) {
+        console.error("Error loading history workers:", error);
         set_is_have_history(false);
-      } else {
-        set_is_have_history(true);
-      }
-      console.log("the data now is+++++++++++++++++++++ ");
-      console.log(response.data);
-    })
-    .catch(function (error) {
-      console.error("Error loading history workers:", error);
-      set_is_have_history(false);
-    });
+      });
 
     // alert(newProduct);
   }, []);
@@ -468,13 +470,12 @@ function Home(props) {
   };
 
   const handleRecentsClick = () => {
-    router.push('/recents')
-  }
+    router.push("/recents");
+  };
 
-  
   const handleFavoritesClick = () => {
-    router.push('/favorites')
-  }
+    router.push("/favorites");
+  };
 
   const renderHistoryWorkers = () => {
     if (1) {
@@ -535,7 +536,6 @@ function Home(props) {
       );
     }
   };
-
 
   const renderFavoriteWorkers = () => {
     if (1) {
@@ -634,89 +634,53 @@ function Home(props) {
         <div>
           <main className={styles["main"]}>
             {/* Quick action buttons for Buy / Rent (stacked on small, side-by-side on larger) */}
-            <div
-              className={`${styles.actionButtonsRow} ${
-                animState === "pushed" ? styles.pushed : ""
-              } ${animState === "pullIn" ? styles.pullIn : ""}`}
-            >
-
-              <div className={styles.actionBtnWrap}>
-                {buyVisible && (
-                  <div
-                    className={styles.actionCard}
-                    onClick={() => selectAction("buy")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        selectAction("buy");
-                    }}
-                    aria-label="خرید"
-                  >
-                    {/* Replaced content with single PNG to keep layout & animations but simplify visuals */}
-                    <img
-                      src="/buttons/buy-button.jpg"
-                      alt="خرید"
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        display: "block",
-                        borderRadius: "15px",
-                      }}
-                    />
-                  </div>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 w-full max-w-7xl mx-auto px-4 py-8">
+              <div className="w-full h-full min-h-[400px]">
+                <ActionCard
+                  image="/buttons/buyproperty.png"
+                  title="خرید"
+                  description="آگهی‌های خرید ملک، خانه و آپارتمان"
+                  buttonText="مشاهده آگهی‌ها"
+                  onClick={() => selectAction("buy")}
+                />
               </div>
 
-              
-              <div className={styles.actionBtnWrap}>
-                {rentVisible && (
-                  <div
-                    className={styles.actionCard}
-                    onClick={() => selectAction("rent")}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
-                        selectAction("rent");
-                    }}
-                    aria-label="اجاره"
-                  >
-                    <img
-                      src="/buttons/rent-button.jpg"
-                      alt="اجاره"
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        display: "block",
-                        borderRadius: "15px",
-                      }}
-                    />
-                  </div>
-                )}
+              <div className="w-full h-full min-h-[400px]">
+                <ActionCard
+                  image="/buttons/newfile.png"
+                  title="ثبت آگهی"
+                  description="ملک خود را برای فروش یا اجاره در آجر ثبت کنید"
+                  buttonText="ثبت آگهی"
+                  onClick={() => router.push("/panel/new")}
+                />
               </div>
-              
+
+              <div className="w-full h-full min-h-[400px]">
+                <ActionCard
+                  image="/buttons/rentproperty.png"
+                  title="اجاره"
+                  description="آگهی‌های اجاره مسکونی، تجاری و اداری"
+                  buttonText="مشاهده آگهی‌ها"
+                  onClick={() => selectAction("rent")}
+                />
+              </div>
             </div>
 
-            {/* Deal categories grid when buy or rent is selected */}
-            {clickedAction && (
-              <div
-                className={`${styles.dealGrid} ${
-                  dealAnim === "popOut" ? styles.dealPopOut : ""
-                }`}
-                style={{ maxWidth: 760, margin: "12px auto", padding: 12 }}
-              >
-                <div className={styles.dealHeader}>
+            {/* Full screen modal for subcategories */}
+            {(clickedAction === "buy" || clickedAction === "rent") && (
+              <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+                {/* Modal Header */}
+                <div className="sticky top-0 mt-5 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
+                  {/* Left side - Arrow back button */}
                   <button
-                    className={styles.backButton}
-                    onClick={handleBackButtons}
+                    onClick={() => setClickedAction(null)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
                     aria-label="بازگشت"
                   >
                     <svg
-                      className={styles.backIcon}
+                      className="w-6 h-6"
                       viewBox="0 0 24 24"
                       fill="none"
-                      aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
@@ -734,327 +698,86 @@ function Home(props) {
                         strokeLinejoin="round"
                       />
                     </svg>
+                    <span className="mr-2 text-sm font-medium">بازگشت</span>
                   </button>
-                  <div className={styles.dealTitle}>
+
+                  {/* Center - Title */}
+                  <div className="text-xl font-bold text-gray-900">
                     {clickedAction === "buy"
-                      ? "\u062f\u0633\u062a\u0647 \u0628\u0646\u062f\u06cc \u0647\u0627\u06cc \u062e\u0631\u06cc\u062f"
-                      : "\u062f\u0633\u062a\u0647 \u0628\u0646\u062f\u06cc \u0647\u0627\u06cc \u0627\u062c\u0627\u0631\u0647"}
+                      ? "دسته‌بندی‌های خرید"
+                      : "دسته‌بندی‌های اجاره"}
                   </div>
-                </div>
-                <div className={styles.dealGridInner}>
-                  {sub_cats
-                    .filter((c) =>
-                      clickedAction === "buy"
-                        ? c.type === "sell"
-                        : c.type === "rent"
-                    )
-                    .map((cat, idx) => (
-                      <DealButton
-                        key={cat.id}
-                        title={cat.name}
-                        src={`/cats_image/sub-cats/${cat.id}.png`}
-                        onClick={() => {
-                          // navigate to the same URL pattern the old main category links used
-                          const city = props.trigeredcity
-                            ? props.trigeredcity
-                            : renderDefaultCity();
-                          // use router.push to change the path so pages/index.js will receive the category segment
-                          // encodeURIComponent in case cat.name contains spaces or non-latin chars
-                          router.push(
-                            `/${encodeURIComponent(city)}/${encodeURIComponent(
-                              cat.name
-                            )}`
-                          );
-                        }}
-                        style={{ animationDelay: `${idx * 80}ms` }}
+
+                  {/* Right side - X close button */}
+                  <button
+                    onClick={() => setClickedAction(null)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="بستن"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M18 6L6 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       />
-                    ))}
+                      <path
+                        d="M6 6L18 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Subcategories Grid */}
+                <div className="p-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+                    {sub_cats
+                      .filter((c) =>
+                        clickedAction === "buy"
+                          ? c.type === "sell"
+                          : c.type === "rent"
+                      )
+                      .map((cat, idx) => (
+                        <DealButton
+                          key={cat.id}
+                          title={cat.name}
+                          src={`/cats_image/sub-cats/${cat.id}.png`}
+                          onClick={() => {
+                            const city = props.trigeredcity
+                              ? props.trigeredcity
+                              : renderDefaultCity();
+                            router.push(
+                              `/${encodeURIComponent(
+                                city
+                              )}/${encodeURIComponent(cat.name)}`
+                            );
+                          }}
+                          style={{ animationDelay: `${idx * 80}ms` }}
+                        />
+                      ))}
+                  </div>
                 </div>
               </div>
             )}
-            <div className={styles["main-row"]}>
-              {/* <SearchDiv
-                loading={AlterLoading}
-                the_city={the_city}
-                the_neighborhoods={the_neighborhoods}
-              /> */}
 
+            <div className={styles["main-row"]}>
               {renderHistoryWorkers()}
               {renderFavoriteWorkers()}
-
-              {/* <Swiper
-                slidesPerView={1}
-                spaceBetween={10}
-                pagination={{ clickable: true }}
-                // autoplay
-                // autoplay={true}
-
-                autoplay={{
-                  delay: 5000,
-                  disableOnInteraction: true,
-                  pauseOnMouseEnter: true
-                }}
-                breakpoints={{
-                  200: {
-                    slidesPerView: 2,
-                    spaceBetween: 10
-                  },
-
-                  640: {
-                    slidesPerView: 2,
-                    spaceBetween: 10
-                  },
-                  1050: {
-                    slidesPerView: 2,
-                    spaceBetween: 20
-                  },
-                  1400: {
-                    slidesPerView: 4,
-                    spaceBetween: 30
-                  }
-                }}
-                modules={[Pagination, Navigation]}
-                // className={styles["cat-swiper"]}
-              >
-                {renderSliderCategories()}
-              </Swiper> 
-                <div>
-                  <div className={styles["title"]}>
-                    <Link
-                      href={`/${props.trigeredcity
-                        ? props.trigeredcity
-                        : renderDefaultCity()}/فروش زمین مسکونی`}
-                    >
-                      <h2>
-                        {title1}
-                      </h2>
-                    </Link>
-                  </div>
-                  <Swiper
-                    slidesPerView={1}
-                    spaceBetween={8}
-                    autoplay={{
-                      delay: 3000,
-                      disableOnInteraction: true,
-                      pauseOnMouseEnter: true
-                    }}
-                    pagination={{ clickable: true }}
-                    breakpoints={{
-                      200: {
-                        slidesPerView: 1,
-                        spaceBetween: 2,
-
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-
-                      640: {
-                        slidesPerView: 2,
-                        spaceBetween: 3,
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-                      1050: {
-                        slidesPerView: 3,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-                      1400: {
-                        slidesPerView: 4,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true
-                        }
-                      }
-                    }}
-                    modules={[Pagination, Navigation]}
-                    className={styles["worker-swiper"]}
-                  >
-                    {renderSliderOne()}
-
-                    <SwiperSlide>
-                      <Link
-                        href={`/${props.trigeredcity
-                          ? props.trigeredcity
-                          : renderDefaultCity()}/فروش زمین مسکونی`}
-                      >
-                        <div className={styles["more-swiper"]}>
-                          <p className={styles["more-swiper-p"]}>
-                            {" "}<p>نمایش موارد بیشتر</p>{" "}
-                            <ForwardIcon
-                              className={styles["more-swiper-icon"]}
-                            />{" "}
-                          </p>
-                        </div>
-                      </Link>
-                    </SwiperSlide>
-                  </Swiper>
-                </div>
-              )} */}
-
-              {/* {collection2.length > 0 && (
-                <div>
-                  <div className={styles["title"]}>
-                    <Link
-                      href={`/${props.trigeredcity
-                        ? props.trigeredcity
-                        : renderDefaultCity()}/فروش آپارتمان`}
-                    >
-                      <h2>
-                        {title2}{" "}
-                      </h2>
-                    </Link>
-                  </div>
-                  <Swiper
-                    slidesPerView={1}
-                    spaceBetween={8}
-                    navigation
-                    pagination={{ clickable: true }}
-                    // autoplay
-                    // autoplay={true}
-
-                    breakpoints={{
-                      200: {
-                        slidesPerView: 1,
-                        spaceBetween: 2,
-
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-
-                      640: {
-                        slidesPerView: 2,
-                        spaceBetween: 10,
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-                      1050: {
-                        slidesPerView: 3,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true
-                        }
-                      },
-                      1400: {
-                        slidesPerView: 4,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true
-                        }
-                      }
-                    }}
-                    modules={[Pagination, Navigation]}
-                    className={styles["worker-swiper"]}
-                  >
-                    {renderSlidertwo()}
-                    <SwiperSlide>
-                      <Link
-                        href={`/${props.trigeredcity
-                          ? props.trigeredcity
-                          : renderDefaultCity()}/فروش آپارتمان`}
-                      >
-                        <div className={styles["more-swiper"]}>
-                          <p className={styles["more-swiper-p"]}>
-                            {" "}<p>نمایش موارد بیشتر</p>{" "}
-                            <ForwardIcon
-                              className={styles["more-swiper-icon"]}
-                            />{" "}
-                          </p>
-                        </div>
-                      </Link>
-                    </SwiperSlide>
-                  </Swiper>
-                </div>
-              )} */}
-
-              {collection3.length > 0 && (
-                <div>
-                  <div className={styles["title"]}>
-                    <Link
-                      href={`/${
-                        props.trigeredcity
-                          ? props.trigeredcity
-                          : renderDefaultCity()
-                      }/فروش باغ و باغچه`}
-                    >
-                      <h2>{title3} </h2>
-                    </Link>
-                  </div>
-                  <Swiper
-                    slidesPerView={1}
-                    spaceBetween={20}
-                    navigation
-                    pagination={{ clickable: true }}
-                    breakpoints={{
-                      200: {
-                        slidesPerView: 1,
-                        spaceBetween: 10,
-
-                        navigation: {
-                          enabled: true,
-                        },
-                      },
-
-                      640: {
-                        slidesPerView: 2,
-                        spaceBetween: 10,
-                        navigation: {
-                          enabled: true,
-                        },
-                      },
-                      1050: {
-                        slidesPerView: 3,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true,
-                        },
-                      },
-                      1400: {
-                        slidesPerView: 4,
-                        spaceBetween: 20,
-                        navigation: {
-                          enabled: true,
-                        },
-                      },
-                    }}
-                    modules={[Pagination, Navigation]}
-                    className={styles["worker-swiper"]}
-                  >
-                    {renderSliderthree()}
-
-                    <SwiperSlide>
-                      <Link
-                        href={`/${
-                          props.trigeredcity
-                            ? props.trigeredcity
-                            : renderDefaultCity()
-                        }/فروش باغ و باغچه`}
-                      >
-                        <div className={styles["more-swiper"]}>
-                          <p className={styles["more-swiper-p"]}>
-                            {" "}
-                            <p>نمایش موارد بیشتر</p>{" "}
-                            <ForwardIcon
-                              className={styles["more-swiper-icon"]}
-                            />{" "}
-                          </p>
-                        </div>
-                      </Link>
-                    </SwiperSlide>
-                  </Swiper>
-                </div>
-              )}
 
               <FileRequest />
 
               <div className={styles["title"]}>
-                <h2>بهترین دپارتمان های املاک آجر {the_city.title}</h2>
+                <h2>بهترین دپارتمان‌های املاک آجر {the_city.title}</h2>
               </div>
 
               <div className="mx-4">
@@ -1073,7 +796,6 @@ function Home(props) {
                       slidesPerView: 2,
                       spaceBetween: 15,
                     },
-
                     640: {
                       slidesPerView: 4,
                       spaceBetween: 20,
@@ -1109,7 +831,6 @@ function Home(props) {
                       slidesPerView: 2,
                       spaceBetween: 15,
                     },
-
                     640: {
                       slidesPerView: 4,
                       spaceBetween: 20,
