@@ -305,7 +305,7 @@ const Profile = () => {
                     rows={4}
                     placeholder="کمی درباره فعالیت خود توضیح دهید"
                   />
-                  <PrimaryButton fullWidth  onClick={onclickEdit} sx={{ mt: 3, py: 1.5, fontSize: "1.2rem"}}>
+                  <PrimaryButton fullWidth startIcon={<Edit sx={{ mr: 1.5 }} />} onClick={onclickEdit} sx={{ mt: 3, py: 1.5 }}>
                     ثبت تغییرات
                   </PrimaryButton>
                 </Box>
