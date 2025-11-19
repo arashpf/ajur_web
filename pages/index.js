@@ -12,7 +12,7 @@ import PropTypes from "prop-types";
 import Slider from "react-slick";
 import axios from "axios";
 import Link from "next/link";
-import FileRequest from "../components/request/FileRequest";
+import FileRequest from "../components/request/FileRequest.jsx";
 import Cookies from "js-cookie";
 import { useRouter } from "next/router";
 import LandingPage from "./assistant/G-ads/landing-page";
@@ -24,6 +24,8 @@ import Button from "@mui/material/Button";
 // simplified buttons: using plain HTML buttons instead of animated ActionButton
 import DealButton from "../components/parts/DealButton";
 import ActionCard from "../components/ActionButton";
+// import Cards (from your Desktop file)
+import Cards from "../components/Cards";
 
 import ForwardIcon from "@mui/icons-material/Forward";
 
@@ -35,7 +37,6 @@ import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { display, style } from "@mui/system";
-import ActionButtons from "../components/ActionButton";
 // import "./styles.css";
 // import required modules
 
@@ -78,6 +79,34 @@ function Home(props) {
   const [dealAnim, setDealAnim] = useState(null); // null | 'popOut'
   const [showVpnDialog, setShowVpnDialog] = useState(false);
   const [vpnChecked, setVpnChecked] = useState(false);
+
+  const homepageCardsFeatures = [
+    {
+      id: 1,
+      title: "خرید",
+      description: "آگهی‌های خرید ملک، خانه و آپارتمان",
+      illustration: "/img/card1.png",
+      action: "مشاهده آگهی‌ها",
+      onClick: () => selectAction("buy"),
+    },
+    {
+      id: 2,
+      title: "ثبت آگهی",
+      description: "ملک خود را برای فروش یا اجاره در آجر ثبت کنید",
+      illustration: "/img/card2.png",
+      action: "ثبت آگهی",
+      onClick: () => router.push("/panel/new"),
+    },
+    {
+      id: 3,
+      title: "اجاره",
+      description: "آگهی‌های اجاره مسکونی، تجاری و اداری",
+      illustration: "/img/card3.png",
+      action: "مشاهده آگهی‌ها",
+      onClick: () => selectAction("rent"),
+    },
+  ];
+
   // simplified visibility control
   const selectAction = (type) => {
     // start push animation; after animation finishes, show deal grid and hide buttons
@@ -633,38 +662,15 @@ function Home(props) {
       return (
         <div>
           <main className={styles["main"]}>
-            {/* Quick action buttons for Buy / Rent (stacked on small, side-by-side on larger) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 w-full max-w-7xl mx-auto px-4 py-8">
-              <div className="w-full h-full min-h-[400px]">
-                <ActionCard
-                  image="/buttons/buyproperty.png"
-                  title="خرید"
-                  description="آگهی‌های خرید ملک، خانه و آپارتمان"
-                  buttonText="مشاهده آگهی‌ها"
-                  onClick={() => selectAction("buy")}
-                />
-              </div>
+            {/* Replaced the three ActionCard tiles with the new Cards component */}
+            <Cards features={homepageCardsFeatures} />
 
-              <div className="w-full h-full min-h-[400px]">
-                <ActionCard
-                  image="/buttons/newfile.png"
-                  title="ثبت آگهی"
-                  description="ملک خود را برای فروش یا اجاره در آجر ثبت کنید"
-                  buttonText="ثبت آگهی"
-                  onClick={() => router.push("/panel/new")}
-                />
-              </div>
-
-              <div className="w-full h-full min-h-[400px]">
-                <ActionCard
-                  image="/buttons/rentproperty.png"
-                  title="اجاره"
-                  description="آگهی‌های اجاره مسکونی، تجاری و اداری"
-                  buttonText="مشاهده آگهی‌ها"
-                  onClick={() => selectAction("rent")}
-                />
-              </div>
-            </div>
+            {/* Insert the new FileRequest section right after the Cards
+                Pass the original CTA handlers: call and open file-request page */}
+            <FileRequest
+              onCallClick={() => (window.location.href = "tel:+989124161970")}
+              onActionClick={() => router.push("/file-request")}
+            />
 
             {/* Full screen modal for subcategories */}
             {(clickedAction === "buy" || clickedAction === "rent") && (
@@ -774,7 +780,7 @@ function Home(props) {
               {renderHistoryWorkers()}
               {renderFavoriteWorkers()}
 
-              <FileRequest />
+              {/* ...existing FileRequest removed from here to avoid duplicate ... */}
 
               <div className={styles["title"]}>
                 <h2>بهترین دپارتمان‌های املاک آجر {the_city.title}</h2>

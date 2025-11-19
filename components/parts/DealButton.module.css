@@ -1,0 +1,146 @@
+.card {
+  position: relative;
+  display: block;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Main square tile */
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;                /* smaller, squarish corners */
+  background: linear-gradient(180deg, #ffffff, #fbfbfb);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06); /* subtle base shadow */
+  transition: transform 240ms cubic-bezier(.2,.9,.2,1), box-shadow 240ms ease, filter 240ms ease;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;                /* enforce square shape */
+  min-height: 180px;
+}
+
+/* small red blurred "back" glow offset behind the card */
+.glow {
+  position: absolute;
+  z-index: 1;
+  width: 70%;
+  height: 60%;
+  right: -6%;
+  bottom: -8%;
+  pointer-events: none;
+  border-radius: 14px;
+  filter: blur(18px);
+  opacity: 0.12;
+  background: radial-gradient(60% 60% at 30% 30%, rgba(220,20,60,0.22), rgba(255,70,90,0.06) 50%, transparent 60%);
+  transform: translateZ(0);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+/* hover / focus: lift and stronger shadow */
+.card:hover .content,
+.card:focus .content {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 6px 18px rgba(220,20,60,0.04);
+}
+
+.card:active .content {
+  transform: translateY(-4px) scale(0.996);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  transition-duration: 120ms;
+}
+
+/* strengthen subtle glow on hover */
+.card:hover .glow,
+.card:focus .glow {
+  opacity: 0.22;
+  transform: scale(1.03);
+}
+
+/* media / image area (keeps content balanced inside square) */
+.media {
+  width: 64%;
+  height: 64%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px; /* slight rounding inside square */
+  transition: transform 240ms ease, box-shadow 240ms ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.card:hover .image {
+  transform: translateY(-6px) scale(1.02);
+}
+
+/* text */
+.text {
+  text-align: center;
+  padding: 6px 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.15;
+  color: #111827;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* CTA (small pill) */
+.cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ctaText {
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(90deg,#ff6b74,#e6002d);
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(230,0,45,0.14);
+  font-size: 0.9rem;
+}
+
+.arrow {
+  color: white;
+  transform: translateX(0);
+  transition: transform 200ms ease;
+}
+
+.card:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* accessibility focus */
+.card:focus-visible .content {
+  outline: 3px solid rgba(99,102,241,0.10);
+  outline-offset: 4px;
+}
