@@ -45,37 +45,40 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
           <div className="fr-robot-wrap">
             <svg className="fr-robot" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden>
               {/* Antenna */}
-              <line className="fr-antenna" x1="100" y1="20" x2="100" y2="40" stroke="#B8322C" strokeWidth="3" strokeLinecap="round" />
-              <circle className="fr-antenna-dot" cx="100" cy="20" r="6" fill="#B8322C" />
+              <line className="fr-antenna" x1="100" y1="20" x2="100" y2="40" stroke="#6B7280" strokeWidth="3" strokeLinecap="round" />
+              <circle className="fr-antenna-dot" cx="100" cy="20" r="6" fill="#6B7280" />
+
+              {/* Ajur logo in SVG (loads from /logo/ajur.png) */}
+              <image href="/logo/ajur.png" x="70" y="8" width="60" height="20" preserveAspectRatio="xMidYMid meet" />
 
               {/* Head (filled with light gradient to avoid black) */}
-              <rect x="60" y="40" width="80" height="70" rx="15" fill="url(#robotGradient)" stroke="#B8322C" strokeWidth="3" />
+              <rect x="60" y="40" width="80" height="70" rx="15" fill="url(#robotGradient)" stroke="#6B7280" strokeWidth="3" />
               
-              {/* Eyes */}
+              {/* Eyes (red) */}
               <circle className="fr-eye" cx="80" cy="70" r="8" fill="#B8322C" />
               <circle className="fr-eye" cx="120" cy="70" r="8" fill="#B8322C" />
 
               {/* Smile */}
-              <path d="M 80 90 Q 100 100 120 90" stroke="#B8322C" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 80 90 Q 100 100 120 90" stroke="#6B7280" strokeWidth="3" fill="none" strokeLinecap="round" />
 
               {/* Body (filled with same light gradient) */}
-              <rect x="50" y="120" width="100" height="80" rx="20" fill="url(#robotGradient)" stroke="#B8322C" strokeWidth="3" />
+              <rect x="50" y="120" width="100" height="80" rx="20" fill="url(#robotGradient)" stroke="#6B7280" strokeWidth="3" />
               
               {/* Document in hand */}
               <g className="fr-doc">
-                <rect x="80" y="140" width="40" height="50" rx="4" fill="white" stroke="#B8322C" strokeWidth="2" />
-                <line x1="85" y1="150" x2="115" y2="150" stroke="#B8322C" strokeWidth="2" />
-                <line x1="85" y1="160" x2="115" y2="160" stroke="#B8322C" strokeWidth="2" />
-                <line x1="85" y1="170" x2="110" y2="170" stroke="#B8322C" strokeWidth="2" />
+                <rect x="80" y="140" width="40" height="50" rx="4" fill="white" stroke="#6B7280" strokeWidth="2" />
+                <line x1="85" y1="150" x2="115" y2="150" stroke="#6B7280" strokeWidth="2" />
+                <line x1="85" y1="160" x2="115" y2="160" stroke="#6B7280" strokeWidth="2" />
+                <line x1="85" y1="170" x2="110" y2="170" stroke="#6B7280" strokeWidth="2" />
               </g>
 
               {/* Arms */}
-              <line className="fr-arm fr-arm-left" x1="50" y1="140" x2="30" y2="160" stroke="#B8322C" strokeWidth="6" strokeLinecap="round" />
-              <line className="fr-arm fr-arm-right" x1="150" y1="140" x2="170" y2="160" stroke="#B8322C" strokeWidth="6" strokeLinecap="round" />
+              <line className="fr-arm fr-arm-left" x1="50" y1="140" x2="30" y2="160" stroke="#6B7280" strokeWidth="6" strokeLinecap="round" />
+              <line className="fr-arm fr-arm-right" x1="150" y1="140" x2="170" y2="160" stroke="#6B7280" strokeWidth="6" strokeLinecap="round" />
 
               {/* Legs */}
-              <rect className="fr-leg fr-leg-left" x="65" y="200" width="25" height="35" rx="8" fill="#B8322C" />
-              <rect className="fr-leg fr-leg-right" x="110" y="200" width="25" height="35" rx="8" fill="#B8322C" />
+              <rect className="fr-leg fr-leg-left" x="65" y="200" width="25" height="35" rx="8" fill="#6B7280" />
+              <rect className="fr-leg fr-leg-right" x="110" y="200" width="25" height="35" rx="8" fill="#6B7280" />
 
               {/* Gradient Definitions (light / warm so head/body look white-ish) */}
               <defs>
@@ -90,7 +93,10 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
         <div className="fr-right">
           <div className="fr-card">
-            <h3 className="fr-card-title">ربات آجر به دنبال بهترین گزینه‌هاست</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src="/logo/ajur.png" alt="ajur" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              <h3 className="fr-card-title">ربات آجر به دنبال بهترین گزینه‌هاست</h3>
+            </div>
             <p className="fr-card-desc">با ثبت درخواست، ما فایل‌های متناسب با نیازتان را در اولویت قرار می‌دهیم و به محض یافتن، به شما اطلاع می‌دهیم.</p>
 
             <ul className="fr-features">
@@ -115,10 +121,17 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
       {/* Scoped styles (no framer-motion required) */}
       <style jsx>{`
+        @font-face {
+          font-family: 'Iran Sans';
+          src: url('/fonts/iran-sans.ttf') format('truetype');
+          font-weight: 400 900;
+          font-style: normal;
+          font-display: swap;
+        }
         .fr-wrapper { padding: 48px 16px; max-width: 1200px; margin: 0 auto; }
-        .fr-header { text-align: center; margin-bottom: 40px; }
-        .fr-title { font-size: 34px; font-weight: 800; background: linear-gradient(135deg,#B8322C,#8F251F); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
-        .fr-sub { color: #6B7280; max-width: 720px; margin: 0 auto; }
+        .fr-header { text-align: center; margin-bottom: 40px; direction: rtl; }
+        .fr-header .fr-title { display: block; margin: 0 auto 8px auto; text-align: center; font-size: 34px; font-weight: 800; background: linear-gradient(135deg,#A64B44,#2F2F2F); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Iran Sans', sans-serif; }
+        .fr-sub { color: #374151; max-width: 720px; margin: 0 auto; text-align: right; direction: rtl; font-family: 'Iran Sans', sans-serif; }
 
         .fr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
         .fr-left { position: relative; height: 400px; display:flex; align-items:center; justify-content:center; }
@@ -129,7 +142,7 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
           transform: translate(-50%,-50%);
           background: rgba(255,255,255,0.95);
           backdrop-filter: blur(8px);
-          border: 2px solid rgba(184,50,44,0.12);
+          border: 2px solid rgba(107,114,128,0.18);
           border-radius: 12px;
           padding: 12px 16px;
           box-shadow: 0 8px 32px rgba(0,0,0,0.08);
@@ -156,7 +169,7 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
         .fr-file-title { font-size: 14px; font-weight: 700; color: #1F2937; margin-bottom: 4px; }
         .fr-file-meta { font-size: 12px; color: #6B7280; display:flex; justify-content:space-between; }
-        .fr-price { color:#B8322C; font-weight:700; }
+        .fr-price { color:#374151; font-weight:700; }
 
         .fr-robot-wrap { display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
         .fr-robot { width: 200px; height: 240px; overflow: visible; animation: frBob 2s ease-in-out infinite; }
@@ -176,21 +189,22 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
         .fr-right { display:flex; align-items:flex-start; }
         .fr-card { background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; box-shadow: 0 16px 40px rgba(0,0,0,0.06); width:100%; }
-        .fr-card-title { margin: 0; font-size: 22px; font-weight: 800; color: #111827; }
-        .fr-card-desc { color: #6B7280; line-height: 1.8; margin-top: 12px; }
-        .fr-features { margin-top: 12px; padding-left: 18px; color: #374151; }
+        .fr-card-title { margin: 0; font-size: 22px; font-weight: 800; color: #111827; font-family: 'Iran Sans', sans-serif; }
+        .fr-card-desc { color: #374151; line-height: 1.8; margin-top: 12px; text-align: right; direction: rtl; font-family: 'Iran Sans', sans-serif; }
+        .fr-features { margin-top: 12px; padding-right: 18px; color: #374151; list-style: disc; list-style-position: inside; text-align: right; direction: rtl; }
+        .fr-features li { margin-bottom: 8px; }
         .fr-ctas { display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
 
         .fr-cta { flex:1; min-width:160px; padding:12px 18px; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; border:0; transition: transform 160ms ease, box-shadow 160ms ease; }
-        .fr-cta.primary { background: linear-gradient(135deg,#B8322C,#8F251F); color:#fff; box-shadow: 0 8px 26px rgba(184,50,44,0.18); }
-        .fr-cta.outline { background: #fff; color: #B8322C; border: 2px solid #B8322C; }
+        .fr-cta.primary { background: linear-gradient(135deg,#16A34A,#059669); color:#fff; box-shadow: 0 8px 26px rgba(5,150,105,0.18); }
+        .fr-cta.outline { background: linear-gradient(135deg,#A64B44,#2F2F2F); color: #fff; border: 0; box-shadow: 0 8px 18px rgba(55,65,81,0.12); }
 
         .fr-cta:hover { transform: translateY(-6px) scale(1.02); }
         .fr-cta:active { transform: translateY(-2px) scale(0.98); }
 
         .fr-stats { display:flex; gap:12px; margin-top:28px; flex-wrap:wrap; }
-        .fr-stat { flex:1 1 220px; background: rgba(255,255,255,0.7); border-radius:12px; padding:14px; text-align:center; border:1px solid rgba(184,50,44,0.06); }
-        .fr-stat-number { font-size:22px; font-weight:800; color:#B8322C; margin-bottom:6px; }
+        .fr-stat { flex:1 1 220px; background: rgba(255,255,255,0.8); border-radius:12px; padding:14px; text-align:center; border:1px solid rgba(107,114,128,0.12); }
+        .fr-stat-number { font-size:22px; font-weight:800; color:#111827; margin-bottom:6px; }
         .fr-stat-label { color:#6B7280; }
 
         /* RTL support and responsive */

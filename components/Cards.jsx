@@ -22,11 +22,31 @@ const ArrowLeft = (props) => (
 
 // Cards component accepts features = [{ id, title, description, illustration, action, onClick }]
 export default function Cards({ features = [] }) {
+  const [hovered, setHovered] = React.useState(null);
   return (
     <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/30">
+      <div className="max-w-7xl mx-auto text-center mb-10">
+        <div className="inline-flex items-center gap-4">
+          <img src="/logo/ajur.png" alt="ajur" style={{ width: 48, height: 48, objectFit: 'contain' }} />
+          <h1 className="text-3xl font-extrabold">آجر، مشاور املاک هوشمند</h1>
+        </div>
+      </div>
+      <style jsx>{`
+        @font-face {
+          font-family: 'Iran Sans';
+          src: url('/fonts/iran-sans.ttf') format('truetype');
+          font-weight: 400 900;
+          font-style: normal;
+          font-display: swap;
+        }
+        h1 { font-family: 'Iran Sans', 'Sahel', sans-serif; }
+        h3 { font-family: 'Iran Sans', 'Sahel', sans-serif; }
+      `}</style>
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-3 gap-8">
-          {features.map((feature) => (
+          {features.map((feature) => {
+            const isRed = feature.title === "ثبت آگهی" || feature.action === "ثبت آگهی";
+            return (
             <div
               key={feature.id}
               className="group transform transition-all duration-300"
@@ -39,7 +59,7 @@ export default function Cards({ features = [] }) {
                 feature.onClick(e);
               }}
             >
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 h-full flex flex-col gap-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50">
+              <div className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 h-full flex flex-col gap-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-300/40`}>
                 {/* Illustration */}
                 <div className="mx-auto transition-transform duration-300 group-hover:scale-105">
                   <div className="relative w-52 h-52 mx-auto">
@@ -68,14 +88,22 @@ export default function Cards({ features = [] }) {
                     e.stopPropagation();
                     if (typeof feature.onClick === "function") feature.onClick(e);
                   }}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-l from-[oklch(0.58_0.18_25)] to-[oklch(0.48_0.17_24)] text-white font-bold hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  onMouseEnter={() => setHovered(feature.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="w-full py-3.5 px-6 rounded-2xl text-white font-bold hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  style={{
+                    background: (isRed && hovered === feature.id)
+                      ? "linear-gradient(135deg,#B8322C,#8F251F)"
+                      : "linear-gradient(135deg,#7C7A75,#2F2F2F)",
+                  }}
                 >
                   {feature.action}
                   <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 </button>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="mt-16 text-center opacity-95">
