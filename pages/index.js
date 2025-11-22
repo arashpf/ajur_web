@@ -31,13 +31,6 @@ import Cards from "../components/Cards";
 import Download from "../components/Download";
 import BestSection from "../components/bestsection";
 
-import Cards from "../components/home/cards";
-import city from "../components/home/city";
-import Footer from "../components/home/footer";
-import PrefooterText from "../components/home/prefooter_texts";
-import PrefooterCTA from "../components/home/prefooter-cta";
-import WhyAjur from "../components/home/why-ajur";
-
 import ForwardIcon from "@mui/icons-material/Forward";
 
 import { Navigation, Pagination, Scrollbar, A11y } from "swiper";

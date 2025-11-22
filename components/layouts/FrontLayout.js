@@ -14,6 +14,7 @@ import AIOverlayComponent from "../parts/AIOverlayComponent"
 import GoogleAnalytics from '../parts/GoogleAnalytics';
 import { GoogleTagManager } from '@next/third-parties/google';
 import { CityProvider } from '../parts/CityContext'
+import AppWrapper from './AppWrapper'
 
 
 
@@ -25,19 +26,21 @@ function FrontLayout({ children }) {
   const isHome = router && (router.pathname === '/' || router.asPath === '/');
 
   return (
-    <CityProvider>
-      <div>
-        {/* Sticky header container: keeps Header or SearchBars fixed at top */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 1100, background: 'white', paddingBottom: '0px' }}>
-          <SearchBars/>
-        </div>
+    <AppWrapper>
+      <CityProvider>
+        <div>
+          {/* Sticky header container: keeps Header or SearchBars fixed at top */}
+          <div style={{ position: 'sticky', top: 0, zIndex: 1100, background: 'white', paddingBottom: '0px' }}>
+            <SearchBars/>
+          </div>
 
-        <GoogleAnalytics />
-        <GoogleTagManager id="GTM-WNKQBXPR" />
-        <main>{children}</main>
-        <Footer />
-      </div>
-    </CityProvider>
+          <GoogleAnalytics />
+          <GoogleTagManager id="GTM-WNKQBXPR" />
+          <main>{children}</main>
+          <Footer />
+        </div>
+      </CityProvider>
+    </AppWrapper>
   );
 }
 
