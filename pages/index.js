@@ -15,6 +15,8 @@ import Link from "next/link";
 import FileRequest from "../components/request/FileRequest.jsx";
 import Cookies from "js-cookie";
 import { useRouter } from "next/router";
+import dynamic from 'next/dynamic'
+const FeaturesHub = dynamic(() => import('../components/accesshub'), { ssr: false })
 import LandingPage from "./assistant/G-ads/landing-page";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -26,6 +28,8 @@ import DealButton from "../components/parts/DealButton";
 import ActionCard from "../components/ActionButton";
 // import Cards (from your Desktop file)
 import Cards from "../components/Cards";
+import Download from "../components/Download";
+import BestSection from "../components/bestsection";
 
 import ForwardIcon from "@mui/icons-material/Forward";
 
@@ -665,12 +669,24 @@ function Home(props) {
             {/* Replaced the three ActionCard tiles with the new Cards component */}
             <Cards features={homepageCardsFeatures} />
 
+            {/* Services heading */}
+            <div className="max-w-7xl mx-auto my-6 text-center">
+              <h1 className="text-2xl md:text-3xl font-bold">خدمات آجر</h1>
+            </div>
+
+            {/* Quick access / features hub (renders after Cards) */}
+            <FeaturesHub />
+
             {/* Insert the new FileRequest section right after the Cards
                 Pass the original CTA handlers: call and open file-request page */}
             <FileRequest
               onCallClick={() => (window.location.href = "tel:+989124161970")}
               onActionClick={() => router.push("/file-request")}
             />
+
+            {/* Download section */}
+            <Download />
+            <BestSection />
 
             {/* Full screen modal for subcategories */}
             {(clickedAction === "buy" || clickedAction === "rent") && (
@@ -782,83 +798,7 @@ function Home(props) {
 
               {/* ...existing FileRequest removed from here to avoid duplicate ... */}
 
-              <div className={styles["title"]}>
-                <h2>بهترین دپارتمان‌های املاک آجر {the_city.title}</h2>
-              </div>
-
-              <div className="mx-4">
-                <Swiper
-                  slidesPerView={1}
-                  spaceBetween={8}
-                  navigation
-                  pagination={{ clickable: true }}
-                  autoplay={{
-                    delay: 5000,
-                    disableOnInteraction: false,
-                    pauseOnMouseEnter: true,
-                  }}
-                  breakpoints={{
-                    200: {
-                      slidesPerView: 2,
-                      spaceBetween: 15,
-                    },
-                    640: {
-                      slidesPerView: 4,
-                      spaceBetween: 20,
-                    },
-                    1050: {
-                      slidesPerView: 6,
-                      spaceBetween: 25,
-                    },
-                    1400: {
-                      slidesPerView: 8,
-                      spaceBetween: 35,
-                    },
-                  }}
-                  modules={[Pagination, Navigation, Autoplay]}
-                  className={styles["cat-swiper"]}
-                >
-                  {renderSliderDepartments()}
-                </Swiper>
-              </div>
-
-              <div className={styles["title"]}>
-                <h2>بهترین مشاورین املاک آجر {the_city.title}</h2>
-              </div>
-
-              <div className="mx-4">
-                <Swiper
-                  slidesPerView={1}
-                  spaceBetween={8}
-                  navigation
-                  pagination={{ clickable: true }}
-                  breakpoints={{
-                    200: {
-                      slidesPerView: 2,
-                      spaceBetween: 15,
-                    },
-                    640: {
-                      slidesPerView: 4,
-                      spaceBetween: 20,
-                    },
-                    1050: {
-                      slidesPerView: 6,
-                      spaceBetween: 25,
-                    },
-                    1400: {
-                      slidesPerView: 7,
-                      spaceBetween: 35,
-                    },
-                  }}
-                  modules={[Pagination, Navigation, Autoplay]}
-                  className={styles["cat-swiper"]}
-                  style={{
-                    marginBottom: "30px",
-                  }}
-                >
-                  {renderSliderRealState()}
-                </Swiper>
-              </div>
+              {/* Removed duplicate 'بهترین دپارتمان‌های املاک آجر' and 'بهترین مشاورین املاک آجر' sections per request */}
             </div>
           </main>
         </div>

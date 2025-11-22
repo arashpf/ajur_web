@@ -16,7 +16,7 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
   return (
     <section className="fr-wrapper">
       <header className="fr-header">
-        <h2 className="fr-title">فایل مورد نظر خود را درخواست دهید</h2>
+        <h2 className="fr-title">فایل مورد نظر خود را <span className="fr-request">درخواست</span> دهید</h2>
         <p className="fr-sub">ربات هوشمند آجر در حال جستجوی بهترین املاک برای شماست — درخواست‌تان را ثبت کنید تا پیشنهادات مناسب برایتان ارسال شود.</p>
       </header>
 
@@ -45,40 +45,41 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
           <div className="fr-robot-wrap">
             <svg className="fr-robot" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden>
               {/* Antenna */}
-              <line className="fr-antenna" x1="100" y1="20" x2="100" y2="40" stroke="#6B7280" strokeWidth="3" strokeLinecap="round" />
-              <circle className="fr-antenna-dot" cx="100" cy="20" r="6" fill="#6B7280" />
-
-              {/* Ajur logo in SVG (loads from /logo/ajur.png) */}
-              <image href="/logo/ajur.png" x="70" y="8" width="60" height="20" preserveAspectRatio="xMidYMid meet" />
+              <line className="fr-antenna" x1="100" y1="20" x2="100" y2="40" stroke="#111827" strokeWidth="3" strokeLinecap="round" />
+              <circle className="fr-antenna-dot" cx="100" cy="20" r="6" fill="#111827" />
 
               {/* Head (filled with light gradient to avoid black) */}
-              <rect x="60" y="40" width="80" height="70" rx="15" fill="url(#robotGradient)" stroke="#6B7280" strokeWidth="3" />
+              <rect x="60" y="40" width="80" height="70" rx="15" fill="url(#robotGradient)" stroke="#111827" strokeWidth="3" />
               
-              {/* Eyes (red) */}
-              <circle className="fr-eye" cx="80" cy="70" r="8" fill="#B8322C" />
-              <circle className="fr-eye" cx="120" cy="70" r="8" fill="#B8322C" />
+              {/* Eyes */}
+              <circle className="fr-eye" cx="80" cy="70" r="8" fill="#111827" />
+              <circle className="fr-eye" cx="120" cy="70" r="8" fill="#111827" />
 
               {/* Smile */}
-              <path d="M 80 90 Q 100 100 120 90" stroke="#6B7280" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M 80 90 Q 100 100 120 90" stroke="#111827" strokeWidth="3" fill="none" strokeLinecap="round" />
 
               {/* Body (filled with same light gradient) */}
-              <rect x="50" y="120" width="100" height="80" rx="20" fill="url(#robotGradient)" stroke="#6B7280" strokeWidth="3" />
+              <rect x="50" y="120" width="100" height="80" rx="20" fill="url(#robotGradient)" stroke="#111827" strokeWidth="3" />
+              {/* brand logo on chest */}
+              <image href="/logo/ajur.png" x="88" y="132" width="24" height="24" preserveAspectRatio="xMidYMid meet" />
               
               {/* Document in hand */}
               <g className="fr-doc">
-                <rect x="80" y="140" width="40" height="50" rx="4" fill="white" stroke="#6B7280" strokeWidth="2" />
-                <line x1="85" y1="150" x2="115" y2="150" stroke="#6B7280" strokeWidth="2" />
-                <line x1="85" y1="160" x2="115" y2="160" stroke="#6B7280" strokeWidth="2" />
-                <line x1="85" y1="170" x2="110" y2="170" stroke="#6B7280" strokeWidth="2" />
+                <rect x="80" y="140" width="40" height="50" rx="4" fill="white" stroke="#111827" strokeWidth="2" />
+                <line x1="85" y1="150" x2="115" y2="150" stroke="#111827" strokeWidth="2" />
+                <line x1="85" y1="160" x2="115" y2="160" stroke="#111827" strokeWidth="2" />
+                <line x1="85" y1="170" x2="110" y2="170" stroke="#111827" strokeWidth="2" />
+                {/* logo inside the small document */}
+                <image href="/logo/ajur.png" x="90" y="154" width="20" height="20" preserveAspectRatio="xMidYMid meet" />
               </g>
 
               {/* Arms */}
-              <line className="fr-arm fr-arm-left" x1="50" y1="140" x2="30" y2="160" stroke="#6B7280" strokeWidth="6" strokeLinecap="round" />
-              <line className="fr-arm fr-arm-right" x1="150" y1="140" x2="170" y2="160" stroke="#6B7280" strokeWidth="6" strokeLinecap="round" />
+              <line className="fr-arm fr-arm-left" x1="50" y1="140" x2="30" y2="160" stroke="#111827" strokeWidth="6" strokeLinecap="round" />
+              <line className="fr-arm fr-arm-right" x1="150" y1="140" x2="170" y2="160" stroke="#111827" strokeWidth="6" strokeLinecap="round" />
 
               {/* Legs */}
-              <rect className="fr-leg fr-leg-left" x="65" y="200" width="25" height="35" rx="8" fill="#6B7280" />
-              <rect className="fr-leg fr-leg-right" x="110" y="200" width="25" height="35" rx="8" fill="#6B7280" />
+              <rect className="fr-leg fr-leg-left" x="65" y="200" width="25" height="35" rx="8" fill="#111827" />
+              <rect className="fr-leg fr-leg-right" x="110" y="200" width="25" height="35" rx="8" fill="#111827" />
 
               {/* Gradient Definitions (light / warm so head/body look white-ish) */}
               <defs>
@@ -93,13 +94,10 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
         <div className="fr-right">
           <div className="fr-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img src="/logo/ajur.png" alt="ajur" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-              <h3 className="fr-card-title">ربات آجر به دنبال بهترین گزینه‌هاست</h3>
-            </div>
-            <p className="fr-card-desc">با ثبت درخواست، ما فایل‌های متناسب با نیازتان را در اولویت قرار می‌دهیم و به محض یافتن، به شما اطلاع می‌دهیم.</p>
+            <h3 className="fr-card-title text-right">ربات آجر به دنبال بهترین گزینه‌هاست</h3>
+            <p className="fr-card-desc text-right">با ثبت درخواست، ما فایل‌های متناسب با نیازتان را در اولویت قرار می‌دهیم و به محض یافتن، به شما اطلاع می‌دهیم.</p>
 
-            <ul className="fr-features">
+            <ul className="fr-features" dir="rtl">
               <li>جستجوی هوشمند در تمام فایل‌های موجود</li>
               <li>تطبیق دقیق با نیاز شما</li>
               <li>اعلان آنی فایل‌های جدید</li>
@@ -107,7 +105,7 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
             <div className="fr-ctas">
               <button className="fr-cta primary" onClick={onCallClick || (() => (window.location.href = "tel:+982191000000"))}>📞 تماس با مشاور</button>
-              <button className="fr-cta outline" onClick={onActionClick || (() => console.log("ثبت درخواست فایل clicked"))}>📋 ثبت درخواست فایل</button>
+              <button className="fr-cta card-action" onClick={onActionClick || (() => console.log("ثبت درخواست فایل clicked"))}>📋 ثبت درخواست فایل</button>
             </div>
           </div>
         </div>
@@ -121,17 +119,12 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
       {/* Scoped styles (no framer-motion required) */}
       <style jsx>{`
-        @font-face {
-          font-family: 'Iran Sans';
-          src: url('/fonts/iran-sans.ttf') format('truetype');
-          font-weight: 400 900;
-          font-style: normal;
-          font-display: swap;
-        }
         .fr-wrapper { padding: 48px 16px; max-width: 1200px; margin: 0 auto; }
-        .fr-header { text-align: center; margin-bottom: 40px; direction: rtl; }
-        .fr-header .fr-title { display: block; margin: 0 auto 8px auto; text-align: center; font-size: 34px; font-weight: 800; background: linear-gradient(135deg,#A64B44,#2F2F2F); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Iran Sans', sans-serif; }
-        .fr-sub { color: #374151; max-width: 720px; margin: 0 auto; text-align: right; direction: rtl; font-family: 'Iran Sans', sans-serif; }
+        .fr-header { text-align: center; margin-bottom: 40px; }
+        .fr-header { text-align: center; margin-bottom: 40px; }
+        .fr-title { font-size: 28px; font-weight: 800; color: #111827; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .fr-request { color: #D93025; }
+        .fr-sub { color: #6B7280; max-width: 720px; margin: 0 auto; }
 
         .fr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
         .fr-left { position: relative; height: 400px; display:flex; align-items:center; justify-content:center; }
@@ -142,7 +135,7 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
           transform: translate(-50%,-50%);
           background: rgba(255,255,255,0.95);
           backdrop-filter: blur(8px);
-          border: 2px solid rgba(107,114,128,0.18);
+          border: 2px solid rgba(107,114,128,0.12);
           border-radius: 12px;
           padding: 12px 16px;
           box-shadow: 0 8px 32px rgba(0,0,0,0.08);
@@ -189,22 +182,24 @@ export default function FileRequest({ files: propFiles, onCallClick, onActionCli
 
         .fr-right { display:flex; align-items:flex-start; }
         .fr-card { background: rgba(255,255,255,0.72); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; box-shadow: 0 16px 40px rgba(0,0,0,0.06); width:100%; }
-        .fr-card-title { margin: 0; font-size: 22px; font-weight: 800; color: #111827; font-family: 'Iran Sans', sans-serif; }
-        .fr-card-desc { color: #374151; line-height: 1.8; margin-top: 12px; text-align: right; direction: rtl; font-family: 'Iran Sans', sans-serif; }
-        .fr-features { margin-top: 12px; padding-right: 18px; color: #374151; list-style: disc; list-style-position: inside; text-align: right; direction: rtl; }
+        .fr-card-title { margin: 0; font-size: 20px; font-weight: 800; color: #111827; }
+        .fr-card-desc { color: #111827; line-height: 1.8; margin-top: 12px; }
+        .fr-features { margin-top: 12px; padding-right: 18px; color: #374151; list-style-type: disc; text-align: right; }
         .fr-features li { margin-bottom: 8px; }
         .fr-ctas { display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
 
         .fr-cta { flex:1; min-width:160px; padding:12px 18px; border-radius:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; border:0; transition: transform 160ms ease, box-shadow 160ms ease; }
         .fr-cta.primary { background: linear-gradient(135deg,#16A34A,#059669); color:#fff; box-shadow: 0 8px 26px rgba(5,150,105,0.18); }
-        .fr-cta.outline { background: linear-gradient(135deg,#A64B44,#2F2F2F); color: #fff; border: 0; box-shadow: 0 8px 18px rgba(55,65,81,0.12); }
+        .fr-cta.outline { background: #fff; color: #059669; border: 2px solid rgba(107,114,128,0.12); }
+        .fr-cta.card-action { background: linear-gradient(135deg,#7C7A75,#2F2F2F); color: #fff; box-shadow: 0 12px 34px rgba(0,0,0,0.14); }
+        .fr-cta.card-action:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 18px 44px rgba(0,0,0,0.18); }
 
         .fr-cta:hover { transform: translateY(-6px) scale(1.02); }
         .fr-cta:active { transform: translateY(-2px) scale(0.98); }
 
         .fr-stats { display:flex; gap:12px; margin-top:28px; flex-wrap:wrap; }
-        .fr-stat { flex:1 1 220px; background: rgba(255,255,255,0.8); border-radius:12px; padding:14px; text-align:center; border:1px solid rgba(107,114,128,0.12); }
-        .fr-stat-number { font-size:22px; font-weight:800; color:#111827; margin-bottom:6px; }
+        .fr-stat { flex:1 1 220px; background: rgba(255,255,255,0.7); border-radius:12px; padding:14px; text-align:center; border:1px solid rgba(107,114,128,0.06); }
+        .fr-stat-number { font-size:22px; font-weight:800; color:#374151; margin-bottom:6px; }
         .fr-stat-label { color:#6B7280; }
 
         /* RTL support and responsive */

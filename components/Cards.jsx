@@ -27,8 +27,8 @@ export default function Cards({ features = [] }) {
     <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/30">
       <div className="max-w-7xl mx-auto text-center mb-10">
         <div className="inline-flex items-center gap-4">
-          <img src="/logo/ajur.png" alt="ajur" style={{ width: 48, height: 48, objectFit: 'contain' }} />
-          <h1 className="text-3xl font-extrabold">آجر، مشاور املاک هوشمند</h1>
+          <img src="/logo/ajur.png" alt="ajur" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+          <h1 className="text-2xl md:text-3xl font-extrabold whitespace-nowrap">آجر، مشاور املاک هوشمند</h1>
         </div>
       </div>
       <style jsx>{`
@@ -45,7 +45,8 @@ export default function Cards({ features = [] }) {
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature) => {
-            const isRed = feature.title === "ثبت آگهی" || feature.action === "ثبت آگهی";
+            // Make buy/rent/register actions use the red hover style
+            const isRed = ["ثبت آگهی", "خرید", "اجاره"].includes(feature.title || feature.action);
             return (
             <div
               key={feature.id}
@@ -90,11 +91,12 @@ export default function Cards({ features = [] }) {
                   }}
                   onMouseEnter={() => setHovered(feature.id)}
                   onMouseLeave={() => setHovered(null)}
-                  className="w-full py-3.5 px-6 rounded-2xl text-white font-bold hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 px-7 rounded-full text-white font-bold text-base hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
                   style={{
-                    background: (isRed && hovered === feature.id)
-                      ? "linear-gradient(135deg,#B8322C,#8F251F)"
-                      : "linear-gradient(135deg,#7C7A75,#2F2F2F)",
+                    background:
+                      isRed && hovered === feature.id
+                        ? "linear-gradient(135deg,#B8322C,#8F251F)"
+                        : "linear-gradient(135deg,#7C7A75,#2F2F2F)",
                   }}
                 >
                   {feature.action}
