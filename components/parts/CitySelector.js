@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { CityContext } from "./CityContext";
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import SearchIcon from '@mui/icons-material/Search';
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import SearchIcon from "@mui/icons-material/Search";
+import { useRouter } from "next/router";
 
 const CitySelector = ({ handleCitySelect }) => {
   const {
@@ -14,6 +15,8 @@ const CitySelector = ({ handleCitySelect }) => {
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const router = useRouter();
 
   // Fetch cities when modal opens or search query changes
   useEffect(() => {
@@ -58,11 +61,14 @@ const CitySelector = ({ handleCitySelect }) => {
     try {
       const success = await updateCity(city);
       if (success) {
+        // Update URL with city title
+        router.push(`/${city.title}`, undefined, { shallow: true });
+
         setShowModal(false);
         setSearchQuery("");
+        alert(`شهر ${city.tie}`)
       }
 
-      // Call the parent's handler after successful city update
       if (handleCitySelect) {
         handleCitySelect(city);
       }
@@ -87,7 +93,7 @@ const CitySelector = ({ handleCitySelect }) => {
         data-testid="citySelectorButton"
       >
         <div className="flex flex-row-reverse items-center gap-1">
-          <LocationOnIcon style={{ color: '#6b7280' }} />
+          <LocationOnIcon style={{ color: "#6b7280" }} />
           <span className="text-sm text-gray-700 font-sans text-right truncate max-w-[80px]">
             {currentCity?.title || "انتخاب شهر"}
           </span>
@@ -118,7 +124,7 @@ const CitySelector = ({ handleCitySelect }) => {
             </div>
 
             {/* Search */}
-              <div className="flex flex-row-reverse items-center bg-gray-100 rounded-lg px-3 py-2 mb-4">
+            <div className="flex flex-row-reverse items-center bg-gray-100 rounded-lg px-3 py-2 mb-4">
               <input
                 type="text"
                 className="flex-1 bg-transparent text-right text-gray-800 text-base outline-none ml-2"
@@ -126,7 +132,7 @@ const CitySelector = ({ handleCitySelect }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <SearchIcon style={{ color: '#9CA3AF' }} />
+              <SearchIcon style={{ color: "#9CA3AF" }} />
             </div>
 
             {/* City List */}

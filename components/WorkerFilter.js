@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Cookies from "js-cookie";
+import { useFilter } from "./contexts/FilterContext";
 import {
   Box,
   Button,
@@ -9,14 +9,18 @@ import {
   AccordionSummary,
   AccordionDetails,
   Slider,
+  CircularProgress,
   Divider,
-  AppBar,
-  Modal,
   Typography,
   Chip,
   Stack,
   Menu,
   MenuItem,
+  useMediaQuery,
+  Skeleton,
+  useTheme,
+  TextField,
+  Paper,
 } from "@mui/material";
 import {
   ExpandMore,
@@ -31,149 +35,338 @@ import {
   Sort,
 } from "@mui/icons-material";
 
+// Utility functions
+const convertToPersianDigits = (str) => {
+  if (!str) return "";
+  return str.toString().replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+};
+
+const formatNumber = (num) => {
+  if (num === "" || num === null || num === undefined) return "";
+  const number = parseFloat(num);
+  if (isNaN(number)) return "";
+
+  return convertToPersianDigits(
+    number.toLocaleString("en-US", { maximumFractionDigits: 0 })
+  );
+};
+
+const formatNumberWithWords = (num) => {
+  if (num === "" || num === null || num === undefined) return "";
+  const number = parseFloat(num);
+  if (isNaN(number)) return "";
+
+  // For numbers >= 1 billion
+  if (number >= 1000000000) {
+    const billions = Math.floor(number / 1000000000);
+    const remainder = number % 1000000000;
+    let result = `${convertToPersianDigits(billions.toString())} میلیارد`;
+    if (remainder > 0) {
+      const millions = Math.floor(remainder / 1000000);
+      result += ` و ${convertToPersianDigits(millions.toString())} میلیون`;
+    }
+    return result;
+  }
+
+  // For numbers >= 1 million
+  if (number >= 1000000) {
+    const millions = Math.floor(number / 1000000);
+    const remainder = number % 1000000;
+    let result = `${convertToPersianDigits(millions.toString())} میلیون`;
+    if (remainder > 0) {
+      const thousands = Math.floor(remainder / 1000);
+      result += ` و ${convertToPersianDigits(thousands.toString())} هزار`;
+    }
+    return result;
+  }
+
+  // For numbers >= 1000
+  if (number >= 1000) {
+    const thousands = Math.floor(number / 1000);
+    const remainder = number % 1000;
+    let result = `${convertToPersianDigits(thousands.toString())} هزار`;
+    if (remainder > 0) {
+      result += ` و ${convertToPersianDigits(remainder.toString())}`;
+    }
+    return result;
+  }
+
+  return convertToPersianDigits(number.toString());
+};
+
 const WorkerFilter = ({
   workers = [],
   onFilteredWorkersChange,
   initialCategory = null,
   onCategoryChange = null,
-  enableLocalCategoryFilter = false,
-  availableCategories = [],
-  initialNeighborhood = null,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { isFilterOpen, openFilter, closeFilter } = useFilter();
+
+  // State
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
-  const [selectedTickFields, setSelectedTickFields] = useState([]);
-  const [localNormalFields, setLocalNormalFields] = useState([]);
+  const [selectedFeatures, setSelectedFeatures] = useState([]);
+  const [rangeFilters, setRangeFilters] = useState([]);
   const [filterLevel, setFilterLevel] = useState("base");
   const [sortAnchorEl, setSortAnchorEl] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
-  const [result, setResult] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [focusedField, setFocusedField] = useState(null); // Track which field is focused
+  const [filterTimeout, setFilterTimeout] = useState(null); // Timeout for debouncing
+  const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(false); // State for collapsible filters
 
-  const [subcategories, setSubcategories] = useState([]);
+  // Data
+  const [categories, setCategories] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
-  const [tickFields, setTickFields] = useState([
-    { id: 1, name: "پارکینگ", value: "پارکینگ", kind: 2, special: 1 },
-    { id: 2, name: "آسانسور", value: "آسانسور", kind: 2, special: 1 },
-    { id: 3, name: "انباری", value: "انباری", kind: 2, special: 1 },
-  ]);
 
-  const displayCategories = enableLocalCategoryFilter
-    ? availableCategories
-    : subcategories;
+  // Define all possible features
+  const allFeatures = [
+    { id: 1, name: "پارکینگ", value: "پارکینگ" },
+    { id: 2, name: "آسانسور", value: "آسانسور" },
+    { id: 3, name: "انباری", value: "انباری" },
+  ];
 
-  useEffect(() => {
-    if (initialNeighborhood) {
-      setSelectedNeighborhoods([initialNeighborhood]);
+  // Define range filter fields
+  const rangeFilterFields = [
+    { id: 1, name: "متراژ", value: "متراژ", unit: "متر", min: 0, max: 10000 },
+    {
+      id: 2,
+      name: "قیمت",
+      value: "قیمت",
+      unit: "تومان",
+      min: 0,
+      max: 1000000000000,
+    },
+    {
+      id: 3,
+      name: "تعداد اتاق",
+      value: "تعداد اتاق",
+      unit: "اتاق",
+      min: 0,
+      max: 20,
+    },
+  ];
+
+  // Category type mappings
+  const categoryTypeMappings = {
+    residential: [16, 17, 25, 26],
+    commercial: [23, 24, 27, 28],
+    land: [18, 19, 20, 21, 22, 65],
+    industrial: [3, 6],
+  };
+
+  // Feature availability by category type
+  const featureAvailability = {
+    residential: ["پارکینگ", "آسانسور", "انباری"],
+    commercial: ["پارکینگ", "آسانسور", "انباری"],
+    land: [],
+    industrial: ["پارکینگ", "انباری"],
+  };
+
+  // Common price suggestions
+  const priceSuggestions = [
+    { value: 500000000, label: "۵۰۰ میلیون" },
+    { value: 1000000000, label: "۱ میلیارد" },
+    { value: 1500000000, label: "۱/۵ میلیارد" },
+    { value: 2000000000, label: "۲ میلیارد" },
+    { value: 2500000000, label: "۲/۵ میلیارد" },
+    { value: 3000000000, label: "۳ میلیارد" },
+    { value: 5000000000, label: "۵ میلیارد" },
+    { value: 10000000000, label: "۱۰ میلیارد" },
+  ];
+
+  // Common area suggestions
+  const areaSuggestions = [
+    { value: 50, label: "۵۰ متر" },
+    { value: 70, label: "۷۰ متر" },
+    { value: 100, label: "۱۰۰ متر" },
+    { value: 120, label: "۱۲۰ متر" },
+    { value: 150, label: "۱۵۰ متر" },
+    { value: 200, label: "۲۰۰ متر" },
+    { value: 250, label: "۲۵۰ متر" },
+    { value: 300, label: "۳۰۰ متر" },
+  ];
+
+  // Convert number to Persian words
+  const numberToPersianWords = (num) => {
+    if (num === "" || num === null || num === undefined) return "";
+
+    const number = parseFloat(num);
+    if (isNaN(number)) return "";
+
+    // For small numbers (under 1000), just return the number
+    if (number < 1000) {
+      return convertToPersianDigits(number.toString());
     }
-  }, [initialNeighborhood]);
 
-  useEffect(() => {
-    if (initialCategory) {
-      setSelectedCategory(initialCategory);
+    // For thousands
+    if (number < 1000000) {
+      const thousands = Math.floor(number / 1000);
+      const remainder = number % 1000;
+      let result = `${convertToPersianDigits(thousands.toString())} هزار`;
+      if (remainder > 0) {
+        result += ` و ${convertToPersianDigits(remainder.toString())}`;
+      }
+      return result;
     }
+
+    // For millions
+    if (number < 1000000000) {
+      const millions = Math.floor(number / 1000000);
+      const remainder = number % 1000000;
+      let result = `${convertToPersianDigits(millions.toString())} میلیون`;
+      if (remainder > 0) {
+        result += ` و ${numberToPersianWords(remainder)}`;
+      }
+      return result;
+    }
+
+    // For billions
+    const billions = Math.floor(number / 1000000000);
+    const remainder = number % 1000000000;
+    let result = `${convertToPersianDigits(billions.toString())} میلیارد`;
+    if (remainder > 0) {
+      result += ` و ${numberToPersianWords(remainder)}`;
+    }
+    return result;
+  };
+
+  // Get suggestions based on field type
+  const getSuggestions = (fieldId) => {
+    if (fieldId === 2) {
+      // Price field
+      return priceSuggestions;
+    } else if (fieldId === 1) {
+      // Area field
+      return areaSuggestions;
+    }
+    return [];
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (fieldId, type, value) => {
+    setRangeFilters((prev) =>
+      prev.map((f) =>
+        f.id === fieldId
+          ? {
+              ...f,
+              [type]: value,
+            }
+          : f
+      )
+    );
+    setFocusedField(null); // Close suggestions
+  };
+
+  // Initialize range filters with empty values (showing all)
+  useEffect(() => {
+    const initialRangeFilters = rangeFilterFields.map((field) => ({
+      ...field,
+      low: "", // Empty means no lower limit
+      high: "", // Empty means no upper limit
+    }));
+    setRangeFilters(initialRangeFilters);
+  }, []);
+
+  // Sync selectedCategory with initialCategory prop when it changes
+  useEffect(() => {
+    setSelectedCategory(initialCategory);
   }, [initialCategory]);
-  useEffect(() => {
-    if (initialCategory) {
-      setSelectedCategory(initialCategory);
-    }
-  }, [initialCategory]);
 
+  // Get available features based on selected category
+  const getAvailableFeatures = () => {
+    if (!selectedCategory) {
+      return allFeatures;
+    }
+
+    let categoryType = null;
+    for (const [type, categoryIds] of Object.entries(categoryTypeMappings)) {
+      if (categoryIds.includes(selectedCategory.id)) {
+        categoryType = type;
+        break;
+      }
+    }
+
+    if (!categoryType) {
+      return allFeatures;
+    }
+
+    const availableFeatureValues = featureAvailability[categoryType] || [];
+    return allFeatures.filter((feature) =>
+      availableFeatureValues.includes(feature.value)
+    );
+  };
+
+  // Fetch categories and neighborhoods
   useEffect(() => {
-    const fetchOptionalData = async () => {
+    const fetchData = async () => {
       try {
-        var token = Cookies.get("id_token");
-        const response = await axios({
-          method: "get",
-          url: "https://api.ajur.app/api/get-department",
-          params: { token: token },
-        });
-
-        setSubcategories(response.data.subcategories || []);
-        setNeighborhoods(response.data.neighborhoods || []);
-        setResult(response.data);
+        const response = await axios.get("https://api.ajur.app/api/base");
+        setCategories(response.data.cats);
+        setNeighborhoods(response.data.the_neighborhoods);
       } catch (error) {
-        console.error("Error fetching optional filter data:", error);
+        console.error("Error loading filters:", error);
+      } finally {
+        setLoading(false);
       }
     };
+    fetchData();
+  }, []);
 
-    if (!enableLocalCategoryFilter) {
-      fetchOptionalData();
+  // Debounced filter application
+  const applyFiltersWithDebounce = () => {
+    // Clear existing timeout
+    if (filterTimeout) {
+      clearTimeout(filterTimeout);
     }
-  }, [enableLocalCategoryFilter]);
 
+    // Set new timeout
+    const timeout = setTimeout(() => {
+      const filtered = applyFilters();
+      const sorted = sortWorkers(filtered);
+      onFilteredWorkersChange(sorted);
+    }, 300); // 300ms delay
+
+    setFilterTimeout(timeout);
+  };
+
+  // Apply filters when dependencies change with debounce
   useEffect(() => {
-    const fetchCategoryFields = async () => {
-      if (selectedCategory?.id) {
-        try {
-          const response = await axios({
-            method: "get",
-            url: "https://api.ajur.app/api/category-fields",
-            params: { cat: selectedCategory.id },
-          });
+    applyFiltersWithDebounce();
 
-          const fieldsWithDefaults = (response.data.normal_fields || []).map(
-            (field) => ({
-              ...field,
-              low: parseInt(field.min_range) || 0,
-              high: parseInt(field.max_range) || 100,
-            })
-          );
-
-          setLocalNormalFields(fieldsWithDefaults);
-        } catch (error) {
-          console.error("Error fetching category fields:", error);
-          setLocalNormalFields([]);
-        }
-      } else {
-        setLocalNormalFields([]);
+    // Cleanup timeout on unmount
+    return () => {
+      if (filterTimeout) {
+        clearTimeout(filterTimeout);
       }
     };
-
-    fetchCategoryFields();
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    console.log("🔍 useEffect triggered - applying filters and sorting");
-    console.log("📊 Total workers:", workers.length);
-    console.log("🎯 Current sort:", sortBy);
-
-    const filtered = applyAllFilters(workers);
-    console.log("✅ After filtering:", filtered.length);
-    const sorted = applySorting(filtered);
-    console.log("🔄 After sorting:", sorted.length);
-
-    onFilteredWorkersChange(sorted);
   }, [
     workers,
     selectedCategory,
     selectedNeighborhoods,
-    selectedTickFields,
-    localNormalFields,
+    selectedFeatures,
+    rangeFilters,
     sortBy,
   ]);
 
-  const applyAllFilters = (workersToFilter) => {
-    const shouldFilterByCategory =
-      enableLocalCategoryFilter && selectedCategory;
+  const handleCategoryChange = () => {
+    openFilter();
+    setFilterLevel("category");
+  };
 
-    if (
-      !shouldFilterByCategory &&
-      selectedNeighborhoods.length === 0 &&
-      selectedTickFields.length === 0 &&
-      !hasActiveRangeFilters()
-    ) {
-      return workersToFilter;
-    }
-
-    return workersToFilter.filter((worker) => {
-      if (shouldFilterByCategory) {
-        const workerCategoryId = parseInt(worker.category_id);
-        if (workerCategoryId !== selectedCategory.id) {
-          return false;
-        }
+  const applyFilters = () => {
+    return workers.filter((worker) => {
+      // Category filter
+      if (
+        selectedCategory &&
+        parseInt(worker.category_id) !== selectedCategory.id
+      ) {
+        return false;
       }
 
+      // Neighborhood filter
       if (selectedNeighborhoods.length > 0) {
         const workerNeighborhoodId = parseInt(worker.neighborhood_id);
         if (
@@ -183,126 +376,127 @@ const WorkerFilter = ({
         }
       }
 
-      if (selectedTickFields.length > 0) {
+      // Features filter
+      if (selectedFeatures.length > 0) {
         try {
           const workerProperties = JSON.parse(worker.json_properties || "[]");
-          const hasAllTickFields = selectedTickFields.every((tickField) =>
+          const hasAllFeatures = selectedFeatures.every((feature) =>
             workerProperties.some(
-              (prop) => prop.name === tickField.value && prop.kind === 2
+              (prop) => prop.name === feature.value && prop.kind === 2
             )
           );
-          if (!hasAllTickFields) return false;
+          if (!hasAllFeatures) {
+            return false;
+          }
         } catch (e) {
           return false;
         }
       }
 
-      return isWorkerInRange(worker);
+      // Range filters
+      if (!passesRangeFilters(worker)) {
+        return false;
+      }
+
+      return true;
     });
   };
 
-  const applySorting = (workersToSort) => {
-    if (!workersToSort || workersToSort.length === 0) {
-      console.log("❌ No workers to sort");
-      return workersToSort;
-    }
-
-    console.log("🔄 Starting sort with type:", sortBy);
-    const workersCopy = [...workersToSort];
-
-    try {
-      switch (sortBy) {
-        case "newest":
-          return workersCopy.sort((a, b) => {
-            const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
-            const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
-            return dateB.getTime() - dateA.getTime();
-          });
-
-        case "oldest":
-          return workersCopy.sort((a, b) => {
-            const dateA = a.updated_at ? new Date(a.updated_at) : new Date(0);
-            const dateB = b.updated_at ? new Date(b.updated_at) : new Date(0);
-            return dateA.getTime() - dateB.getTime();
-          });
-
-        case "most_viewed":
-          return workersCopy.sort((a, b) => {
-            const viewsA = parseInt(a.total_view) || 0;
-            const viewsB = parseInt(b.total_view) || 0;
-            return viewsB - viewsA;
-          });
-
-        default:
-          return workersCopy;
-      }
-    } catch (error) {
-      console.error("❌ Error in sorting:", error);
-      return workersCopy;
-    }
-  };
-
-  const hasActiveRangeFilters = () => {
-    return localNormalFields.some(
-      (field) =>
-        field.special == 1 &&
-        (field.low !== parseInt(field.min_range) ||
-          field.high !== parseInt(field.max_range))
-    );
-  };
-
-  const hasActiveFilters = () => {
-    const hasCategoryFilter = enableLocalCategoryFilter && selectedCategory;
-
-    return (
-      hasCategoryFilter ||
-      selectedNeighborhoods.length > 0 ||
-      selectedTickFields.length > 0 ||
-      hasActiveRangeFilters() ||
-      sortBy !== "newest"
-    );
-  };
-
-  const isWorkerInRange = (worker) => {
+  const passesRangeFilters = (worker) => {
     try {
       const workerProperties = JSON.parse(worker.json_properties || "[]");
-      const specialProperties = workerProperties.filter(
-        (prop) => prop.special == 1
+
+      // If no range filters are set (all are empty), return true
+      const hasActiveRangeFilters = rangeFilters.some(
+        (filter) => filter.low !== "" || filter.high !== ""
       );
 
-      return localNormalFields.every((field) => {
-        if (field.special != 1) return true;
+      if (!hasActiveRangeFilters) {
+        return true;
+      }
 
-        const workerProp = specialProperties.find(
-          (prop) => prop.name == field.value
+      return rangeFilters.every((filter) => {
+        // If both low and high are empty, this filter is inactive
+        if (filter.low === "" && filter.high === "") {
+          return true;
+        }
+
+        // Try to find the property by name - look in both special and regular properties
+        const workerProp = workerProperties.find(
+          (prop) =>
+            prop.name === filter.value || prop.name.includes(filter.value)
         );
-        if (!workerProp) return false;
 
-        const lower = field.low;
-        const higher = field.high;
+        // If property doesn't exist and we have active filters, exclude
+        if (!workerProp) {
+          return false;
+        }
 
-        return workerProp.value >= lower && workerProp.value <= higher;
+        // Parse the worker value - handle different formats
+        let workerValue;
+        try {
+          workerValue = parseFloat(workerProp.value);
+          if (isNaN(workerValue)) {
+            // Try to extract numbers from string if it contains text
+            const numMatch = workerProp.value.match(/\d+/);
+            workerValue = numMatch ? parseFloat(numMatch[0]) : NaN;
+          }
+        } catch (e) {
+          return false;
+        }
+
+        if (isNaN(workerValue)) {
+          return false;
+        }
+
+        // Check lower bound (if set)
+        const lowerBoundOK =
+          filter.low === "" || workerValue >= parseFloat(filter.low);
+
+        // Check upper bound (if set)
+        const upperBoundOK =
+          filter.high === "" || workerValue <= parseFloat(filter.high);
+
+        return lowerBoundOK && upperBoundOK;
       });
     } catch (e) {
       return false;
     }
   };
 
+  const sortWorkers = (workersToSort) => {
+    if (!workersToSort.length) return workersToSort;
+
+    const workersCopy = [...workersToSort];
+
+    switch (sortBy) {
+      case "newest":
+        return workersCopy.sort(
+          (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0)
+        );
+      case "oldest":
+        return workersCopy.sort(
+          (a, b) => new Date(a.updated_at || 0) - new Date(b.updated_at || 0)
+        );
+      case "most_viewed":
+        return workersCopy.sort(
+          (a, b) =>
+            (parseInt(b.total_view) || 0) - (parseInt(a.total_view) || 0)
+        );
+      default:
+        return workersCopy;
+    }
+  };
+
+  // Event handlers with immediate UI feedback but debounced filtering
   const handleCategorySelect = (category) => {
-    if (selectedCategory?.id === category.id) {
-      setFilterLevel("base");
-      return;
-    }
-
-    if (enableLocalCategoryFilter) {
-      setSelectedCategory(category);
+    if (onCategoryChange) {
+      onCategoryChange(category);
     } else {
-      if (onCategoryChange) {
-        onCategoryChange(category);
-      }
+      setSelectedCategory(category);
     }
-
     setFilterLevel("base");
+    // Filtering will happen automatically via useEffect
   };
 
   const handleNeighborhoodToggle = (neighborhood) => {
@@ -311,183 +505,70 @@ const WorkerFilter = ({
         ? prev.filter((n) => n.id !== neighborhood.id)
         : [...prev, neighborhood]
     );
+    // Filtering will happen automatically via useEffect
   };
 
-  const handleTickFieldToggle = (field) => {
-    setSelectedTickFields((prev) =>
-      prev.some((f) => f.value === field.value)
-        ? prev.filter((f) => f.value !== field.value)
-        : [...prev, field]
+  const handleFeatureToggle = (feature) => {
+    setSelectedFeatures((prev) =>
+      prev.some((f) => f.value === feature.value)
+        ? prev.filter((f) => f.value !== feature.value)
+        : [...prev, feature]
     );
+    // Filtering will happen automatically via useEffect
   };
 
-  const handleSliderChange = (event, newValue, activeThumb, field) => {
-    if (!Array.isArray(newValue)) return;
-
-    const minDistance = calculateMinDistance(field);
-    let [low, high] = newValue;
-
-    if (activeThumb === 0) {
-      low = Math.min(low, high - minDistance);
-      low = Math.max(low, parseInt(field.min_range));
-    } else {
-      high = Math.max(high, low + minDistance);
-      high = Math.min(high, parseInt(field.max_range));
-    }
-
-    setLocalNormalFields((prev) =>
-      prev.map((f) =>
-        f.id === field.id
-          ? {
-              ...f,
-              low: low,
-              high: high,
-            }
-          : f
-      )
-    );
-  };
-
-  const calculateMinDistance = (field) => {
-    const minRange = parseInt(field.min_range) || 0;
-    const maxRange = parseInt(field.max_range) || 100;
-    const totalRange = maxRange - minRange;
-    const minDistance = Math.max(1, Math.floor(totalRange * 0.02));
-    return minDistance;
-  };
-
-  const handleDeleteFilter = (field) => {
-    setLocalNormalFields((prev) =>
-      prev.map((f) =>
-        f.id === field.id
-          ? {
-              ...f,
-              low: parseInt(f.min_range) || 0,
-              high: parseInt(field.max_range) || 100,
-            }
-          : f
-      )
-    );
-  };
-
-  const handleResetAll = () => {
-    setSelectedNeighborhoods([]);
-    setSelectedTickFields([]);
-
-    setLocalNormalFields((prev) =>
-      prev.map((field) => ({
-        ...field,
-        low: parseInt(field.min_range) || 0,
-        high: parseInt(field.max_range) || 100,
-      }))
-    );
-
-    setSortBy("newest");
-
-    if (!enableLocalCategoryFilter && selectedCategory && onCategoryChange) {
-      onCategoryChange(null);
-    } else if (enableLocalCategoryFilter) {
-      setSelectedCategory(null);
-    }
-  };
-
-  const handleSortClick = (event) => {
-    setSortAnchorEl(event.currentTarget);
-  };
-
-  const handleSortClose = () => {
-    setSortAnchorEl(null);
-  };
-
-  const handleSortSelect = (sortType) => {
-    console.log("🎯 Sort selected:", sortType);
-    setSortBy(sortType);
-    handleSortClose();
-  };
-
-  const removeCategoryFilter = () => {
-    if (!enableLocalCategoryFilter) {
-      setIsOpen(true);
-      setFilterLevel("category");
-    }
-
-    if (!enableLocalCategoryFilter && onCategoryChange) {
-      onCategoryChange(null);
-    } else {
-      setSelectedCategory(null);
-    }
-  };
-
-  const removeNeighborhoodFilter = (neighborhoodId) => {
-    setSelectedNeighborhoods((prev) =>
-      prev.filter((n) => n.id !== neighborhoodId)
-    );
-  };
-
-  const removeTickFieldFilter = (fieldValue) => {
-    setSelectedTickFields((prev) => prev.filter((f) => f.value !== fieldValue));
-  };
-
-  const removeRangeFilter = (fieldId) => {
-    setLocalNormalFields((prev) =>
+  const handleRangeFilterChange = (fieldId, type, value) => {
+    setRangeFilters((prev) =>
       prev.map((f) =>
         f.id === fieldId
           ? {
               ...f,
-              low: parseInt(f.min_range) || 0,
-              high: parseInt(field.max_range) || 100,
+              [type]: value === "" ? "" : parseFloat(value) || "",
             }
           : f
       )
     );
+    // Filtering will happen automatically via useEffect
   };
 
-  const handleBackClick = () => {
-    if (filterLevel === "base") {
-      setIsOpen(false);
-    } else {
-      setFilterLevel("base");
-    }
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+    setSortAnchorEl(null);
+    // Filtering will happen automatically via useEffect
   };
 
-  const numFormatter = (num) => {
-    if (num >= 1000000000) {
-      return (num / 1000000000).toFixed(0) + " میلیارد";
-    } else if (num >= 1000000) {
-      return (num / 1000000).toFixed(0) + " میلیون";
-    } else if (num > 999) {
-      return (num / 1000).toFixed(0) + " هزار";
-    } else {
-      return num.toString();
-    }
+  const handleResetAll = () => {
+    setSelectedCategory(null);
+    setSelectedNeighborhoods([]);
+    setSelectedFeatures([]);
+    setRangeFilters(
+      rangeFilterFields.map((field) => ({
+        ...field,
+        low: "",
+        high: "",
+      }))
+    );
+    setSortBy("newest");
+    if (onCategoryChange) onCategoryChange(null);
+    // Filtering will happen automatically via useEffect
   };
 
   const getSortDisplayText = () => {
-    switch (sortBy) {
-      case "newest":
-        return "جدیدترین";
-      case "oldest":
-        return "قدیمی ترین";
-      case "most_viewed":
-        return "پر بازدید ترین";
-      default:
-        return "مرتب‌سازی";
-    }
+    const sortTexts = {
+      newest: "جدیدترین",
+      oldest: "قدیمی ترین",
+      most_viewed: "پر بازدید ترین",
+    };
+    return sortTexts[sortBy] || "مرتب‌سازی";
   };
 
-  const isFieldAtDefault = (field) => {
-    return (
-      field.low === parseInt(field.min_range) &&
-      field.high === parseInt(field.max_range)
-    );
-  };
-
-  const renderSelectedFilterTags = () => {
+  // Render methods
+  const renderSelectedFilters = () => {
     const hasActiveFilters =
       selectedCategory ||
       selectedNeighborhoods.length > 0 ||
-      selectedTickFields.length > 0 ||
-      hasActiveRangeFilters() ||
+      selectedFeatures.length > 0 ||
+      rangeFilters.some((filter) => filter.low !== "" || filter.high !== "") ||
       sortBy !== "newest";
 
     if (!hasActiveFilters) return null;
@@ -495,19 +576,17 @@ const WorkerFilter = ({
     return (
       <Box
         sx={{
-          mt: 2,
           p: 2,
           border: "1px solid",
           borderColor: "grey.300",
           borderRadius: 2,
-          bgcolor: "grey.50",
         }}
       >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {selectedCategory && (
             <Chip
               label={`دسته‌بندی: ${selectedCategory.name}`}
-              onDelete={removeCategoryFilter}
+              onClick={() => handleCategoryChange()}
               color="primary"
               variant="outlined"
               size="small"
@@ -518,38 +597,68 @@ const WorkerFilter = ({
             <Chip
               key={neighborhood.id}
               label={`محله: ${neighborhood.name}`}
-              onDelete={() => removeNeighborhoodFilter(neighborhood.id)}
+              onDelete={() =>
+                setSelectedNeighborhoods((prev) =>
+                  prev.filter((n) => n.id !== neighborhood.id)
+                )
+              }
               color="secondary"
               variant="outlined"
               size="small"
             />
           ))}
 
-          {selectedTickFields.map((field) => (
+          {selectedFeatures.map((feature) => (
             <Chip
-              key={field.value}
-              label={`دارای ${field.value}`}
-              onDelete={() => removeTickFieldFilter(field.value)}
+              key={feature.value}
+              label={`دارای ${feature.value}`}
+              onDelete={() =>
+                setSelectedFeatures((prev) =>
+                  prev.filter((f) => f.value !== feature.value)
+                )
+              }
               color="success"
               variant="outlined"
               size="small"
             />
           ))}
 
-          {localNormalFields
-            .filter((field) => field.special == 1 && !isFieldAtDefault(field))
-            .map((field) => (
-              <Chip
-                key={field.id}
-                label={`${field.value}: ${numFormatter(
-                  field.low
-                )} - ${numFormatter(field.high)}`}
-                onDelete={() => removeRangeFilter(field.id)}
-                color="warning"
-                variant="outlined"
-                size="small"
-              />
-            ))}
+          {rangeFilters
+            .map((filter) => {
+              if (filter.low !== "" || filter.high !== "") {
+                let label = `${filter.name}: `;
+                
+                if (filter.low !== "" && filter.high !== "") {
+                  // Both low and high set
+                  label += `${formatNumberWithWords(filter.low)} تا ${formatNumberWithWords(filter.high)} ${filter.unit}`;
+                } else if (filter.low !== "") {
+                  // Only low set
+                  label += `از ${formatNumberWithWords(filter.low)}`;
+                } else if (filter.high !== "") {
+                  // Only high set
+                  label += `تا ${formatNumberWithWords(filter.high)}`;
+                }
+                
+                return (
+                  <Chip
+                    key={filter.id}
+                    label={label}
+                    onDelete={() => {
+                      setRangeFilters((prev) =>
+                        prev.map((f) =>
+                          f.id === filter.id ? { ...f, low: "", high: "" } : f
+                        )
+                      );
+                    }}
+                    color="warning"
+                    variant="outlined"
+                    size="small"
+                  />
+                );
+              }
+              return null;
+            })
+            .filter(Boolean)}
 
           {sortBy !== "newest" && (
             <Chip
@@ -574,8 +683,12 @@ const WorkerFilter = ({
     );
   };
 
-  const renderTickFields = () => {
-    if (tickFields.length === 0) return null;
+  const renderFeatures = () => {
+    const availableFeatures = getAvailableFeatures();
+
+    if (availableFeatures.length === 0) {
+      return null;
+    }
 
     return (
       <Box sx={{ mb: 2 }}>
@@ -584,13 +697,13 @@ const WorkerFilter = ({
         </Typography>
 
         <Grid container spacing={1}>
-          {tickFields.map((field) => {
-            const isSelected = selectedTickFields.some(
-              (f) => f.value === field.value
+          {availableFeatures.map((feature) => {
+            const isSelected = selectedFeatures.some(
+              (f) => f.value === feature.value
             );
 
             return (
-              <Grid item xs={12} key={field.id || field.value}>
+              <Grid item xs={12} key={feature.id}>
                 <Box
                   sx={{
                     display: "flex",
@@ -602,13 +715,8 @@ const WorkerFilter = ({
                     borderRadius: 2,
                     bgcolor: isSelected ? "primary.light" : "white",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      bgcolor: isSelected ? "primary.light" : "grey.50",
-                    },
                   }}
-                  onClick={() => handleTickFieldToggle(field)}
+                  onClick={() => handleFeatureToggle(feature)}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Box
@@ -632,371 +740,668 @@ const WorkerFilter = ({
                       variant="body2"
                       fontWeight={isSelected ? "bold" : "normal"}
                     >
-                      دارای {field.value}
+                      دارای {feature.value}
                     </Typography>
                   </Box>
-
-                  {isSelected && (
-                    <Box
-                      sx={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: "50%",
-                        bgcolor: "primary.main",
-                      }}
-                    />
-                  )}
                 </Box>
               </Grid>
             );
           })}
         </Grid>
-
-        {selectedTickFields.length > 0 && (
-          <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              onClick={() => setSelectedTickFields([])}
-              startIcon={<Delete />}
-              color="error"
-            >
-              پاک کردن امکانات
-            </Button>
-          </Box>
-        )}
       </Box>
     );
   };
 
-  const renderBaseLevel = () => (
-    <Box sx={{ p: 2 }}>
-      <Box
+  const renderRangeFilters = () => (
+    <Box sx={{ mb: 2 }}>
+      <Accordion
+        expanded={moreFiltersExpanded}
+        onChange={() => setMoreFiltersExpanded(!moreFiltersExpanded)}
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
+          "&:before": {
+            display: "none",
+          },
+          boxShadow: "none",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 2,
         }}
       >
-        <Button
-          onClick={handleSortClick}
-          variant="outlined"
-          size="small"
-          startIcon={<Sort />}
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          sx={{
+            backgroundColor: moreFiltersExpanded ? "grey.50" : "transparent",
+            borderBottom: moreFiltersExpanded ? "1px solid" : "none",
+            borderColor: "divider",
+            borderRadius: moreFiltersExpanded ? "8px 8px 0 0" : "8px",
+            minHeight: "48px",
+            "& .MuiAccordionSummary-content": {
+              margin: "12px 0",
+            },
+          }}
         >
-          {getSortDisplayText()}
-        </Button>
-        <span>مرتب‌سازی</span>
-      </Box>
-      <Divider />
+          <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+            فیلترهای بیشتر
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ pt: 2 }}>
+          <Grid container spacing={2}>
+            {rangeFilters.map((filter) => (
+              <Grid item xs={12} key={filter.id}>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  {filter.name} ({filter.unit})
+                </Typography>
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          my: 2,
-        }}
-      >
-        <Button
-          onClick={() => setFilterLevel("category")}
-          variant="outlined"
-          size="small"
-        >
-          {selectedCategory ? "تغییر" : "انتخاب"}
-        </Button>
-        <span>
-          {selectedCategory
-            ? `دسته بندی: ${selectedCategory.name}`
-            : "انتخاب دسته بندی"}
-        </span>
-      </Box>
-      <Divider />
+                {/* Range inputs */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    alignItems: "center",
+                    position: "relative",
+                  }}
+                >
+                  {/* تا (To) - upper limit */}
+                  <Box sx={{ flex: 1, position: "relative" }}>
+                    <TextField
+                      size="small"
+                      placeholder="تا"
+                      value={filter.high}
+                      onChange={(e) =>
+                        handleRangeFilterChange(
+                          filter.id,
+                          "high",
+                          e.target.value
+                        )
+                      }
+                      onFocus={() => setFocusedField(`${filter.id}-high`)}
+                      onBlur={(e) => {
+                        // Use setTimeout to allow click event to process first
+                        setTimeout(() => {
+                          // Check if the related target (what was clicked) is inside our suggestions
+                          const relatedTarget = e.relatedTarget;
+                          const isClickingSuggestion =
+                            relatedTarget &&
+                            relatedTarget.closest &&
+                            relatedTarget.closest("[data-suggestion]");
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          my: 2,
-        }}
-      >
-        <Button
-          onClick={() => setFilterLevel("region")}
-          variant="outlined"
-          size="small"
-        >
-          {selectedNeighborhoods.length > 0 ? "تغییر" : "انتخاب"}
-        </Button>
-        <span>
-          {selectedNeighborhoods.length > 0
-            ? `محلات: ${selectedNeighborhoods
-                .slice(0, 2)
-                .map((n) => n.name)
-                .join("، ")}${selectedNeighborhoods.length > 2 ? "..." : ""}`
-            : "انتخاب محلات"}
-        </span>
-      </Box>
-      <Divider />
+                          if (!isClickingSuggestion) {
+                            setFocusedField(null);
+                          }
+                        }, 150);
+                      }}
+                      fullWidth
+                      type="number"
+                      inputProps={{
+                        min: filter.min,
+                        max: filter.max,
+                        style: { textAlign: "center" },
+                        autoComplete: "off",
+                        autoCorrect: "off",
+                        autoCapitalize: "off",
+                        spellCheck: "false",
+                      }}
+                      autoComplete="off"
+                      name={`filter-${filter.id}-high`}
+                    />
+                    {/* Suggestions for upper limit */}
+                    {focusedField === `${filter.id}-high` &&
+                      getSuggestions(filter.id).length > 0 && (
+                        <Paper
+                          sx={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            zIndex: 10,
+                            mt: 0.5,
+                            maxHeight: 150,
+                            overflow: "auto",
+                          }}
+                          elevation={3}
+                        >
+                          {getSuggestions(filter.id).map(
+                            (suggestion, index) => (
+                              <Box
+                                key={index}
+                                data-suggestion="true" // Add data attribute for identification
+                                sx={{
+                                  p: 1,
+                                  cursor: "pointer",
+                                  borderBottom: "1px solid",
+                                  borderColor: "divider",
+                                  "&:hover": {
+                                    bgcolor: "action.hover",
+                                  },
+                                  "&:last-child": {
+                                    borderBottom: "none",
+                                  },
+                                }}
+                                onClick={() => {
+                                  handleSuggestionClick(
+                                    filter.id,
+                                    "high",
+                                    suggestion.value
+                                  );
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ textAlign: "center" }}
+                                >
+                                  {suggestion.label}
+                                </Typography>
+                              </Box>
+                            )
+                          )}
+                        </Paper>
+                      )}
+                  </Box>
 
-      {renderTickFields()}
-
-      {localNormalFields
-        .filter((field) => field.special == 1)
-        .map((field) => (
-          <Accordion key={field.id} sx={{ mt: 1 }}>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Box sx={{ width: "100%", textAlign: "right" }}>
-                {!isFieldAtDefault(field) && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="error"
-                    startIcon={<Delete />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteFilter(field);
-                    }}
-                    sx={{ mr: 1 }}
+                  <Typography
+                    variant="body2"
+                    sx={{ minWidth: "30px", textAlign: "center" }}
                   >
-                    حذف
-                  </Button>
+                    تا
+                  </Typography>
+
+                  {/* از (From) - lower limit */}
+                  <Box sx={{ flex: 1, position: "relative" }}>
+                    <TextField
+                      size="small"
+                      placeholder="از"
+                      value={filter.low}
+                      onChange={(e) =>
+                        handleRangeFilterChange(
+                          filter.id,
+                          "low",
+                          e.target.value
+                        )
+                      }
+                      onFocus={() => setFocusedField(`${filter.id}-low`)}
+                      onBlur={(e) => {
+                        // Use setTimeout to allow click event to process first
+                        setTimeout(() => {
+                          // Check if the related target (what was clicked) is inside our suggestions
+                          const relatedTarget = e.relatedTarget;
+                          const isClickingSuggestion =
+                            relatedTarget &&
+                            relatedTarget.closest &&
+                            relatedTarget.closest("[data-suggestion]");
+
+                          if (!isClickingSuggestion) {
+                            setFocusedField(null);
+                          }
+                        }, 150);
+                      }}
+                      fullWidth
+                      type="number"
+                      inputProps={{
+                        min: filter.min,
+                        max: filter.high || filter.max,
+                        style: { textAlign: "center" },
+                        autoComplete: "off",
+                        autoCorrect: "off",
+                        autoCapitalize: "off",
+                        spellCheck: "false",
+                      }}
+                      autoComplete="off"
+                      name={`filter-${filter.id}-low`}
+                    />
+                    {/* Suggestions for lower limit */}
+                    {focusedField === `${filter.id}-low` &&
+                      getSuggestions(filter.id).length > 0 && (
+                        <Paper
+                          sx={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            zIndex: 10,
+                            mt: 0.5,
+                            maxHeight: 150,
+                            overflow: "auto",
+                          }}
+                          elevation={3}
+                        >
+                          {getSuggestions(filter.id).map(
+                            (suggestion, index) => (
+                              <Box
+                                key={index}
+                                data-suggestion="true" // Add data attribute for identification
+                                sx={{
+                                  p: 1,
+                                  cursor: "pointer",
+                                  borderBottom: "1px solid",
+                                  borderColor: "divider",
+                                  "&:hover": {
+                                    bgcolor: "action.hover",
+                                  },
+                                  "&:last-child": {
+                                    borderBottom: "none",
+                                  },
+                                }}
+                                onClick={() => {
+                                  handleSuggestionClick(
+                                    filter.id,
+                                    "low",
+                                    suggestion.value
+                                  );
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ textAlign: "center" }}
+                                >
+                                  {suggestion.label}
+                                </Typography>
+                              </Box>
+                            )
+                          )}
+                        </Paper>
+                      )}
+                  </Box>
+                </Box>
+
+                {/* Number in words display */}
+                {(filter.low !== "" || filter.high !== "") && (
+                  <Box
+                    sx={{ mt: 1, p: 1, bgcolor: "grey.50", borderRadius: 1 }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      {filter.low !== "" && (
+                        <span>
+                          از {formatNumber(filter.low)} {filter.unit}{" "}
+                        </span>
+                      )}
+                      {filter.low !== "" && filter.high !== "" && (
+                        <span>تا </span>
+                      )}
+                      {filter.high !== "" && (
+                        <span>
+                          {formatNumber(filter.high)} {filter.unit}
+                        </span>
+                      )}
+                    </Typography>
+                  </Box>
                 )}
-                <span>{field.value}</span>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Slider
-                value={[field.low, field.high]}
-                onChange={(e, newValue, activeThumb) =>
-                  handleSliderChange(e, newValue, activeThumb, field)
-                }
-                valueLabelFormat={numFormatter}
-                valueLabelDisplay="auto"
-                min={parseInt(field.min_range)}
-                max={parseInt(field.max_range)}
-                disableSwap
-              />
-            </AccordionDetails>
-          </Accordion>
-        ))}
-    </Box>
-  );
-
-  const renderCategoryLevel = () => (
-    <Box sx={{ p: 2 }}>
-      <Grid container spacing={1}>
-        {displayCategories.map((category) => (
-          <Grid item xs={12} key={category.id}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                p: 2,
-                cursor: "pointer",
-                border: "1px solid",
-                borderColor:
-                  selectedCategory?.id === category.id
-                    ? "primary.main"
-                    : "grey.300",
-                borderRadius: 1,
-                bgcolor:
-                  selectedCategory?.id === category.id
-                    ? "primary.light"
-                    : "white",
-              }}
-              onClick={() => handleCategorySelect(category)}
-            >
-              {selectedCategory?.id === category.id ? (
-                <RadioButtonChecked color="primary" sx={{ ml: 1 }} />
-              ) : (
-                <RadioButtonUnchecked sx={{ ml: 1 }} />
-              )}
-              <span>{category.name}</span>
-            </Box>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
-
-  const renderRegionLevel = () => (
-    <Box sx={{ p: 2 }}>
-      <Grid container spacing={1}>
-        {neighborhoods.map((neighborhood) => (
-          <Grid item xs={12} md={6} key={neighborhood.id}>
-            <Button
-              variant={
-                selectedNeighborhoods.some((n) => n.id === neighborhood.id)
-                  ? "contained"
-                  : "outlined"
-              }
-              fullWidth
-              startIcon={
-                selectedNeighborhoods.some((n) => n.id === neighborhood.id) ? (
-                  <CheckBox />
-                ) : (
-                  <CheckBoxOutlineBlank />
-                )
-              }
-              onClick={() => handleNeighborhoodToggle(neighborhood)}
-              sx={{ justifyContent: "flex-start" }}
-            >
-              {neighborhood.name}
-            </Button>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
-
-  const renderFilterContent = () => {
-    switch (filterLevel) {
-      case "category":
-        return renderCategoryLevel();
-      case "region":
-        return renderRegionLevel();
-      default:
-        return renderBaseLevel();
-    }
-  };
-
-  const getFilterTitle = () => {
-    const titles = {
-      base: "فیلترها",
-      category: "انتخاب دسته بندی",
-      region: "انتخاب محلات",
-    };
-    return titles[filterLevel];
-  };
-
-  const getHeaderButtonIcon = () => {
-    return filterLevel === "base" ? <Close /> : <ArrowBack />;
-  };
 
   return (
     <>
-      {/* Filter Trigger Button with fixed z-index */}
+      {/* Apply margin to body/content when filter is open on desktop */}
+      {!isMobile && isFilterOpen && (
+        <style jsx global>{`
+          body {
+            margin-right: 500px;
+            transition: margin-right 0.3s ease-in-out;
+          }
+        `}</style>
+      )}
+
+      {!isMobile && !isFilterOpen && (
+        <style jsx global>{`
+          body {
+            margin-right: 0;
+            transition: margin-right 0.3s ease-in-out;
+          }
+        `}</style>
+      )}
+
+      {/* Filter & Sort Buttons */}
       <Box
         sx={{
+          position: "fixed",
+          top: 80,
+          right: 16,
+          zIndex: 100,
           display: "flex",
+          flexDirection: "column",
           gap: 1,
-          mb: 2,
-          position: "sticky",
-          top: 0,
-          backgroundColor: "background.paper",
-          py: 1,
-          borderBottom: "1px solid",
-          borderColor: "grey.300",
         }}
       >
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={() => openFilter()}
           variant="contained"
-          startIcon={<Tune />}
-          size="medium"
-          sx={{ flex: 2 }}
+          sx={{ width: 56, height: 56, borderRadius: "50%" }}
         >
-          فیلترها
+          <Tune sx={{ fontSize: 24 }} />
         </Button>
-
-        <Button
-          onClick={handleSortClick}
-          variant="outlined"
-          startIcon={<Sort />}
-          size="medium"
-          sx={{ flex: 1 }}
-        >
-          {getSortDisplayText()}
-        </Button>
-
-        <Menu
-          anchorEl={sortAnchorEl}
-          open={Boolean(sortAnchorEl)}
-          onClose={handleSortClose}
-        >
-          <MenuItem
-            onClick={() => handleSortSelect("newest")}
-            selected={sortBy === "newest"}
-          >
-            جدیدترین
-          </MenuItem>
-          <MenuItem
-            onClick={() => handleSortSelect("oldest")}
-            selected={sortBy === "oldest"}
-          >
-            قدیمی ترین
-          </MenuItem>
-        </Menu>
       </Box>
 
-      {/* Selected Filter Tags with fixed z-index */}
-      {renderSelectedFilterTags() && (
-        <Box
-          sx={{
-            position: "sticky",
-            top: 60,
-            zIndex: 30,
-            backgroundColor: "grey.50",
-          }}
+      {/* Sort Menu */}
+      <Menu
+        anchorEl={sortAnchorEl}
+        open={Boolean(sortAnchorEl)}
+        onClose={() => setSortAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => handleSortChange("newest")}
+          selected={sortBy === "newest"}
         >
-          {renderSelectedFilterTags()}
-        </Box>
-      )}
+          جدیدترین
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleSortChange("oldest")}
+          selected={sortBy === "oldest"}
+        >
+          قدیمی ترین
+        </MenuItem>
+        <MenuItem
+          onClick={() => handleSortChange("most_viewed")}
+          selected={sortBy === "most_viewed"}
+        >
+          پر بازدید ترین
+        </MenuItem>
+      </Menu>
 
-      {/* Filter Modal */}
-      <Modal open={isOpen} onClose={() => setIsOpen(false)}>
+      {/* Filter Panel */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          right: isFilterOpen ? 0 : -500,
+          width: isMobile ? "100%" : 500,
+          height: "100vh",
+          bgcolor: "background.paper",
+          boxShadow: 3,
+          borderLeft: "1px solid",
+          borderColor: "divider",
+          transition: "right 0.3s ease-in-out",
+          zIndex: 1200,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header */}
         <Box
           sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: { xs: "95%", sm: 500 },
-            maxHeight: "80vh",
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
+            bgcolor: "primary.main",
+            color: "white",
+            p: 2,
             display: "flex",
-            flexDirection: "column",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <AppBar position="static" color="primary">
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                p: 2,
-              }}
-            >
-              <Button onClick={handleBackClick} color="inherit">
-                {getHeaderButtonIcon()}
-              </Button>
+          <Button
+            onClick={() =>
+              filterLevel === "base" ? closeFilter() : setFilterLevel("base")
+            }
+            color="inherit"
+          >
+            {filterLevel === "base" ? <Close /> : <ArrowBack />}
+          </Button>
+          <Typography variant="h6">فیلترها</Typography>
+          <Button onClick={handleResetAll} color="inherit" size="small">
+            حذف همه
+          </Button>
+        </Box>
 
-              <strong>{getFilterTitle()}</strong>
+        {/* Selected Filters */}
+        {renderSelectedFilters()}
 
-              <Button onClick={handleResetAll} color="inherit" size="small">
-                حذف همه
-              </Button>
+        {/* Content */}
+        <Box sx={{ flex: 1, overflow: "auto" }}>
+          {filterLevel === "category" ? (
+            <Box sx={{ p: 2 }}>
+              {loading ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 4,
+                  }}
+                >
+                  <CircularProgress size={40} sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading categories...
+                  </Typography>
+                </Box>
+              ) : categories.length === 0 ? (
+                <Typography
+                  sx={{ textAlign: "center", p: 3 }}
+                  color="text.secondary"
+                >
+                  No categories available
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {categories.map((category) => (
+                    <Grid item xs={6} key={category.id}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          p: 2,
+                          cursor: "pointer",
+                          border: "1px solid",
+                          borderColor:
+                            selectedCategory?.id === category.id
+                              ? "primary.main"
+                              : "grey.300",
+                          borderRadius: 1,
+                          bgcolor:
+                            selectedCategory?.id === category.id
+                              ? "primary.light"
+                              : "white",
+                          "&:hover": {
+                            bgcolor:
+                              selectedCategory?.id === category.id
+                                ? "primary.light"
+                                : "grey.50",
+                            borderColor:
+                              selectedCategory?.id === category.id
+                                ? "primary.main"
+                                : "grey.400",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                          height: "100%",
+                          minHeight: "80px",
+                        }}
+                        onClick={() => handleCategorySelect(category)}
+                      >
+                        {selectedCategory?.id === category.id ? (
+                          <RadioButtonChecked color="primary" sx={{ ml: 1 }} />
+                        ) : (
+                          <RadioButtonUnchecked
+                            sx={{ ml: 1, color: "grey.500" }}
+                          />
+                        )}
+                        <Typography
+                          sx={{
+                            ml: 2,
+                            fontWeight: 500,
+                            textAlign: "right",
+                            flex: 1,
+                          }}
+                        >
+                          {category.name}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
             </Box>
-          </AppBar>
-
-          <Box sx={{ flex: 1, overflow: "auto" }}>{renderFilterContent()}</Box>
-
-          {filterLevel === "base" && (
-            <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={() => setIsOpen(false)}
+          ) : filterLevel === "region" ? (
+            <Box sx={{ p: 2 }}>
+              {loading ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 4,
+                  }}
+                >
+                  <CircularProgress size={40} sx={{ mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading neighborhoods...
+                  </Typography>
+                </Box>
+              ) : neighborhoods.length === 0 ? (
+                <Typography
+                  sx={{ textAlign: "center", p: 3 }}
+                  color="text.secondary"
+                >
+                  No neighborhoods available
+                </Typography>
+              ) : (
+                <Grid container spacing={1}>
+                  {neighborhoods.map((neighborhood) => (
+                    <Grid item xs={12} md={6} key={neighborhood.id}>
+                      <Button
+                        variant={
+                          selectedNeighborhoods.some(
+                            (n) => n.id === neighborhood.id
+                          )
+                            ? "contained"
+                            : "outlined"
+                        }
+                        fullWidth
+                        startIcon={
+                          selectedNeighborhoods.some(
+                            (n) => n.id === neighborhood.id
+                          ) ? (
+                            <CheckBox />
+                          ) : (
+                            <CheckBoxOutlineBlank />
+                          )
+                        }
+                        onClick={() => handleNeighborhoodToggle(neighborhood)}
+                        sx={{ justifyContent: "flex-start" }}
+                      >
+                        {neighborhood.name}
+                      </Button>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2 }}>
+              {/* Sort Button */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
               >
-                نمایش {applyAllFilters(workers).length} آگهی
-              </Button>
+                <Button
+                  onClick={(e) => setSortAnchorEl(e.currentTarget)}
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Sort />}
+                >
+                  {getSortDisplayText()}
+                </Button>
+                <span>مرتب‌سازی</span>
+              </Box>
+              <Divider />
+
+              {/* Category Selection */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  my: 2,
+                }}
+              >
+                <Button
+                  onClick={() => setFilterLevel("category")}
+                  variant="outlined"
+                  size="small"
+                >
+                  {selectedCategory ? "تغییر" : "انتخاب"}
+                </Button>
+                <span>
+                  {selectedCategory
+                    ? `دسته بندی: ${selectedCategory.name}`
+                    : "انتخاب دسته بندی"}
+                </span>
+              </Box>
+              <Divider />
+
+              {/* Neighborhood Selection */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  my: 2,
+                }}
+              >
+                <Button
+                  onClick={() => setFilterLevel("region")}
+                  variant="outlined"
+                  size="small"
+                >
+                  {selectedNeighborhoods.length > 0 ? "تغییر" : "انتخاب"}
+                </Button>
+                <span>
+                  {selectedNeighborhoods.length > 0
+                    ? `محلات: ${selectedNeighborhoods
+                        .slice(0, 2)
+                        .map((n) => n.name)
+                        .join("، ")}${
+                        selectedNeighborhoods.length > 2 ? "..." : ""
+                      }`
+                    : "انتخاب محلات"}
+                </span>
+              </Box>
+              <Divider />
+
+              {/* Features Section - Now above range filters */}
+              {renderFeatures()}
+
+              {/* Range Filters Section - Now in collapsible accordion */}
+              {renderRangeFilters()}
             </Box>
           )}
         </Box>
-      </Modal>
+
+        {/* Footer */}
+        {filterLevel === "base" && (
+          <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => closeFilter()}
+            >
+              نمایش {applyFilters().length} آگهی
+            </Button>
+          </Box>
+        )}
+      </Box>
+
+      {/* Overlay for mobile */}
+      {isFilterOpen && isMobile && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1199,
+          }}
+          onClick={() => closeFilter()}
+        />
+      )}
     </>
   );
 };

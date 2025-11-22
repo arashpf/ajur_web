@@ -23,6 +23,7 @@ const SingleCategory = (props) => {
   const { slug, id, categories, subcat, neighbor } = router.query;
   const [selectedCat, setSelectedCat] = useState(null);
   const [loading, set_loading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
   const [name, set_name] = useState(false);
   const [city, set_city] = useState(false);
   const [neighborhoods, set_neighborhoods] = useState([]);
@@ -147,6 +148,19 @@ const SingleCategory = (props) => {
   };
 
   const renderWorkers = () => {
+    if (filterLoading) {
+      return (
+        <Grid item xs={12} style={{ textAlign: "center", padding: "40px 0" }}>
+          <img
+            src="/logo/ajour-gif.gif"
+            alt="در حال فیلتر کردن"
+            style={{ height: "60px", width: "auto" }}
+          />
+          <p style={{ marginTop: "10px", color: "#666" }}>در حال فیلتر کردن نتایج...</p>
+        </Grid>
+      );
+    }
+
     if (filteredWorkers.length > 0) {
       return (
         <LazyLoader
@@ -211,6 +225,7 @@ const SingleCategory = (props) => {
               <WorkerFilter
                 workers={all_workers}
                 onFilteredWorkersChange={setFilteredWorkers}
+                onLoadingChange={setFilterLoading}
                 initialCategory={selectedCat}
                 onCategoryChange={handleCategoryChange}
                 initialNeighborhood={initialNeighborhood}
