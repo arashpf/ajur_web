@@ -258,7 +258,8 @@ const Contact = (props) => {
         }
         
         .contact-hero {
-          background: linear-gradient(135deg, #a92b21 0%, #d32f2f 100%);
+          // background: linear-gradient(135deg, #577387 0%, #577387 100%);
+          background: linear-gradient(135deg, #7fa5bbff 0%, #2c3e50 100%);
           color: white;
           padding: 80px 20px;
           text-align: center;

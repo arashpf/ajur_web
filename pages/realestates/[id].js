@@ -661,21 +661,19 @@ const RealestateSingle = (props) => {
               </Box>
             </div>
             <div>
+              <WorkerFilter
+                workers={workers}
+                onFilteredWorkersChange={setFilteredWorkers}
+                enableLocalCategoryFilter={true}
+                availableCategories={cats}
+              />
               <Container
                 maxWidth="lg"
-                sx={{ mt: 7, mb: 1, paddingTop: 5, textAlign: "center" }}
+                sx={{ mt: 3, mb: 1, paddingTop: 2, textAlign: "center" }}
               >
-                <Grid container spacing={1}>
-                  <Grid item xs={12}>
-                    {/* WorkerFilter component - this will update filteredWorkers */}
-                    <WorkerFilter
-                      workers={workers}
-                      onFilteredWorkersChange={setFilteredWorkers}
-                      enableLocalCategoryFilter={true}
-                      availableCategories={cats}
-                    />
-                  </Grid>
-                </Grid>
+                <Box sx={{ position: "relative" }}>
+                  {/* Content goes here */}
+                </Box>
               </Container>
               
             </div>

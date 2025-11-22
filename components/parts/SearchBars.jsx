@@ -5,6 +5,7 @@ import CitySelector from "./CitySelector";
 import SearchIcon from "@mui/icons-material/Search";
 import { useRouter } from "next/router";
 import SmallCard from "../cards/SmallCard";
+import { Snackbar, Alert } from "@mui/material";
 
 const RealEstateCard = ({ realstate, circle_size }) => (
   <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
@@ -276,7 +277,6 @@ const categoriesData = [
 const SearchBars = ({ realstates }) => {
   const router = useRouter();
   const { currentCity, isLoading } = useContext(CityContext);
-
   // State management
   const [activeTab, setActiveTab] = useState("buySell");
   const [searchQuery, setSearchQuery] = useState("");
@@ -284,6 +284,7 @@ const SearchBars = ({ realstates }) => {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingAgents, setLoadingAgents] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const [isInputReady, setIsInputReady] = useState(false);
@@ -301,6 +302,8 @@ const SearchBars = ({ realstates }) => {
   const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
   const [lastHintPressed, setLastHintPressed] = useState(null);
   const [suggestionDirection, setSuggestionDirection] = useState("down");
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snack, setSnack] = useState("");
 
   // Refs
   const inputRef = useRef(null);
@@ -315,6 +318,18 @@ const SearchBars = ({ realstates }) => {
       // fetchData(currentCity.id);
     }
   }, [currentCity, isLoading]);
+
+  useEffect(() => {
+    // Reset redirecting spinner when route changes complete
+    const handleRouteChangeComplete = () => {
+      setIsRedirecting(false);
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChangeComplete);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChangeComplete);
+    };
+  }, [router]);
 
   useEffect(() => {
     if (lastHintPressed) {
@@ -340,12 +355,12 @@ const SearchBars = ({ realstates }) => {
     if (activeTab && !searchQuery && !showModal) {
       suggestionIntervalRef.current = setInterval(() => {
         setSuggestionDirection("up");
-        
+
         setTimeout(() => {
           setCurrentSuggestionIndex((prev) =>
             prev >= suggestionsMap[activeTab].length - 1 ? 0 : prev + 1
           );
-          
+
           setTimeout(() => {
             setSuggestionDirection("down");
           }, 100);
@@ -372,6 +387,37 @@ const SearchBars = ({ realstates }) => {
   }, [showModal]);
 
   // Helper functions
+  const handleSnackbar = (message) => {
+    setSnack(message);
+    setSnackOpen(true);
+  };
+
+  const renderSnackBar = () => {
+    return (
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{
+          "& .MuiSnackbarContent-root": {
+            fontSize: "1.2rem", // Larger font
+            padding: "16px 24px", // More padding
+            minWidth: "400px", // Minimum width
+          },
+        }}
+      >
+        <Alert
+          onClose={() => setSnackOpen(false)}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          {snack}
+        </Alert>
+      </Snackbar>
+    );
+  };
+
   const getCurrentSuggestion = () => {
     if (searchQuery) return searchQuery;
     if (!activeTab) return "جستجو...";
@@ -380,9 +426,10 @@ const SearchBars = ({ realstates }) => {
 
   const getNextSuggestion = () => {
     if (!activeTab) return "جستجو...";
-    const nextIndex = currentSuggestionIndex >= suggestionsMap[activeTab].length - 1 
-      ? 0 
-      : currentSuggestionIndex + 1;
+    const nextIndex =
+      currentSuggestionIndex >= suggestionsMap[activeTab].length - 1
+        ? 0
+        : currentSuggestionIndex + 1;
     return suggestionsMap[activeTab][nextIndex] || "جستجو...";
   };
 
@@ -421,6 +468,7 @@ const SearchBars = ({ realstates }) => {
   const handleCloseModal = () => {
     setActiveTab("buySell");
     setShowModal(false);
+    setIsRedirecting(false);
     clearTimeout(loadingTimeoutRef.current);
     clearInterval(progressIntervalRef.current);
   };
@@ -428,6 +476,7 @@ const SearchBars = ({ realstates }) => {
   const handleHintPress = (hint) => {
     setSearchQuery(hint);
     setLastHintPressed(hint);
+    handleSearch(true);
   };
 
   const handleTextChange = (text) => {
@@ -482,6 +531,8 @@ const SearchBars = ({ realstates }) => {
   const sendToCat = (item, neighborhoodName = null) => {
     console.log("Item data:", item);
 
+    handleCloseModal();
+
     let categoryId;
     let categoryName;
 
@@ -530,6 +581,9 @@ const SearchBars = ({ realstates }) => {
     const dynamicPathname = `/${currentCity.title}/${encodeURIComponent(
       categoryName
     )}`;
+
+    // Show spinner during redirect
+    setIsRedirecting(true);
 
     router.push({
       pathname: dynamicPathname,
@@ -676,6 +730,17 @@ const SearchBars = ({ realstates }) => {
   };
 
   const set_modal_active = (status) => {
+    if (!currentCity || isLoading) {
+      handleSnackbar("لطفاً ابتدا یک شهر را انتخاب کنید");
+      // Trigger the CitySelector modal to open
+      const citySelectorButton = document.querySelector(
+        '[data-testid="citySelectorButton"]'
+      );
+      if (citySelectorButton) {
+        citySelectorButton.click();
+      }
+      return;
+    }
     setShowAllNeighborhoods(false);
     setProperties([]);
     setSearchQuery("");
@@ -740,23 +805,16 @@ const SearchBars = ({ realstates }) => {
                         return (
                           <button
                             key={`${item.id}-${neighborhood.name}-${index}`}
-                            className={`px-3 py-1 rounded-full text-sm border ${
-                              propertyCount === 0
-                                ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-                                : "bg-green-50 text-gray-700 border-green-200 hover:bg-green-100"
-                            }`}
+                            className={`px-3 py-1 rounded-full text-sm border bg-green-50 text-gray-700 border-green-200 hover:bg-green-100`}
                             onClick={() =>
-                              propertyCount > 0 &&
+                              // propertyCount > 0 &&
                               sendToCat(item, neighborhood.name)
                             }
-                            disabled={propertyCount === 0}
                           >
                             {neighborhood.name}
-                            {propertyCount > 0 && (
-                              <span className="text-gray-500 text-xs mr-1">
-                                {` (${propertyCount} ملک)`}
-                              </span>
-                            )}
+                            <span className="text-gray-500 text-xs mr-1">
+                              {` (${propertyCount} ملک)`}
+                            </span>
                           </button>
                         );
                       })}
@@ -845,7 +903,7 @@ const SearchBars = ({ realstates }) => {
             {loadingAgents ? (
               renderSpinner()
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 m-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 m-4">
                 {agents.map((agent, index) => (
                   <SmallCard
                     key={index}
@@ -921,7 +979,7 @@ const SearchBars = ({ realstates }) => {
                     {getCurrentSuggestion()}
                   </span>
                 </div>
-                
+
                 {/* Next Suggestion */}
                 <div
                   className={`absolute inset-0 flex items-center transition-all duration-500 ease-in-out ${
@@ -958,6 +1016,7 @@ const SearchBars = ({ realstates }) => {
             </button>
           </div>
         </div>
+        {renderSnackBar()}
       </div>
 
       {/* Modal */}
@@ -1026,19 +1085,34 @@ const SearchBars = ({ realstates }) => {
                 onKeyPress={(e) => e.key === "Enter" && handleSearch(true)}
                 autoFocus={isInputReady}
               />
-              <div className="ml-3">
+              {/* <div className="ml-3">
                 <CitySelector
                   handleCitySelect={(city) => {
                     set_modal_active();
                     setShowAllNeighborhoods(false);
                   }}
                 />
-              </div>
+              </div> */}
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Loading Overlay - Only during redirect */}
+      {isRedirecting && (
+        <div className="fixed inset-0 bg-white bg-opacity-98 flex items-center justify-center z-[9999]">
+          <img
+            className="spinner-image"
+            src="/logo/ajour-gif.gif"
+            alt="در حال رفتن به نتایج"
+            style={{
+              width: "150px",
+              height: "150px",
+            }}
+          />
         </div>
       )}
     </div>
