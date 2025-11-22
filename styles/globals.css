@@ -114,6 +114,14 @@ body {
   --bottom-nav-height: 76px;
 }
 
+:root {
+  --ajur-red: #b92a31;
+  --metal-light: #f6f7f8;
+  --metal-mid: #d6d8da;
+  --metal-dark: #bfc1c3;
+  --metal-gradient: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-mid) 45%, var(--metal-dark) 100%);
+}
+
 /* Ensure the root containers include bottom padding for the navbar */
 #__next {
   padding-bottom: var(--bottom-nav-height);
