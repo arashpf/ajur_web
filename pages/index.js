@@ -25,6 +25,13 @@ import Button from "@mui/material/Button";
 import DealButton from "../components/parts/DealButton";
 import ActionCard from "../components/ActionButton";
 
+import Cards from "../components/home/cards";
+import city from "../components/home/city";
+import Footer from "../components/home/footer";
+import PrefooterText from "../components/home/prefooter_texts";
+import PrefooterCTA from "../components/home/prefooter-cta";
+import WhyAjur from "../components/home/why-ajur";
+
 import ForwardIcon from "@mui/icons-material/Forward";
 
 import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
@@ -78,6 +85,31 @@ function Home(props) {
   const [dealAnim, setDealAnim] = useState(null); // null | 'popOut'
   const [showVpnDialog, setShowVpnDialog] = useState(false);
   const [vpnChecked, setVpnChecked] = useState(false);
+
+  const features = [
+    {
+      id: "0",
+      illustration: "/buttons/buyProperty.png", // Add file extension
+      title: "خرید ملک",
+      description: "مشاهده آگهی های ملک در اپلیکیشن هوشمند آجر",
+      action: "جستجو املاک", // Changed from object to string
+    },
+    {
+      id: "1",
+      illustration: "/buttons/rentProperty.png",
+      title: "رهن و اجاره ملک",
+      description: "اجاره آپارتمان، ویلا و مغازه در بهترین مناطق",
+      action: "مشاهده آگهی های  اجاره",
+    },
+    {
+      id: "2",
+      illustration: "/buttons/sellProperty.png",
+      title: "فروش ملک",
+      description: "ثبت آگهی فروش ملک در پلتفرم آجر",
+      action: "ثبت آگهی",
+    },
+  ];
+
   // simplified visibility control
   const selectAction = (type) => {
     // start push animation; after animation finishes, show deal grid and hide buttons

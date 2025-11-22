@@ -11,6 +11,8 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
 import Tooltip from "@mui/material/Tooltip";
+import { useFilter } from "../contexts/FilterContext";
+import TuneIcon from "@mui/icons-material/Tune";
 
 import styles from "../styles/Header.module.css";
 
@@ -22,6 +24,7 @@ import MuiAlert from "@mui/material/Alert";
 const Alert = React.forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={20} ref={ref} variant="filled" {...props} />;
 });
+
 
 
 // PWA Install Button Logic
@@ -493,6 +496,8 @@ function Header() {
       );
     } else {
       // Normal mode - show logo, search button, and city selector
+      const { openFilter } = useFilter();
+      
       return (
         <Container fluid className={styles.navbar}>
           <div className={styles.normalHeader}>
@@ -503,6 +508,16 @@ function Header() {
               className={styles.searchButton}
             >
               <i className="fa fa-search"></i>
+            </Button>
+
+            {/* Filter Button */}
+            <Button
+              variant="link"
+              onClick={() => openFilter()}
+              className={styles.filterButton}
+              title="فیلترها"
+            >
+              <TuneIcon />
             </Button>
 
             {/* Logo in Middle */}
