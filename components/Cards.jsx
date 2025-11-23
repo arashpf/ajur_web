@@ -25,12 +25,6 @@ export default function Cards({ features = [] }) {
   const [hovered, setHovered] = React.useState(null);
   return (
     <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/30">
-      <div className="max-w-7xl mx-auto text-center mb-10">
-        <div className="inline-flex items-center gap-4">
-          <img src="/logo/ajur.png" alt="ajur" style={{ width: 44, height: 44, objectFit: 'contain' }} />
-          <h1 className="text-2xl md:text-3xl font-extrabold whitespace-nowrap">آجر، مشاور املاک هوشمند</h1>
-        </div>
-      </div>
       <style jsx>{`
         @font-face {
           font-family: 'Iran Sans';
@@ -106,14 +100,6 @@ export default function Cards({ features = [] }) {
             </div>
             )
           })}
-        </div>
-
-        <div className="mt-16 text-center opacity-95">
-          <p className="text-sm text-muted-foreground max-w-4xl mx-auto">
-            پیشنهادات بر اساس موقعیت مکانی و فعالیت جستجوی شما، مانند املاکی که
-            مشاهده کرده‌اید و ذخیره کرده‌اید و فیلترهایی که استفاده کرده‌اید، ارائه
-            می‌شود.
-          </p>
         </div>
       </div>
     </section>

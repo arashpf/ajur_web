@@ -15,8 +15,10 @@ import Link from "next/link";
 import FileRequest from "../components/request/FileRequest.jsx";
 import Cookies from "js-cookie";
 import { useRouter } from "next/router";
-import dynamic from 'next/dynamic'
-const FeaturesHub = dynamic(() => import('../components/accesshub'), { ssr: false })
+import dynamic from "next/dynamic";
+const FeaturesHub = dynamic(() => import("../components/accesshub"), {
+  ssr: false,
+});
 import LandingPage from "./assistant/G-ads/landing-page";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
@@ -30,15 +32,6 @@ import ActionCard from "../components/ActionButton";
 import Cards from "../components/Cards";
 import Download from "../components/Download";
 import BestSection from "../components/bestsection";
-
-import Cards from "../components/home/cards";
-import city from "../components/home/city";
-import Footer from "../components/home/footer";
-import PrefooterText from "../components/home/prefooter_texts";
-import PrefooterCTA from "../components/home/prefooter-cta";
-import WhyAjur from "../components/home/why-ajur";
-
-import ForwardIcon from "@mui/icons-material/Forward";
 
 import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -684,6 +677,12 @@ function Home(props) {
             {/* Quick access / features hub (renders after Cards) */}
             <FeaturesHub />
 
+            <div className="max-w-7xl mx-auto my-6 pt-14 text-center">
+              <h1 className="text-2xl md:text-3xl font-bold">بهترین‌های آجر</h1>
+            </div>
+
+            <BestSection />
+
             {/* Insert the new FileRequest section right after the Cards
                 Pass the original CTA handlers: call and open file-request page */}
             <FileRequest
@@ -693,7 +692,6 @@ function Home(props) {
 
             {/* Download section */}
             <Download />
-            <BestSection />
 
             {/* Full screen modal for subcategories */}
             {(clickedAction === "buy" || clickedAction === "rent") && (

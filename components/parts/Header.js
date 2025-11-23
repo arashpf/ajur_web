@@ -11,8 +11,6 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
 import Tooltip from "@mui/material/Tooltip";
-import { useFilter } from "../contexts/FilterContext";
-import TuneIcon from "@mui/icons-material/Tune";
 
 import styles from "../styles/Header.module.css";
 
@@ -496,7 +494,6 @@ function Header() {
       );
     } else {
       // Normal mode - show logo, search button, and city selector
-      const { openFilter } = useFilter();
       
       return (
         <Container fluid className={styles.navbar}>
@@ -508,16 +505,6 @@ function Header() {
               className={styles.searchButton}
             >
               <i className="fa fa-search"></i>
-            </Button>
-
-            {/* Filter Button */}
-            <Button
-              variant="link"
-              onClick={() => openFilter()}
-              className={styles.filterButton}
-              title="فیلترها"
-            >
-              <TuneIcon />
             </Button>
 
             {/* Logo in Middle */}
