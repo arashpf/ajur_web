@@ -33,6 +33,8 @@ import Cards from "../components/Cards";
 import Download from "../components/Download";
 import BestSection from "../components/bestsection";
 
+import ForwardIcon from "@mui/icons-material/Forward";
+
 import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import SwiperCore, { Autoplay } from "swiper";
