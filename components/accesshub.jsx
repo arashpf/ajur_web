@@ -1,25 +1,31 @@
 "use client"
+import { useRouter } from 'next/router'
 
 export default function FeaturesHub() {
+  const router = useRouter()
+
+  const handleFeatureClick = (feature) => {
+    if (feature.link) {
+      if (feature.external) {
+        window.open(feature.link, '_blank', 'noopener,noreferrer')
+      } else {
+        router.push(feature.link)
+      }
+    }
+  }
+
   return (
     <section className="w-full py-16 px-4 md:px-6 lg:px-8 max-w-6xl mx-auto text-center" dir="rtl">
-      {/* Added Header and Title sections */}
-      <div className="mb-12 space-y-4">
-        <h2 className="text-red-500 font-medium text-lg md:text-xl tracking-wide">خدمات آجر</h2>
-        <h3 className="text-3xl md:text-4xl font-bold text-gray-900">دسترسی سریع به خدمات ما</h3>
-      </div>
-
-      {/* Circular Fast Access Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-12 justify-items-center max-w-4xl mx-auto">
         {features.map((feature, index) => (
-          <CircleFeature key={index} feature={feature} index={index} />
+          <CircleFeature key={index} feature={feature} index={index} onFeatureClick={handleFeatureClick} />
         ))}
       </div>
     </section>
   )
 }
 
-function CircleFeature({ feature, index }) {
+function CircleFeature({ feature, index, onFeatureClick }) {
   return (
     <div
       className="relative group cursor-pointer"
@@ -27,7 +33,7 @@ function CircleFeature({ feature, index }) {
         animation: `fadeInUp 0.6s ease-out forwards ${index * 0.15}s`,
         opacity: 0,
       }}
-      onClick={() => {}}
+      onClick={() => onFeatureClick(feature)}
     >
       {/* Redesigned circle with neon rotating border and glow */}
       <div className="relative w-32 h-32 md:w-40 md:h-40 flex items-center justify-center">
@@ -70,6 +76,7 @@ function CircleFeature({ feature, index }) {
 const features = [
   {
     title: "محاسبه کمیسیون",
+    link: "/assistant/comissioncalc",
     icon: (
       <svg
         width="36"
@@ -96,6 +103,7 @@ const features = [
   },
   {
     title: "دفترچه تلفن",
+    link: "/assistant/notebook",
     icon: (
       <svg
         width="36"
@@ -116,6 +124,7 @@ const features = [
   },
   {
     title: "بازاریابی آجر",
+    link: "/marketing",
     icon: (
       <svg
         width="36"
@@ -135,6 +144,7 @@ const features = [
   },
   {
     title: "افزایش بازدید",
+    link: "/assistant/G-ads/landing-page",
     icon: (
       <svg
         width="36"
@@ -155,6 +165,8 @@ const features = [
   },
   {
     title: "آموزش",
+    link: "https://mag.ajur.app/category/educational/",
+    external: true,
     icon: (
       <svg
         width="36"
@@ -173,6 +185,7 @@ const features = [
   },
   {
     title: "بانک فایل",
+    link: "/assistant/filebank",
     icon: (
       <svg
         width="36"

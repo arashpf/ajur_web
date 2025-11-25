@@ -5,6 +5,9 @@
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Section Header */}
+         <div className="max-w-7xl mx-auto my-6 text-center">
+              <h1 className="text-2xl md:text-3xl font-bold">بهترین‌های آجر</h1>
+            </div>
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4 text-balance">بهترین‌های آجر</h2>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">

@@ -6,8 +6,7 @@ body {
 @tailwind components;
 @tailwind utilities;
 
-
-.notailwind{
+.notailwind {
   /* avoid forcing a fixed height which breaks grid row sizing; allow natural height */
   width: 100%;
   height: auto !important;
@@ -16,7 +15,9 @@ body {
 }
 
 /* make sure images and media with this helper class fill their grid cell */
-.notailwind img, .notailwind[data-component="img"], .notailwind .MuiCardMedia-root {
+.notailwind img,
+.notailwind[data-component="img"],
+.notailwind .MuiCardMedia-root {
   width: 100% !important;
   height: auto !important;
   display: block;
@@ -35,19 +36,36 @@ body {
   box-sizing: border-box;
 }
 
+.direction-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 @media (min-width: 600px) {
   /* 2 columns, each can shrink to 110px */
-  .lazy-grid { grid-template-columns: repeat(2, minmax(110px, 1fr)); padding-left: 24px; padding-right: 24px; }
+  .lazy-grid {
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 @media (min-width: 900px) {
   /* 3 columns, each can shrink to 100px */
-  .lazy-grid { grid-template-columns: repeat(3, minmax(100px, 1fr)); padding-left: 24px; padding-right: 24px; }
+  .lazy-grid {
+    grid-template-columns: repeat(3, minmax(100px, 1fr));
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 @media (min-width: 1200px) {
   /* 4 columns, each can shrink to 90px */
-  .lazy-grid { grid-template-columns: repeat(4, minmax(90px, 1fr)); padding-left: 32px; padding-right: 32px; }
+  .lazy-grid {
+    grid-template-columns: repeat(4, minmax(90px, 1fr));
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
 .lazy-item {
@@ -97,13 +115,11 @@ body {
   src: url(../fonts/Sahel.woff);
 }
 
-
-
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: 'iransans';
+  font-family: "iransans";
   /* background: #f7f7f7; */
   background: white;
 }
@@ -119,7 +135,12 @@ body {
   --metal-light: #f6f7f8;
   --metal-mid: #d6d8da;
   --metal-dark: #bfc1c3;
-  --metal-gradient: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-mid) 45%, var(--metal-dark) 100%);
+  --metal-gradient: linear-gradient(
+    180deg,
+    var(--metal-light) 0%,
+    var(--metal-mid) 45%,
+    var(--metal-dark) 100%
+  );
 }
 
 /* Ensure the root containers include bottom padding for the navbar */
@@ -139,33 +160,29 @@ main {
   padding-bottom: 10px;
 }
 
-
 h1 {
-  font-family: 'iransans';
+  font-family: "iransans";
 }
 
 h2 {
-  font-family: 'iransans';
+  font-family: "iransans";
 }
 
 p {
-  font-family: 'Tanha';
+  font-family: "Tanha";
 }
 
 a {
-
   text-decoration: none !important;
-  font-family: 'iransans';
+  font-family: "iransans";
 }
 
 * {
   box-sizing: border-box;
-
 }
 
 div {
-  font-family: 'iransans';
-
+  font-family: "iransans";
 }
 
 .search-div-wrapper {
@@ -173,19 +190,14 @@ div {
   margin-bottom: 50px;
 
   font-size: 1em;
-
-
 }
 
-.qrcode__container {}
-
-
+.qrcode__container {
+}
 
 .swiper-pagination {
   position: unset !important;
-
 }
-
 
 @media (prefers-color-scheme: dark) {
   html {
@@ -193,7 +205,6 @@ div {
   }
 
   body {
-
     background: black;
   }
 }
@@ -212,53 +223,33 @@ div {
   background: white;
 }
 
-.swiper-button-next {}
-
-
-
+.swiper-button-next {
+}
 
 /* try to add padding and margin to swipper.js arrows */
 .swiper-button-next,
 .swiper-button-prev {
-
-
-
   color: orange !important;
   display: none !important;
   /* box-shadow: rgba(0, 0, 0, 0.50) 0px 5px 15px; */
-
-
-
-
 }
-
-
-
-
 
 .swiper-button-prev {
   left: -3px !important;
   font-size: 2px !important;
-
 }
 
 .swiper-button-next {
   right: -3px !important;
   color: gray;
   font-size: 20px;
-
 }
-
-
-
 
 /* TODO: in the moment i dont know to use if statment in dynamic className and using css module
 so for now i put the CatCard2 styles in the global css , but i have to fix it later and move this
 lines of codes to the CatCard2.module.css */
 .cat-card-2-title {
-
   font-size: 1em;
-
 }
 
 .cat-all-card-2-active {
@@ -275,14 +266,12 @@ lines of codes to the CatCard2.module.css */
 }
 
 .cat-card-2-active {
-
   padding: 10px;
   background: white;
   margin: 10px;
   border-radius: 5px;
   box-shadow: -5px 5px 5px 1px #ddd;
   background: orange;
-
 }
 
 .cat-card-2-active :hover {
@@ -291,10 +280,7 @@ lines of codes to the CatCard2.module.css */
 
 .clickable :hover {
   cursor: pointer;
-
 }
-
-
 
 .cat-card-2-disactive {
   padding: 10px;
@@ -311,18 +297,14 @@ lines of codes to the CatCard2.module.css */
 
 /* TODO: same as upper todo */
 
-
 .date-picker-active {
   border: 1px solid blue;
   color: white;
   background: rgba(83, 83, 235, 0.081);
-
 }
 
 .date-picker-deactive {
-
   border: 0px !important;
-
 }
 
 .tour-dialog-date-picker-wrapper p {
@@ -361,33 +343,25 @@ lines of codes to the CatCard2.module.css */
 }
 
 .not-found-image {
-
   justify-content: center;
   vertical-align: center;
 }
 
-
 @media (max-width: 600px) {
-
   /* no per-breakpoint sizing here anymore; the global .spinner-image rule
      below handles responsive sizing with a fixed aspect-ratio. */
-
-
-
 }
 
 @media (min-width: 600px) {
-
-
   .swiper {
     padding: 0 40px !important;
   }
 
   /* keep other breakpoint-specific styles here if needed; spinner sizing
      is centralized below */
-
 }
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;

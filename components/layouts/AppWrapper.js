@@ -1,6 +1,12 @@
-import React from "react";
-import { FilterProvider } from "../contexts/FilterContext";
+import React from 'react';
+import { FilterProvider } from '../contexts/FilterContext';
 
-export default function AppWrapper({ children }) {
-  return <FilterProvider>{children}</FilterProvider>;
+function AppWrapper({ children }) {
+  return (
+    <FilterProvider>
+      {children}
+    </FilterProvider>
+  );
 }
+
+export default AppWrapper;

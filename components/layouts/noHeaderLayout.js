@@ -11,6 +11,7 @@ import Footer from '../parts/Footer'
 import AIOverlayComponent from "../parts/AIOverlayComponent"
 import GoogleAnalytics from '../parts/GoogleAnalytics';
 import { GoogleTagManager } from '@next/third-parties/google';
+import AppWrapper from './AppWrapper';
 
 
 
@@ -18,12 +19,14 @@ import { GoogleTagManager } from '@next/third-parties/google';
 
 function NoHeaderLayout({ children }) {
   return (
-    <div>
-      <GoogleAnalytics />
-      <GoogleTagManager id="GTM-WNKQBXPR" />
-      <main>{children}</main>
-      <Footer />
-    </div>
+    <AppWrapper>
+      <div>
+        <GoogleAnalytics />
+        <GoogleTagManager id="GTM-WNKQBXPR" />
+        <main>{children}</main>
+        <Footer />
+      </div>
+    </AppWrapper>
   );
 }
 
