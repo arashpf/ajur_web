@@ -2,20 +2,29 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:20px; /* Increased from 12px */
-  border-radius:16px; /* Increased from 10px */
+  padding:28px; /* larger touch target */
+  border-radius:18px;
   border:1px solid #eee;
   background:#fff;
   cursor:pointer;
   transition:transform .12s ease, box-shadow .12s ease;
-  min-width: 140px; /* Added min-width */
-  min-height: 120px; /* Added min-height */
+  min-width: 160px;
+  min-height: 140px;
+  box-shadow: 0 12px 30px rgba(16,24,40,0.06);
 }
 .button:active{ transform: translateY(1px); }
-.content{ display:flex; flex-direction:column; align-items:center; gap:12px } /* Increased gap from 6px */
-.content{ display:flex; flex-direction:column; align-items:center; gap:12px; direction: rtl; }
-.icon{ width:56px; height:56px; border-radius:14px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center } /* Increased from 36px */
-.title{ font-size:16px; color:#222; direction: rtl; text-align: right; font-weight: 500; } /* Increased from 14px and added font-weight */
+.content{ display:flex; flex-direction:column; align-items:center; gap:18px; direction: rtl; }
+.icon{ width:80px; height:80px; border-radius:16px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center }
+.icon img{ width:70%; height:70%; object-fit:contain }
+.title{ font-size:22px; color:#222; direction: rtl; text-align: right; font-weight: 700; }
+
+/* Larger layout on wide screens */
+@media (min-width: 1024px) {
+  .button{ padding:34px; min-width: 200px; min-height: 160px; }
+  .icon{ width:96px; height:96px; }
+  .icon img{ width:72%; height:72%; }
+  .title{ font-size:24px; }
+}
 
 /* pop-in animation for deal buttons */
 .popIn {

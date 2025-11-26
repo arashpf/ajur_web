@@ -74,6 +74,13 @@
 .main {
   padding: 12px; /* small gutter on mobile */
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden; /* prevent absolutely-positioned decorations from creating extra page scroll */
+}
+
+/* TEMP DEBUG: Outline direct children of main to find overflow/gap source. Remove after debugging. */
+.main > * {
+  outline: 3px dashed rgba(255,0,0,0.08);
 }
 
 @media (min-width: 600px) {

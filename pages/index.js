@@ -672,15 +672,15 @@ function Home(props) {
             <Cards features={homepageCardsFeatures} />
 
             {/* Services heading */}
-            <div className="max-w-7xl mx-auto my-6 text-center">
-              <h1 className="text-2xl md:text-3xl font-bold">خدمات آجر</h1>
+            <div className="max-w-7xl mx-auto my-6 text-center iransans">
+              <h1 className="iransans-heading text-3xl md:text-4xl font-bold">خدمات آجر</h1>
             </div>
 
             {/* Quick access / features hub (renders after Cards) */}
             <FeaturesHub />
 
-            <div className="max-w-7xl mx-auto my-6 pt-14 text-center">
-              <h1 className="text-2xl md:text-3xl font-bold">بهترین‌های آجر</h1>
+            <div className="max-w-7xl mx-auto my-6 pt-14 text-center iransans">
+              <h1 className="iransans-heading text-3xl md:text-4xl font-bold">بهترین‌های آجر</h1>
             </div>
 
             <BestSection />
@@ -938,7 +938,7 @@ function Home(props) {
         </DialogActions>
       </Dialog>
 
-      <main className={styles.main}>{renderOrSpinner()}</main>
+      <main className={`${styles.main} iransans`}>{renderOrSpinner()}</main>
     </div>
   );
 }

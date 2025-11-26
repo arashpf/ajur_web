@@ -124,6 +124,24 @@ body {
   background: white;
 }
 
+/* Utility class to force IranSans where needed */
+.iransans {
+  font-family: "iransans", Sahel, Tanha, sans-serif !important;
+}
+
+/* Helper to enlarge and emphasize headings using IranSans */
+.iransans .iransans-heading {
+  font-family: "iransans", Sahel, Tanha, sans-serif !important;
+  font-weight: 800;
+}
+
+/* Force IranSans for all elements inside a container that opts in.
+   This uses !important to override component-local font declarations
+   so that the index page can guarantee a single font. */
+.iransans, .iransans * {
+  font-family: "iransans", Sahel, Tanha, sans-serif !important;
+}
+
 /* Reserve space for a fixed bottom navbar so it doesn't cover page content.
    Adjust --bottom-nav-height to match your navbar's height. */
 :root {

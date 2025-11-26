@@ -24,27 +24,17 @@ const ArrowLeft = (props) => (
 export default function Cards({ features = [] }) {
   const [hovered, setHovered] = React.useState(null);
   return (
-    <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/30">
-      <style jsx>{`
-        @font-face {
-          font-family: 'Iran Sans';
-          src: url('/fonts/iran-sans.ttf') format('truetype');
-          font-weight: 400 900;
-          font-style: normal;
-          font-display: swap;
-        }
-        h1 { font-family: 'Iran Sans', 'Sahel', sans-serif; }
-        h3 { font-family: 'Iran Sans', 'Sahel', sans-serif; }
-      `}</style>
+    <section className="py-20 px-4 bg-gradient-to-b from-background to-secondary/30 iransans">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature) => {
             // Make buy/rent/register actions use the red hover style
             const isRed = ["ثبت آگهی", "خرید", "اجاره"].includes(feature.title || feature.action);
+            const isDisabled = !!feature.disabled;
             return (
             <div
               key={feature.id}
-              className="group transform transition-all duration-300"
+              className="group transform transition-all duration-300 mx-auto w-11/12 sm:w-full max-w-sm"
               style={{ willChange: "transform, opacity" }}
               // make entire card clickable optionally
               onClick={(e) => {
@@ -54,14 +44,14 @@ export default function Cards({ features = [] }) {
                 feature.onClick(e);
               }}
             >
-              <div className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 h-full flex flex-col gap-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-300/40`}>
+              <div className={`${isDisabled ? 'bg-gray-50 text-gray-600 border border-gray-200' : 'bg-white'} rounded-3xl p-8 h-full flex flex-col gap-6 shadow-lg ${isDisabled ? '' : 'hover:shadow-2xl hover:-translate-y-1'} transition-all duration-300 ring-1 ring-gray-100` }>
                 {/* Illustration */}
-                <div className="mx-auto transition-transform duration-300 group-hover:scale-105">
+                  <div className={`mx-auto transition-transform duration-300 ${isDisabled ? '' : 'group-hover:scale-105'}`}>
                   <div className="relative w-52 h-52 mx-auto">
                     <img
                       src={feature.illustration || "/placeholder.svg"}
                       alt={feature.title || "illustration"}
-                      className="w-full h-full object-contain drop-shadow-lg"
+                      className={`w-full h-full object-contain drop-shadow-lg ${isDisabled ? 'opacity-60' : ''}`}
                       style={{ display: "block" }}
                     />
                   </div>
@@ -69,10 +59,10 @@ export default function Cards({ features = [] }) {
 
                 {/* Content */}
                 <div className="flex-1 flex flex-col gap-4 text-center">
-                  <h3 className="text-2xl font-bold text-foreground">
+                  <h3 className="text-2xl font-bold text-foreground iransans-heading">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed text-balance">
+                  <p className="text-muted-foreground leading-relaxed text-balance iransans">
                     {feature.description}
                   </p>
                 </div>
@@ -80,21 +70,27 @@ export default function Cards({ features = [] }) {
                 <button
                   type="button"
                   onClick={(e) => {
+                    if (isDisabled) return;
                     e.stopPropagation();
                     if (typeof feature.onClick === "function") feature.onClick(e);
                   }}
                   onMouseEnter={() => setHovered(feature.id)}
                   onMouseLeave={() => setHovered(null)}
-                  className="w-full py-3.5 px-7 rounded-full text-white font-bold text-base hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  disabled={isDisabled}
+                  className={`w-full sm:w-10/12 mx-auto py-4 sm:py-3.5 px-8 sm:px-7 rounded-full font-bold text-lg sm:text-base transition-all duration-300 flex items-center justify-center gap-2 ${isDisabled ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'text-white'}`}
                   style={{
                     background:
-                      isRed && hovered === feature.id
-                        ? "linear-gradient(135deg,#B8322C,#8F251F)"
-                        : "linear-gradient(135deg,#7C7A75,#2F2F2F)",
+                      !isDisabled && (
+                        // bluish gradient default, slightly darker on hovered red-target actions
+                        isRed && hovered === feature.id
+                          ? 'linear-gradient(135deg,#1e40af,#1e3a8a)'
+                          : 'linear-gradient(135deg,#3b82f6,#2563eb)'
+                      ),
+                    transform: !isDisabled ? 'scale(1.0)' : undefined,
                   }}
                 >
                   {feature.action}
-                  <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                  <ArrowLeft className={`w-4 h-4 transition-transform ${isDisabled ? '' : 'group-hover:-translate-x-1'}`} />
                 </button>
               </div>
             </div>

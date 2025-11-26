@@ -129,11 +129,14 @@ const Trophy = (props) => (
 export default function Download() {
   const [showQr, setShowQr] = React.useState(false);
   return (
-    <section className="px-4 py-12">
+    <section className="px-4 py-12 relative overflow-hidden">
       <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-24 max-w-7xl mx-auto">
         {/* Left Content (text + CTAs) */}
-        <div className="flex-1 text-center lg:text-right lg:order-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
+        <div className="flex-1 text-center lg:text-right lg:order-1 iransans">
+          <h1
+            className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center iransans-heading"
+            style={{ fontFamily: 'iransans, Sahel, Tanha, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif', fontWeight: 800 }}
+          >
             اپلیکیشن آجر را دریافت کنید
           </h1>
           <p
