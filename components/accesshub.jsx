@@ -164,7 +164,7 @@ const features = [
     ),
   },
   {
-    title: "آموزش",
+    title: "مجله آجر",
     link: "https://mag.ajur.app/category/educational/",
     external: true,
     icon: (

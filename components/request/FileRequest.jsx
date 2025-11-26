@@ -22,9 +22,9 @@ export default function FileRequest({
   );
 
   return (
-    <section className="fr-wrapper">
+    <section className="fr-wrapper iransans">
       <header className="fr-header">
-        <h2 className="fr-title">
+        <h2 className="fr-title iransans-heading" style={{fontSize: '32px'}}>
           فایل مورد نظر خود را <span className="fr-request">درخواست</span> دهید
         </h2>
         <p style={{ direction: "rtl" }} className="text-center">
@@ -242,7 +242,7 @@ export default function FileRequest({
 
         <div className="fr-right">
           <div className="fr-card">
-            <h3 className="fr-card-title text-right">
+            <h3 className="fr-card-title text-right iransans-heading" style={{fontSize: '20px'}}>
               ربات آجر به دنبال بهترین گزینه‌هاست
             </h3>
 
@@ -250,9 +250,6 @@ export default function FileRequest({
               <li>ثبت درخواست دقیق بر اساس بودجه و نیاز شما</li>
               <li>جستجو توسط تیم حرفه‌ای و هوش مصنوعی Ajur</li>
               <li>پیدا کردن بهترین فایل‌های موجود بدون اتلاف وقت شما</li>
-              <li>پیگیری مستمر تا زمانی که فایل مناسب پیدا شود</li>
-              <li>اعلان فوری وقتی گزینه‌ی مناسب برای شما یافت شود</li>
-              <li>ارائه چند پیشنهاد مطمئن و واقعی برای انتخاب راحت‌تر</li>
             </ul>
 
             <div className="fr-ctas">
@@ -263,7 +260,10 @@ export default function FileRequest({
                   (() => (window.location.href = "tel:+982191000000"))
                 }
               >
-                📞 تماس با مشاور
+                <svg className="fr-cta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.72c.12.9.38 1.77.78 2.58a2 2 0 0 1-.45 2.11L9.91 9.91a16 16 0 0 0 6 6l1.5-1.5a2 2 0 0 1 2.11-.45c.81.4 1.68.66 2.58.78A2 2 0 0 1 22 16.92z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>تماس با مشاور</span>
               </button>
               <button
                 className="fr-cta card-action"
@@ -272,7 +272,12 @@ export default function FileRequest({
                   (() => console.log("ثبت درخواست فایل clicked"))
                 }
               >
-                📋 ثبت درخواست فایل
+                <svg className="fr-cta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M9 11l3-3 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 21h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <span>ثبت درخواست فایل</span>
               </button>
             </div>
           </div>
@@ -590,9 +595,9 @@ export default function FileRequest({
           border: 2px solid rgba(107, 114, 128, 0.12);
         }
         .fr-cta.card-action {
-          background: linear-gradient(135deg, #7c7a75, #2f2f2f);
+          background: linear-gradient(135deg, #2563eb, #1e40af);
           color: #fff;
-          box-shadow: 0 12px 34px rgba(0, 0, 0, 0.14);
+          box-shadow: 0 12px 34px rgba(30, 64, 175, 0.14);
         }
         .fr-cta.card-action:hover {
           transform: translateY(-6px) scale(1.02);
@@ -611,6 +616,15 @@ export default function FileRequest({
           gap: 12px;
           margin-top: 28px;
           flex-wrap: wrap;
+        }
+
+        /* Icon sizing inside CTAs */
+        .fr-cta .fr-cta-icon {
+          width: 18px;
+          height: 18px;
+          display: inline-block;
+          margin-inline-end: 8px;
+          flex-shrink: 0;
         }
         .fr-stat {
           flex: 1 1 220px;

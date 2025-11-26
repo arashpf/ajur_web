@@ -3,9 +3,9 @@ import React from "react";
 const cards = [
   {
     id: 1,
-    title: "مجله آجر",
-    description: "مطالب و اخبار روز دنیای املاک",
-    icon: "magazine",
+    title: "بهترین املاک",
+    description: "برترین آژانس های املاک شهر شما.",
+    icon: "estate",
   },
   // {
   //   id: 2,
@@ -14,34 +14,59 @@ const cards = [
   //   icon: "marketing",
   // },
   {
-    id: 3,
+    id: 2,
     title: "بهترین مشاوران",
     description: "مشاوران برتر و باتجربه آجر",
     icon: "agent",
   },
   {
-    id: 4,
+    id: 3,
     title: "بهترین دپارتمان‌ها",
     description: "دسترسی به بهترین دپارتمان‌های املاک",
     icon: "department",
+  },
+  // Coming soon greyed-out cards
+  {
+    id: 4,
+    title: "برترین سازنده ها",
+    description: "برترین سازنده های حوزه املاک",
+    icon: "clock",
+    disabled: true,
+    soonLabel: "به زودی !",
+  },
+  {
+    id: 5,
+    title: "بهترین مشاغل",
+    description: "بهترین کسب‌وکارهای مرتبط با املاک",
+    icon: "clock",
+    disabled: true,
+    soonLabel: "به زودی !",
+  },
+  {
+    id: 6,
+    title: "برترین کارشناسان",
+    description: "مشاوران و کارشناسان خبره",
+    icon: "clock",
+    disabled: true,
+    soonLabel: "به زودی !",
   },
 ];
 
 export default function BestSection() {
   return (
-    <section className="pb-24 pt-12 px-4 bg-transparent relative overflow-hidden">
+    <section dir="rtl" className="pb-24 pt-12 px-4 bg-transparent relative overflow-hidden">
       <div className="max-w-7xl mx-auto relative z-10">
 
         {/* Cards Grid - Dynamic centering for any number of cards */}
         <div className="flex justify-center">
-          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-${cards.length > 3 ? 4 : cards.length} gap-6 justify-items-center`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
             {cards.map((card, index) => (
               <div
                 key={card.id}
                 onClick={() => {
                   // Empty onClick - to be filled by friend
                 }}
-                className="group relative cursor-pointer h-full w-full max-w-sm animate-fade-in-up"
+                className={`group relative overflow-hidden ${card.disabled ? 'cursor-default' : 'cursor-pointer'} h-full w-full max-w-sm animate-fade-in-up`}
                 style={{
                   animationDelay: `${index * 150}ms`,
                   animationFillMode: "backwards",
@@ -49,14 +74,10 @@ export default function BestSection() {
               >
                 {/* Moving Neon Border Container */}
                 <div className="relative h-full overflow-hidden rounded-3xl p-[3px] isolate transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-                  {/* Spinning Gradient Border */}
-                  <div className="absolute inset-[-100%] animate-spin-slow bg-[conic-gradient(from_90deg_at_50%_50%,#ffcdd2_0%,#ff5252_25%,#d32f2f_50%,#ff5252_75%,#ffcdd2_100%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                  {/* Static Border for non-hover state */}
-                  <div className="absolute inset-[-100%] bg-gradient-to-br from-red-200/30 to-red-300/30 group-hover:opacity-0 transition-opacity duration-500" />
+                  {/* Subtle neutral decoration removed to avoid overpowering borders. */}
 
                   {/* Inner Card Content */}
-                  <div className="relative h-full w-full rounded-[22px] bg-gradient-to-br from-[#ffebee] via-[#ffcdd2] to-[#ffb3ba] p-8 flex flex-col justify-between overflow-hidden">
+                  <div className={`relative h-full w-full rounded-[22px] p-8 flex flex-col justify-between overflow-hidden ${card.disabled ? 'bg-gray-50 text-black border border-gray-200 pointer-events-none' : 'bg-white/95 border border-gray-100 shadow-2xl hover:shadow-2xl hover:-translate-y-1 ring-1 ring-gray-200'}`}>
                     {/* Shine effect on hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
@@ -65,10 +86,13 @@ export default function BestSection() {
                     <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-white/50 rounded-full blur-3xl animate-float-delayed" />
 
                     <div className="relative z-10">
+                      {card.disabled && (
+                        <div className="absolute top-3 left-3 bg-gray-100 text-gray-500 px-2 py-1 rounded-full text-[11px] font-semibold z-20">{card.soonLabel}</div>
+                      )}
                       {/* Icon with animation */}
-                      <div className="w-20 h-20 bg-white/70 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-white/60 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                      <div className={`w-20 h-20 bg-white backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-gray-100 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}> 
                         <svg
-                          className="w-10 h-10 text-[#D93025]"
+                          className={`w-10 h-10 ${card.disabled ? 'text-red-500' : 'text-[#D93025]'}`}
                           strokeWidth={2}
                           fill="none"
                           stroke="currentColor"
@@ -76,18 +100,10 @@ export default function BestSection() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >
-                          {card.icon === "magazine" && (
+                          {card.icon === "estate" && (
                             <>
-                              <rect
-                                x="3"
-                                y="4"
-                                width="14"
-                                height="16"
-                                rx="2"
-                                fill="none"
-                              />
-                              <path d="M8 6h6" />
-                              <path d="M8 10h6" />
+                              <path d="M3 11l9-7 9 7v8a1 1 0 0 1-1 1h-4v-6H8v6H4a1 1 0 0 1-1-1v-8z" />
+                              <path d="M9 21v-6h6v6" />
                             </>
                           )}
 
@@ -117,34 +133,43 @@ export default function BestSection() {
                               <path d="M15 16v2" />
                             </>
                           )}
+
+                          {card.icon === "clock" && (
+                            <>
+                              <circle cx="12" cy="12" r="8" />
+                              <path d="M12 8v5l3 2" />
+                            </>
+                          )}
                         </svg>
                       </div>
 
                       {/* Content */}
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3 text-balance">
+                      <h3 className={`text-2xl font-bold mb-3 text-balance iransans-heading ${card.disabled ? 'text-black' : 'text-gray-900'}`}>
                         {card.title}
                       </h3>
-                      <p className="text-gray-800 font-medium text-base leading-relaxed text-balance">
+                      <p className={`font-medium text-base leading-relaxed text-balance iransans ${card.disabled ? 'text-gray-700' : 'text-gray-800'}`}>
                         {card.description}
                       </p>
                     </div>
 
                     {/* Hover indicator */}
-                    <div className="relative z-10 mt-6 group-hover:translate-x-2 transition-transform duration-300">
-                      <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#D93025] transition-colors font-semibold">
-                        <span className="text-sm">مشاهده بیشتر</span>
-                        <svg
-                          className="w-5 h-5 animate-arrow-bounce"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2.5}
-                          viewBox="0 0 24 24"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                      </div>
+                    <div className="relative z-10 mt-6 transition-transform duration-300">
+                      {!card.disabled && (
+                        <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#D93025] transition-colors font-semibold">
+                          <span className="text-sm">مشاهده بیشتر</span>
+                          <svg
+                            className="w-5 h-5 animate-arrow-bounce"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                            viewBox="0 0 24 24"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
