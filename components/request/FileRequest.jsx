@@ -24,7 +24,7 @@ export default function FileRequest({
   return (
     <section className="fr-wrapper iransans">
       <header className="fr-header">
-        <h2 className="fr-title iransans-heading" style={{fontSize: '32px'}}>
+        <h2 className="fr-title iransans-heading" style={{fontSize: 'clamp(18px, 5vw, 32px)'}}>
           فایل مورد نظر خود را <span className="fr-request">درخواست</span> دهید
         </h2>
         <p style={{ direction: "rtl" }} className="text-center">

@@ -597,6 +597,25 @@
   min-width: 88px;
 }
 
+/* Hover animation for header title */
+.headerTitleHover {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.headerTitleHover:hover {
+  animation: titleHoverFloat 1.5s ease-in-out infinite;
+}
+
+@keyframes titleHoverFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 
 .worker-swiper {
   padding: 25px !important;

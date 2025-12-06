@@ -149,9 +149,7 @@ export default function Download() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href="https://ajur.app/download"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/download"
               className="inline-flex px-8 py-4 bg-red-600 text-white rounded-xl font-semibold text-lg hover:bg-red-700 transition-colors items-center gap-2 shadow-lg shadow-red-600/20"
             >
               <Smartphone className="w-5 h-5" />
