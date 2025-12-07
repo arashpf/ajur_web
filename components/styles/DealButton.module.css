@@ -16,14 +16,14 @@
 .content{ display:flex; flex-direction:column; align-items:center; gap:18px; direction: rtl; }
 .icon{ width:80px; height:80px; border-radius:16px; background:rgba(0,0,0,0.04); display:flex; align-items:center; justify-content:center }
 .icon img{ width:70%; height:70%; object-fit:contain }
-.title{ font-size:22px; color:#222; direction: rtl; text-align: right; font-weight: 700; }
+.title{ font-size:18px; color:#222; direction: rtl; text-align: right; font-weight: 500; }
 
 /* Larger layout on wide screens */
 @media (min-width: 1024px) {
   .button{ padding:34px; min-width: 200px; min-height: 160px; }
   .icon{ width:96px; height:96px; }
   .icon img{ width:72%; height:72%; }
-  .title{ font-size:24px; }
+  .title{ font-size:20px; }
 }
 
 /* pop-in animation for deal buttons */
