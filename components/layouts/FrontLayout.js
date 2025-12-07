@@ -28,15 +28,18 @@ function FrontLayout({ children }) {
   return (
     <AppWrapper>
       <CityProvider>
-        <div>
-          {/* Sticky header container: keeps Header or SearchBars fixed at top */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 1100, background: 'white', paddingBottom: '0px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          {/* Sticky header - using fixed position for reliability */}
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, background: 'white', width: '100%', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
             <SearchBars/>
           </div>
 
+          {/* Spacer to account for fixed header - no background color */}
+          <div style={{ height: '80px', background: 'transparent' }}></div>
+
           <GoogleAnalytics />
           <GoogleTagManager id="GTM-WNKQBXPR" />
-          <main>{children}</main>
+          <main style={{ flex: 1 }}>{children}</main>
           <Footer />
         </div>
       </CityProvider>
