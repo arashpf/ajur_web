@@ -1,6 +1,7 @@
 import React, { useEffect } from "react"
 import FrontLayout from '../components/layouts/FrontLayout'
 import '../styles/globals.css'
+import '../styles/download-theme.css'
 import 'font-awesome/css/font-awesome.min.css'
 import 'bootstrap/dist/css/bootstrap.css'
 import "slick-carousel/slick/slick.css"

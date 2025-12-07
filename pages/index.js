@@ -668,7 +668,13 @@ function Home(props) {
       return (
         <div>
           <main className={styles["main"]}>
-            {/* Replaced the three ActionCard tiles with the new Cards component */}
+
+            {/* Header Title Above Cards */}
+            <div className={`max-w-7xl mx-auto mt-32 mb-10 text-center iransans ${styles.headerTitleHover}`}>
+              <h1 className="iransans-heading text-3xl sm:text-4xl md:text-6xl font-extrabold leading-tight">
+                <span className="text-red-600">آجر</span>، مشاور املاک هوشمند
+              </h1>
+            </div>
             <Cards features={homepageCardsFeatures} />
 
             {/* Services heading */}

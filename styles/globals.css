@@ -378,11 +378,15 @@ lines of codes to the CatCard2.module.css */
   /* keep other breakpoint-specific styles here if needed; spinner sizing
      is centralized below */
 }
-html,
+html {
+  overflow-y: scroll;
+}
+
 body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 /* Centralized spinner-image rules: keep the GIF centered and preserve its
@@ -413,14 +417,12 @@ body {
 }
 
 #__next {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
 }
 
 body {
-  display: flex;
-  flex-direction: column;
+  display: block;
+  overflow-x: hidden;
 }
 
 .main-content {
