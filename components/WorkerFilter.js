@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useFilter } from "./contexts/FilterContext";
 import {
   Box,
   Button,
@@ -102,9 +101,9 @@ const WorkerFilter = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { isFilterOpen, openFilter, closeFilter } = useFilter();
 
   // State
+  const [isFilterOpen, setIsFilterOpen] = useState(!isMobile);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
@@ -352,7 +351,7 @@ const WorkerFilter = ({
   ]);
 
   const handleCategoryChange = () => {
-    openFilter();
+    setIsFilterOpen(true);
     setFilterLevel("category");
   };
 
@@ -538,7 +537,7 @@ const WorkerFilter = ({
   };
 
   const handleResetAll = () => {
-    setSelectedCategory(null);
+    // Don't clear selected category - only clear other filters
     setSelectedNeighborhoods([]);
     setSelectedFeatures([]);
     setRangeFilters(
@@ -549,7 +548,6 @@ const WorkerFilter = ({
       }))
     );
     setSortBy("newest");
-    if (onCategoryChange) onCategoryChange(null);
     // Filtering will happen automatically via useEffect
   };
 
@@ -1058,16 +1056,16 @@ const WorkerFilter = ({
       <Box
         sx={{
           position: "fixed",
-          top: 80,
+          top: isMobile ? 125 : 80,
           right: 16,
-          zIndex: 100,
+          zIndex: 1000,
           display: "flex",
           flexDirection: "column",
           gap: 1,
         }}
       >
         <Button
-          onClick={() => openFilter()}
+          onClick={() => setIsFilterOpen(true)}
           variant="contained"
           sx={{ width: 56, height: 56, borderRadius: "50%" }}
         >
@@ -1106,7 +1104,7 @@ const WorkerFilter = ({
         sx={{
           position: "fixed",
           top: 0,
-          right: isFilterOpen ? 0 : -500,
+          right: isFilterOpen ? 0 : isMobile ? "-100%" : -500,
           width: isMobile ? "100%" : 500,
           height: "100vh",
           bgcolor: "background.paper",
@@ -1131,9 +1129,13 @@ const WorkerFilter = ({
           }}
         >
           <Button
-            onClick={() =>
-              filterLevel === "base" ? closeFilter() : setFilterLevel("base")
-            }
+            onClick={() => {
+              if (filterLevel !== "base") {
+                setFilterLevel("base");
+              } else {
+                setIsFilterOpen(false);
+              }
+            }}
             color="inherit"
           >
             {filterLevel === "base" ? <Close /> : <ArrowBack />}
@@ -1144,11 +1146,11 @@ const WorkerFilter = ({
           </Button>
         </Box>
 
-        {/* Selected Filters */}
-        {renderSelectedFilters()}
+        {/* Selected Filters - Only show on desktop */}
+        {!isMobile && renderSelectedFilters()}
 
         {/* Content */}
-        <Box sx={{ flex: 1, overflow: "auto" }}>
+        <Box sx={{ flex: 1, overflow: "auto", mb: 3 }}>
           {filterLevel === "category" ? (
             <Box sx={{ p: 2 }}>
               {loading ? (
@@ -1379,7 +1381,7 @@ const WorkerFilter = ({
             <Button
               variant="contained"
               fullWidth
-              onClick={() => closeFilter()}
+              onClick={() => setIsFilterOpen(false)}
             >
               نمایش {applyFilters().length} آگهی
             </Button>
@@ -1399,8 +1401,107 @@ const WorkerFilter = ({
             bgcolor: "rgba(0, 0, 0, 0.5)",
             zIndex: 1199,
           }}
-          onClick={() => closeFilter()}
+          onClick={() => setIsFilterOpen(false)}
         />
+      )}
+
+      {/* Mobile Filter Tags Bar - Fixed below header */}
+      {isMobile && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 70,
+            left: 0,
+            right: 0,
+            p: 1,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            maxHeight: "100px",
+            overflow: "auto",
+            bgcolor: "background.paper",
+            zIndex: 100,
+            display:
+              selectedCategory ||
+              selectedNeighborhoods.length > 0 ||
+              selectedFeatures.length > 0 ||
+              rangeFilters.some((f) => f.low !== "" || f.high !== "")
+                ? "block"
+                : "none",
+          }}
+        >
+          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+            {selectedCategory && (
+              <Chip
+                label={selectedCategory.name}
+                onDelete={() => {
+                  setSelectedCategory(null);
+                  if (onCategoryChange) onCategoryChange(null);
+                }}
+                size="small"
+                variant="outlined"
+              />
+            )}
+
+            {selectedNeighborhoods.map((neighborhood) => (
+              <Chip
+                key={neighborhood.id}
+                label={neighborhood.name}
+                onDelete={() =>
+                  setSelectedNeighborhoods((prev) =>
+                    prev.filter((n) => n.id !== neighborhood.id)
+                  )
+                }
+                size="small"
+                variant="outlined"
+              />
+            ))}
+
+            {selectedFeatures.map((feature) => (
+              <Chip
+                key={feature.value}
+                label={feature.value}
+                onDelete={() =>
+                  setSelectedFeatures((prev) =>
+                    prev.filter((f) => f.value !== feature.value)
+                  )
+                }
+                size="small"
+                variant="outlined"
+              />
+            ))}
+
+            {rangeFilters
+              .map((filter) => {
+                if (filter.low !== "" || filter.high !== "") {
+                  let label = "";
+                  if (filter.low !== "" && filter.high !== "") {
+                    label = `${formatNumberWithWords(filter.low)}-${formatNumberWithWords(filter.high)}`;
+                  } else if (filter.low !== "") {
+                    label = `${formatNumberWithWords(filter.low)}+`;
+                  } else if (filter.high !== "") {
+                    label = `-${formatNumberWithWords(filter.high)}`;
+                  }
+                  return (
+                    <Chip
+                      key={filter.id}
+                      label={label}
+                      onDelete={() => {
+                        setRangeFilters((prev) =>
+                          prev.map((f) =>
+                            f.id === filter.id ? { ...f, low: "", high: "" } : f
+                          )
+                        );
+                      }}
+                      size="small"
+                      variant="outlined"
+                    />
+                  );
+                }
+                return null;
+              })
+              .filter(Boolean)}
+          </Stack>
+        </Box>
       )}
     </>
   );
