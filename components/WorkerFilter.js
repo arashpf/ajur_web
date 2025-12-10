@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/router";
 import {
   Box,
   Button,
@@ -99,6 +100,13 @@ const WorkerFilter = ({
   initialCategory = null,
   onCategoryChange = null,
 }) => {
+  const router = useRouter();
+
+  // Do not render this filter inside the admin/ panel area
+  if (router && typeof router.pathname === "string" && router.pathname.startsWith("/panel")) {
+    return null;
+  }
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 

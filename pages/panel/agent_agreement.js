@@ -86,10 +86,7 @@ const AgentAgreement = (props) => {
   const renderFooter = () => {
     if (1) {
       return (
-        <Paper
-          sx={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100 }}
-          elevation={9}
-        >
+        <>
             {
             !loading ?
             <Button
@@ -97,7 +94,7 @@ const AgentAgreement = (props) => {
             size="large"
             variant="contained"
             fullWidth={true}
-            style={{ fontSize: 20 }}
+            style={{ fontSize: 20, marginTop: 20, marginBottom: 20 }}
           >
             {" "}
             قوانین را خواندم و قبول میکنم{" "}
@@ -108,7 +105,7 @@ const AgentAgreement = (props) => {
             size="large"
             variant="contained"
             fullWidth={true}
-            style={{ fontSize: 20 }}
+            style={{ fontSize: 20, marginTop: 20, marginBottom: 20 }}
           >
             {" "}
             ...
@@ -116,7 +113,7 @@ const AgentAgreement = (props) => {
 
             }
           
-        </Paper>
+        </>
       );
     }
   };
