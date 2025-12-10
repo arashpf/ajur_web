@@ -264,7 +264,7 @@ const New = (props) => {
   } else {
     return (
       <ThemeProvider theme={mdTheme}>
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex"}}>
           <CssBaseline />
           <Header data={data} open={open} onToggle={toggleDrawer} drawerWidth={drawerWidth} profileImage={profileImage} />
 
@@ -280,7 +280,7 @@ const New = (props) => {
                   easing: theme.transitions.easing.sharp,
                   duration: theme.transitions.duration.leavingScreen,
                 }),
-              marginRight: open ? `${drawerWidth}px` : 0,
+              marginRight: open ? `${drawerWidth}px` : 'auto',
             }}
           >
             <Paper
