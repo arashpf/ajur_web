@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import PersonIcon from '@mui/icons-material/Person';
 import HolidayVillageIcon from '@mui/icons-material/HolidayVillage';
 import Styles from '../../styles/panel/CategoryForm.module.css';
@@ -42,54 +42,33 @@ const [basecategories, set_basecategories] = useState([]);
 
   const rendCategries = () => {
     if(0){
-
-
-
+      // placeholder
     }else{
-
-
       return basecategories.map(cat =>
-
         cat.id  !=  edit_cat_id ?
-          <Grid item xs={12} sm={4} onClick={() => props.onClickSingleCategory(cat)}>
-          
-            <div  className={Styles.new_single_type_wrapper}>
+          <Grid item xs={12} sm={6} md={4} key={cat.id} onClick={() => props.onClickSingleCategory(cat)}>
+            <div className={Styles.new_single_type_wrapper}>
               <div className={Styles.single_icon}>
-                <p><ArrowBackIosNewIcon/></p>
-                </div>
-              <div   className={Styles.single_info} >
+                <p><KeyboardArrowDownIcon/></p>
+              </div>
+              <div className={Styles.single_info}>
                 <p>{cat.name}</p>
-                {/* <p><PersonIcon/></p> */}
               </div>
             </div>
-        </Grid>
+          </Grid>
         :
-        <Grid item xs={12} sm={4} onClick={() => props.onClickSingleCategory(cat)}>
-          
-          <div style={{background:'orange'}}  className={Styles.new_single_type_wrapper}>
-              <div className={Styles.single_icon}>
-                <p><ArrowBackIosNewIcon/></p>
-                </div>
-                
-              <div   className={Styles.single_info} >
-                <p>{cat.name}</p>
-                
-              </div>
-             
+        <Grid item xs={12} sm={6} md={4} key={cat.id} onClick={() => props.onClickSingleCategory(cat)}>
+          <div style={{background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)', borderColor: '#ff6b6b'}} className={Styles.new_single_type_wrapper}>
+            <div className={Styles.single_icon}>
+              <p><KeyboardArrowDownIcon/></p>
+            </div>
+            <div className={Styles.single_info}>
+              <p style={{color: 'white'}}>{cat.name}</p>
+            </div>
           </div>
-         
-          <p style={{background:'orange',textAlign:'center',fontSize:12}}>(دسته بندی کنونی)</p>
-          
-            
-           
+          <p style={{background: 'linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%)', color: 'white', textAlign:'center', fontSize: 12, padding: '6px', borderRadius: '12px', marginTop: '8px', fontWeight: 600}}>✓ دسته بندی کنونی</p>
         </Grid>
-
-        
-
-        
-       );
-
-
+      );
     }
   }
   return (

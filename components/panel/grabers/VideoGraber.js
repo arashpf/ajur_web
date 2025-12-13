@@ -46,6 +46,7 @@ function Previews(props) {
   const old_videos = props.old_videos;
   const [files, setFiles] = useState([]);
   const [videos, set_videos] = useState([]);
+  const oldVideosLoadedRef = React.useRef(false);
 
   const [open, setOpen] = React.useState(false);
 
@@ -56,12 +57,14 @@ function Previews(props) {
  
 
   useEffect(() => {
-    if (old_videos) {
-      //  alert('old images trigered');
+    // Load old videos only once on component mount to avoid duplicates
+    if (old_videos && !oldVideosLoadedRef.current) {
       console.log(
-        "-------------------the old videos trigered in videograber is -----------------------------"
+        "-------------------loading old videos once on mount------------------------------"
       );
       console.log(old_videos);
+
+      oldVideosLoadedRef.current = true;
 
       props.onGrabVideos(
         old_videos.map((file) =>
@@ -80,7 +83,7 @@ function Previews(props) {
         )
       )
     }
-  }, [old_videos]);
+  }, []); // Empty dependency array: only run once on mount
 
   function handleClose() {
     setOpen(false);
@@ -168,7 +171,18 @@ function Previews(props) {
 
         <p className={Styles["dragsection"]}>
           ویدیو ها را به اینجا بکشید و رها کنید یا
-          <p style={{ background: "#f1f1f1", padding: 10, margin: 30 }}>
+          <p style={{ 
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+            color: 'white',
+            padding: '12px 24px', 
+            margin: '20px auto',
+            borderRadius: '10px',
+            display: 'inline-block',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)'
+          }}>
             {" "}
             انتخاب کنید
           </p>

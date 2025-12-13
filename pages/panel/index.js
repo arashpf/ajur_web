@@ -478,13 +478,13 @@ const DashboardContent = (props) => {
               marginRight: open ? `${drawerWidth}px` : 0,
             }}
           >
-            <Toolbar />
+            {/* <Toolbar /> */}
 
             {rendertabs()}
           </Box>
         </Box>
         {/* keep only the new-file SpeedDial and push it higher to sit above the footer */}
-        <SpeedDial />
+        <SpeedDial open={open} drawerWidth={drawerWidth} />
         {/* main footer added to panel page */}
         {typeof window !== "undefined" &&
           require("../../components/parts/Footer").default &&

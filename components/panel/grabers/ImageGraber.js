@@ -308,23 +308,21 @@ function Previews(props) {
   };
 
   useEffect(() => {
-    if (old_images) {
-      //  alert('old images trigered');
+    // Load old images when old_images prop changes
+    if (old_images && old_images.length > 0) {
       console.log(
-        "-------------------the old images trigered in imagegraber is -----------------------------"
+        "-------------------loading old images------------------------------"
       );
       console.log(old_images);
 
-      //  const canvas = document.getElementById('my-canvas');
-
-      old_images.map((fl) => {
+      // Clear any previously loaded images first
+      set_images([]);
+      
+      old_images.forEach((fl) => {
         convertUrltoDataurl(fl.url);
       });
-
-      //  set_images(old_images);
-      //  set_files(old_images);
     }
-  }, [old_images]);
+  }, [old_images]); // Re-run when old_images prop changes
 
   function handleClose() {
     setOpen(false);
@@ -332,8 +330,8 @@ function Previews(props) {
   }
 
   function handleCloseModal() {
-    set_open_modal(false);
-    console.log("modal status is changed");
+    // Modal closed without submitting crop - skip this image and move to next
+    updateAvatar(null, current_selection);
   }
 
   const handleClickCancelCrop = () => {
@@ -437,7 +435,7 @@ function Previews(props) {
   ));
 
   const final_thumbs = images.map((im, index) => (
-    <div>
+    <div key={`final-thumb-${index}`}>
       {index == 0 && (
         <div style={{ position: "relative" }}>
           <p
@@ -456,7 +454,7 @@ function Previews(props) {
       )}
 
       <div
-        style={thumb}
+        style={{ ...thumb, position: 'relative', display: 'inline-block' }}
         key={im.name}
         onClick={() => onClickSingleFinalThumb(im, index)}
       >
@@ -470,6 +468,36 @@ function Previews(props) {
             // }}
           />
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            set_selected_final_thumb(im);
+            onClickDeletImageFromDrawer();
+          }}
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            backgroundColor: 'rgba(255, 0, 0, 0.9)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            cursor: 'pointer',
+            fontSize: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            zIndex: 10,
+            lineHeight: 1,
+            fontWeight: 'bold'
+          }}
+          title="حذف این عکس"
+        >
+          ✕
+        </button>
       </div>
     </div>
   ));
@@ -495,25 +523,37 @@ function Previews(props) {
   }
 
   function updateAvatar(dataUrl, current_selection) {
-    console.log("update avatar is trigered !!!!");
+    console.log("update avatar is triggered !!!!");
+    console.log("current_selection:", current_selection);
 
-    toDataUrl(dataUrl, function (myBase64) {
-      console.log(myBase64); // myBase64 is the base64 string
-      set_images((images) => images.concat(myBase64));
-      props.onGrabImages(myBase64);
-    });
-
-    // set_images((images) => images.concat(dataUrl));
-    // console.log("the data url in graber side is: ");
-    // console.log(dataUrl);
-    // props.onGrabImages(dataUrl);
-
-    var current_selection_file = files[current_selection];
-    setFiles(files.filter((item) => item !== current_selection_file));
-    if (files) {
-      set_current_selection(current_selection);
-      set_selected_file(files[current_selection + 1]);
+    // If dataUrl is null, user didn't change crop - just skip this image
+    if (dataUrl === null) {
+      console.log("Crop not changed, skipping image without saving");
+    } else {
+      toDataUrl(dataUrl, function (myBase64) {
+        console.log(myBase64); // myBase64 is the base64 string
+        set_images((images) => images.concat(myBase64));
+        props.onGrabImages(myBase64);
+      });
     }
+
+    // Remove current file and move to next - all in one state update
+    setFiles((prevFiles) => {
+      const newFiles = prevFiles.filter((_, idx) => idx !== current_selection);
+      
+      if (newFiles.length > 0) {
+        // There are more files - set the next one (which is now at index 0)
+        console.log("More files to process, advancing to next");
+        set_current_selection(0);
+        set_selected_file(newFiles[0]);
+      } else {
+        // No more files - close modal
+        console.log("All images processed, closing modal");
+        set_open_modal(false);
+      }
+      
+      return newFiles;
+    });
   }
 
   const onClickDeleteFile = (file, index) => {
@@ -693,7 +733,18 @@ function Previews(props) {
         <input {...getInputProps()} />
         <p className={Styles["dragsection"]}>
           عکس ها را به اینجا بکشید و رها کنید یا
-          <p style={{ background: "#f1f1f1", padding: 10, margin: 30 }}>
+          <p style={{ 
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+            color: 'white',
+            padding: '12px 24px', 
+            margin: '20px auto',
+            borderRadius: '10px',
+            display: 'inline-block',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)'
+          }}>
             {" "}
             انتخاب کنید
           </p>
@@ -702,7 +753,25 @@ function Previews(props) {
       {/* <aside style={thumbsContainer}>
         {thumbs}
       </aside> */}
-      <p style={{ textAlign: "right" }}>عکس های برش خورده نهایی</p>
+      <div style={{ marginTop: '30px', marginBottom: '15px' }}>
+        <p style={{ 
+          textAlign: "right",
+          fontSize: '18px',
+          fontWeight: 'bold',
+          color: '#333',
+          marginBottom: '10px'
+        }}>
+          عکس های برش خورده نهایی
+        </p>
+        <p style={{
+          textAlign: "right",
+          fontSize: '12px',
+          color: '#999',
+          marginBottom: '15px'
+        }}>
+          برای حذف یک عکس، بر روی دکمه X سفید کوچک در گوشه تصویر کلیک کنید
+        </p>
+      </div>
       <aside style={thumbsContainer}>{final_thumbs}</aside>
 
       <Snackbar

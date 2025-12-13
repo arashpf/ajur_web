@@ -720,7 +720,8 @@ function LocationForm(props) {
           zIndex: 1000,
           maxWidth: "500px",
           margin: "0 auto",
-          backgroundColor: "white"
+          backgroundColor: "white",
+          borderRadius: "24px"
         }}
       >
         <div className={Styles["location-info-wrapper"]}>
@@ -748,13 +749,24 @@ function LocationForm(props) {
     return !btn_status ? (
       <Button
         variant="contained"
-        color="success"
         fullWidth
-        style={{
+        sx={{
           textAlign: "center",
-          padding: 10,
-          marginTop: 10,
-          fontSize: 20,
+          padding: '12px 20px',
+          marginTop: 2,
+          fontSize: '16px',
+          fontWeight: 600,
+          background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+          color: 'white',
+          borderRadius: '12px',
+          textTransform: 'none',
+          boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #ff5252 0%, #ff3838 100%)',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 6px 20px rgba(255, 107, 107, 0.4)',
+          },
         }}
         onClick={() => onClickFinish()}
         disabled={!isFormValid}
@@ -764,13 +776,18 @@ function LocationForm(props) {
     ) : (
       <Button
         variant="contained"
-        color="success"
         fullWidth
-        style={{
+        sx={{
           textAlign: "center",
-          padding: 10,
-          marginTop: 10,
-          fontSize: 20,
+          padding: '12px 20px',
+          marginTop: 2,
+          fontSize: '16px',
+          fontWeight: 600,
+          background: 'linear-gradient(135deg, #d0d0d0 0%, #b8b8b8 100%)',
+          color: 'white',
+          borderRadius: '12px',
+          textTransform: 'none',
+          boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
         }}
         disabled
       >
@@ -789,7 +806,7 @@ function LocationForm(props) {
   // Render based on current step
   const renderCurrentStep = () => {
     return (
-      <div style={{ position: "relative", height: "100vh", width: "100%" }}>
+      <div style={{ position: "relative", height: "100vh", width: "100%", borderRadius: "24px", overflow: "hidden" }}>
         {/* Map as Background */}
         <MapContainer
           className={Styles["location"]}
@@ -803,7 +820,8 @@ function LocationForm(props) {
             top: 0,
             left: 0,
             right: 0,
-            bottom: 0
+            bottom: 0,
+            borderRadius: "24px"
           }}
         >
           <Markers />
@@ -841,7 +859,8 @@ function LocationForm(props) {
                 margin: "0 auto",
                 p: 2,
                 textAlign: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.9)"
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                borderRadius: "24px"
               }}
             >
               <Typography variant="body1" color="textSecondary">

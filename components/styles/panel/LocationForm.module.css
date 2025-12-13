@@ -54,16 +54,17 @@
   }
 
   .search-location-li {
-    background-color: red;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
     z-index: 4;
     position: relative;
     top:  90%;
     height: 50px;
     width: 50%;
     left:25%;
-    border: 1px solid gray;
+    border: 2px solid #ff5252;
     overflow: hidden;
     text-align: right;
+    border-radius: 12px;
   }
   
   .search-location-li .search-location-li-close-icon {

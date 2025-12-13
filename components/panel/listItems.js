@@ -26,7 +26,7 @@ import Diversity1Icon from "@mui/icons-material/Diversity1";
 import { Clock10Icon, Download, DownloadIcon, TimerIcon } from "lucide-react";
 import { LibraryBooks, PrivacyTip } from "@mui/icons-material";
 
-const MainListItems = ({props, onCloseMenu}) => {
+const MainListItems = ({onCloseMenu, onGrabClicked}) => {
   const router = useRouter();
 
   const onClickDownload = () => {
@@ -71,7 +71,12 @@ const MainListItems = ({props, onCloseMenu}) => {
 
   const onClickNew = () => {
     router.push("/panel/new");
-    props.onGrabClicked("new item call it");
+    if (onGrabClicked) {
+      onGrabClicked("new item call it");
+    }
+    if (onCloseMenu) {
+      onCloseMenu();
+    }
   };
 
   const onClickProfile = () => {
@@ -145,7 +150,7 @@ const MainListItems = ({props, onCloseMenu}) => {
           <Desk />
         </ListItemIcon>
       </ListItemButton>
-      {/* 
+
       <ListItemButton>
         <ListItemText
           onClick={onClickNew}
@@ -161,7 +166,7 @@ const MainListItems = ({props, onCloseMenu}) => {
         <ListItemIcon>
           <LibraryAdd />
         </ListItemIcon>
-      </ListItemButton> */}
+      </ListItemButton>
 
       <ListSubheader component="div" inset></ListSubheader>
       <ListItemButton>
