@@ -20,24 +20,30 @@ const actions = [
     { icon: <Share />, name: 'اشتراک گذاری ',  operation: 'share' }
   ]
 
-export default function BasicSpeedDial() {
+export default function BasicSpeedDial({ open = false, drawerWidth = 250 }) {
     const router = useRouter();
 
-    function handleClick (e,operation){
-
-  
+    function handleClick (e, operation) {
       console.log('speed dial clicked');
       router.push("/panel/new");
-       e.preventDefault();
-    
-     };
+      e.preventDefault();
+    }
      
   return (
     <div className="speed-dial-fixed">
     <Box md={{ height: 320, transform: 'translateZ(0px)', flexGrow: 1 }}>
       <SpeedDial
         ariaLabel="ثبت فایل جدید"
-        sx={{ position: 'fixed', bottom: 90, right: 16 }}
+        sx={{ 
+          position: 'fixed', 
+          bottom: 90, 
+          right: open ? `calc(16px + ${drawerWidth}px)` : 16,
+          transition: (theme) =>
+            theme.transitions.create(['right'], {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+        }}
         icon={<Add />}
         onClick={handleClick}
         FabProps={{

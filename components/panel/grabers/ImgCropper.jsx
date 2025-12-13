@@ -14,6 +14,7 @@ const ImageCropper = ({
   const [completedCrop, setCompletedCrop] = useState();
   const [imgSrc, setImgSrc] = useState();
   const [loading, set_loading] = useState(false);
+  const [initialCrop, setInitialCrop] = useState(null);
   const imgRef = useRef(null);
 
   // Minimum dimensions in pixels
@@ -51,13 +52,16 @@ const ImageCropper = ({
     const initialCropWidth = 80; // Start with 80% of width
     const initialCropHeight = (initialCropWidth / initialAspectRatio) * (width / height);
     
-    setCrop({
+    const cropObj = {
       unit: '%',
       x: 10, // Start 10% from left
       y: 10, // Start 10% from top
       width: Math.min(initialCropWidth, 100),
       height: Math.min(initialCropHeight, 100),
-    });
+    };
+    
+    setCrop(cropObj);
+    setInitialCrop(cropObj); // Track the initial crop to detect if user changed it
   };
 
   // Custom aspect ratio enforcement
@@ -82,6 +86,20 @@ const ImageCropper = ({
 
   const showCroppedImage = async () => {
     if (!imgRef.current || !completedCrop) return;
+
+    // Check if user actually changed the crop (within 1% tolerance for rounding)
+    const cropChanged = !initialCrop || 
+      Math.abs(completedCrop.x - initialCrop.x) > 1 ||
+      Math.abs(completedCrop.y - initialCrop.y) > 1 ||
+      Math.abs(completedCrop.width - initialCrop.width) > 1 ||
+      Math.abs(completedCrop.height - initialCrop.height) > 1;
+
+    if (!cropChanged) {
+      // User didn't change crop - just move to next image
+      console.log("Crop not changed, skipping image");
+      updateAvatar(null, current_selection); // Pass null to indicate skip
+      return;
+    }
 
     set_loading(true);
     
@@ -113,7 +131,10 @@ const ImageCropper = ({
       const fileUrl = URL.createObjectURL(blob);
       updateAvatar(fileUrl, current_selection);
       set_loading(false);
-      closeModal(); // Close modal after successful crop
+      // Do NOT call closeModal() here. Let the parent (ImageGraber)
+      // advance to the next selected file or close the modal when
+      // there are no more files. Closing immediately prevented
+      // batch-processing multiple images.
     }, 'image/jpeg', 0.95);
   };
 
@@ -167,7 +188,7 @@ const ImageCropper = ({
             left: 0, 
             right: 0, 
             zIndex: 11, 
-            background: 'blue',
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
             borderRadius: 0
           }} elevation={9}>
             <Button 
@@ -191,7 +212,7 @@ const ImageCropper = ({
             left: 0, 
             right: 0, 
             zIndex: 11, 
-            background: 'black',
+            background: 'linear-gradient(135deg, #b71c1c 0%, #8b0000 100%)',
             borderRadius: 0
           }} elevation={9}>
             <Button 

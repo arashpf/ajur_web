@@ -22,9 +22,9 @@ function PanelLayout({ children }) {
 
 
       <div>
-
+        <Header />
         <main>{children}</main>
-        
+        <Footer />
         
       </div>
 

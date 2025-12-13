@@ -81,35 +81,37 @@ BootstrapDialogTitle.propTypes = {
 export default function MainForm(props) {
   const cat = props.cat;
   const edit_id = props.edit_id;
+  const preservedData = props.preservedData || {};
+  const onSaveFormState = props.onSaveFormState;
   const router = useRouter();
 
   const [showAlertForNoPic, set_showAlertForNoPic] = useState(false);
   const [loading, set_loading] = useState(true);
   const [loading1, set_loading1] = useState(true);
-  const [cellphone, set_cellphone] = useState("000");
-  const [description, set_description] = useState("");
-  const [note, set_note] = useState("");
-  const [normal_fields, set_normal_fields] = useState([]);
-  const [predefine_fields, set_predefine_fields] = useState([]);
-  const [tick_fields, set_tick_fields] = useState([]);
-  const [selected, set_selected] = useState(undefined);
+  const [cellphone, set_cellphone] = useState(preservedData.cellphone || "000");
+  const [description, set_description] = useState(preservedData.description || "");
+  const [note, set_note] = useState(preservedData.note || "");
+  const [normal_fields, set_normal_fields] = useState(preservedData.normal_fields || []);
+  const [predefine_fields, set_predefine_fields] = useState(preservedData.predefine_fields || []);
+  const [tick_fields, set_tick_fields] = useState(preservedData.tick_fields || []);
+  const [selected, set_selected] = useState(preservedData.selected || undefined);
   const [isModalVisible, set_isModalVisible] = useState(false);
   const [selectedNormalField, set_selectedNormalField] = useState(null);
   const [selectedNormalFieldSlug, set_selectedNormalFieldSlug] = useState(null);
-  const [predefine_fields_data, set_predefine_fields_data] = useState("");
-  const [images, set_images] = useState([]);
-  const [videos, set_videos] = useState([]);
-  const [old_images, set_old_images] = useState([]);
-  const [old_videos, set_old_videos] = useState([]);
+  const [predefine_fields_data, set_predefine_fields_data] = useState(preservedData.predefine_fields_data || "");
+  const [images, set_images] = useState(preservedData.images || []);
+  const [videos, set_videos] = useState(preservedData.videos || []);
+  const [old_images, set_old_images] = useState(preservedData.old_images || []);
+  const [old_videos, set_old_videos] = useState(preservedData.old_videos || []);
 
-  const [cuted_images, set_cuted_images] = useState([]);
+  const [cuted_images, set_cuted_images] = useState(preservedData.cuted_images || []);
 
-  const [imagesPicked, set_imagesPicked] = useState("no");
-  const [properties, set_properties] = useState([]);
-  const [normalField, set_normalField] = useState([]);
-  const [title, set_title] = useState("");
-  const [worker_id, set_worker_id] = useState(null);
-  const [worker, set_worker] = useState(null);
+  const [imagesPicked, set_imagesPicked] = useState(preservedData.imagesPicked || "no");
+  const [properties, set_properties] = useState(preservedData.properties || []);
+  const [normalField, set_normalField] = useState(preservedData.normalField || []);
+  const [title, set_title] = useState(preservedData.title || "");
+  const [worker_id, set_worker_id] = useState(preservedData.worker_id || null);
+  const [worker, set_worker] = useState(preservedData.worker || null);
   const [beginUpload, set_beginUpload] = useState(false);
   const [percent, set_percent] = useState(0);
   const [returnedId, set_returnedId] = useState(null);
@@ -155,19 +157,18 @@ export default function MainForm(props) {
     console.log("the prefilled------------ fileds is------------- ");
     console.log(prefilledFields);
 
-    prefilledFields.map((fl) => {
-      let prop = {
-        name: fl.key,
-        value:
-          fl.type == 1 ? Number(fl.value.replace(/[^0-9.-]+/g, "")) : fl.value,
-        kind: fl.type,
-        special: fl.special,
-        order: fl.order,
-      };
+    // Build the full properties array at once to avoid duplicates from multiple renders
+    const newProps = prefilledFields.map((fl) => ({
+      name: fl.key,
+      value:
+        fl.type == 1 ? Number(fl.value.replace(/[^0-9.-]+/g, "")) : fl.value,
+      kind: fl.type,
+      special: fl.special,
+      order: fl.order,
+    }));
 
-      // set_properties([...properties, prop]);
-      set_properties((pr) => pr.concat(prop));
-    });
+    // Replace existing properties entirely (not concat) to prevent duplicates on re-renders
+    set_properties(newProps);
   };
 
   const fetchworker = (worker) => {
@@ -201,12 +202,17 @@ export default function MainForm(props) {
   const handleClickOpen = (fl) => {
     set_dialog_special(fl.special);
     set_dialog_order(fl.sort);
-    // set_properties(properties.filter((item) => item.name !== fl.value));
     setOpen(true);
     set_dialog_value("");
   };
+
   const handleCloseDialog = () => {
-    setOpen(false);
+    // Save the input value when modal closes (whether by X button or clicking outside)
+    if (dialog_value && dialog_value !== "0" && dialog_value !== "") {
+      handleSubmitDialog();
+    } else {
+      setOpen(false);
+    }
   };
 
   function calculateAutomatic(title, value) {
@@ -215,31 +221,14 @@ export default function MainForm(props) {
       if (pilot[0]) {
         const calculatedPricePerM2 = value / pilot[0].value;
 
-        const promise = new Promise((resolve, reject) => {
-          set_properties(
-            properties.filter((item) => item.name !== "قیمت هر متر")
-          );
-
-          const filtered = "fine";
-          resolve(filtered);
-        });
-
-        promise.then((filtered) => {
-          console.log("-----sdfs--sdf-s-sd-fds-f------the result is --------");
-          console.log(filtered);
-
-          if (filtered) {
-            let prop = {
-              name: "قیمت هر متر",
-              value: calculatedPricePerM2.toFixed(0),
-              kind: 1,
-              special: "1",
-              order: "3",
-            };
-            //  await set_properties([...properties, prop]);
-            set_properties((pr) => pr.concat(prop));
-          }
-        });
+        let prop = {
+          name: "قیمت هر متر",
+          value: calculatedPricePerM2.toFixed(0),
+          kind: 1,
+          special: "1",
+          order: "3",
+        };
+        upsertProperty(prop);
       }
     }
     if (title == "متراژ کل") {
@@ -249,31 +238,14 @@ export default function MainForm(props) {
       if (price[0]) {
         const calculatedPricePerM2 = price[0].value / value;
 
-        const promise = new Promise((resolve, reject) => {
-          set_properties(
-            properties.filter((item) => item.name !== "قیمت هر متر")
-          );
-
-          const filtered = "fine";
-          resolve(filtered);
-        });
-
-        promise.then((filtered) => {
-          console.log("-----sdfs--sdf-s-sd-fds-f------the result is --------");
-          console.log(filtered);
-
-          if (filtered) {
-            let prop = {
-              name: "قیمت هر متر",
-              value: calculatedPricePerM2.toFixed(0),
-              kind: 1,
-              special: "1",
-              order: "3",
-            };
-            //  await set_properties([...properties, prop]);
-            set_properties((pr) => pr.concat(prop));
-          }
-        });
+        let prop = {
+          name: "قیمت هر متر",
+          value: calculatedPricePerM2.toFixed(0),
+          kind: 1,
+          special: "1",
+          order: "3",
+        };
+        upsertProperty(prop);
       }
     }
 
@@ -282,29 +254,14 @@ export default function MainForm(props) {
       if (pilot[0]) {
         const price = pilot[0].value * value;
 
-        const promise = new Promise((resolve, reject) => {
-          set_properties(properties.filter((item) => item.name !== "قیمت"));
-
-          const filtered = "fine";
-          resolve(filtered);
-        });
-
-        promise.then((filtered) => {
-          console.log("-----sdfs--sdf-s-sd-fds-f------the result is --------");
-          console.log(filtered);
-
-          if (filtered) {
-            let prop = {
-              name: "قیمت",
-              value: price.toFixed(0),
-              kind: 1,
-              special: "1",
-              order: "3",
-            };
-            //  await set_properties([...properties, prop]);
-            set_properties((pr) => pr.concat(prop));
-          }
-        });
+        let prop = {
+          name: "قیمت",
+          value: price.toFixed(0),
+          kind: 1,
+          special: "1",
+          order: "3",
+        };
+        upsertProperty(prop);
       }
     }
   }
@@ -333,7 +290,7 @@ export default function MainForm(props) {
       special: special,
       order: order,
     };
-    set_properties([...properties, prop]);
+    upsertProperty(prop);
   };
 
   // a local state to store the currently selected file.
@@ -361,8 +318,15 @@ export default function MainForm(props) {
     });
   }, []);
 
+  const upsertProperty = (newProp) => {
+    // Remove any existing property with the same name, then add the new one
+    set_properties((pr) =>
+      [...pr.filter((item) => item.name !== newProp.name), newProp]
+    );
+  };
+
   const deleteredundance = (amount, fl) => {
-    set_properties(properties.filter((item) => item.name !== fl.value));
+    set_properties((pr) => pr.filter((item) => item.name !== fl.value));
   };
 
   const onNormalFieldsValueChange = async (change, fl) => {
@@ -375,9 +339,14 @@ export default function MainForm(props) {
       special: fl.special,
       order: fl.sort,
     };
-    set_properties([...properties, prop]);
+    upsertProperty(prop);
 
-    await deleteredundance(amount, fl);
+    // Ensure related properties are removed if needed
+    if (fl.value === "قیمت") {
+      set_properties((pr) => pr.filter((item) => item.name !== "قیمت هر متر"));
+    } else if (fl.value === "متراژ کل") {
+      set_properties((pr) => pr.filter((item) => item.name !== "قیمت هر متر"));
+    }
   };
 
   const onNormalFieldsFocus = (focus, fl) => {
@@ -462,7 +431,7 @@ export default function MainForm(props) {
       order: fl.sort,
     };
 
-    set_properties([...properties, prop]);
+    upsertProperty(prop);
   };
 
   const onDeletingingSingleCheckbox = (fl) => {
@@ -526,7 +495,7 @@ export default function MainForm(props) {
       special: fl.special,
       order: fl.sort,
     };
-    set_properties([...properties, prop]);
+    upsertProperty(prop);
   };
 
   const renderVarchars = (fl) => {
@@ -590,6 +559,31 @@ export default function MainForm(props) {
   //go to next level after uploading files
 
   const onClickNextLevel = () => {
+    // Save form state before proceeding
+    if (onSaveFormState) {
+      onSaveFormState({
+        cellphone,
+        description,
+        note,
+        normal_fields,
+        predefine_fields,
+        tick_fields,
+        selected,
+        predefine_fields_data,
+        images,
+        videos,
+        old_images,
+        old_videos,
+        cuted_images,
+        imagesPicked,
+        properties,
+        normalField,
+        title,
+        worker_id,
+        worker,
+      });
+    }
+
     set_loader_btn(true);
 
     const promise = new Promise((resolve, reject) => {
@@ -1005,7 +999,23 @@ export default function MainForm(props) {
                 variant="contained"
                 fullWidth
                 onClick={() => onClickNextLevel()}
-                style={{ margin: 20, padding: 10, fontSize: 20 }}
+                sx={{
+                  margin: 2,
+                  padding: '14px 20px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+                  color: 'white',
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  boxShadow: '0 4px 15px rgba(255, 107, 107, 0.3)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #ff5252 0%, #ff3838 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(255, 107, 107, 0.4)',
+                  },
+                }}
               >
                 مرحله بعدی
               </Button>
@@ -1014,7 +1024,22 @@ export default function MainForm(props) {
                 variant="outlined"
                 fullWidth
                 onClick={() => onClickNextLevel()}
-                style={{ margin: 20, padding: 10, fontSize: 20 }}
+                sx={{
+                  margin: 2,
+                  padding: '14px 20px',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  color: '#ff6b6b',
+                  borderColor: '#ff6b6b',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    background: 'rgba(255, 107, 107, 0.05)',
+                    borderColor: '#ff5252',
+                    color: '#ff5252',
+                  },
+                }}
               >
                 ...
               </Button>

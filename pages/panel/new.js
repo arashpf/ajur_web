@@ -128,6 +128,11 @@ const New = (props) => {
   const [returnedWorker, set_returnedWorker] = useState([]);
   const [edit_id, set_edit_id] = useState(null);
   const [edit_cat_id, set_edit_cat_id] = useState(null);
+  const [formData, setFormData] = useState({
+    category: null,
+    mainForm: null,
+    location: null,
+  });
 
   useEffect(() => {
     console.log("this is a edit one not a brand new file !!!!!!");
@@ -153,6 +158,12 @@ const New = (props) => {
     setActiveStep(activeStep - 1);
   };
 
+  const handleStepClick = (stepIndex) => {
+    if (stepIndex < activeStep) {
+      setActiveStep(stepIndex);
+    }
+  };
+
   const grabSavedPostData = (value) => {
     // try to attach locations specific data to post and finalize it with changing its status to 2
     // for appearing in admin confirmation section
@@ -161,7 +172,18 @@ const New = (props) => {
     );
     console.log(value.value.worker);
     set_returnedWorker(value.value.worker);
+    setFormData({
+      ...formData,
+      mainForm: value,
+    });
     setActiveStep(activeStep + 1);
+  };
+
+  const saveMainFormState = (formState) => {
+    setFormData({
+      ...formData,
+      mainFormState: formState,
+    });
   };
 
   function getStepContent(step) {
@@ -169,6 +191,10 @@ const New = (props) => {
       console.log("cat clicked");
       console.log(cat);
       set_cat(cat);
+      setFormData({
+        ...formData,
+        category: cat,
+      });
       setActiveStep(activeStep + 1);
     };
 
@@ -189,6 +215,8 @@ const New = (props) => {
           <MainForm
             edit_id={edit_id}
             cat={cat}
+            preservedData={formData.mainFormState || {}}
+            onSaveFormState={saveMainFormState}
             grabSavedPostData={(value) => {
               console.log(
                 "the posted data with status 3 in parent section   -->",
@@ -285,16 +313,112 @@ const New = (props) => {
           >
             <Paper
               variant="outlined"
-              sx={{ my: { xs: 5, md: 6 }, p: { xs: 3, md: 3 } }}
+              sx={{ my: { xs: 5, md: 6 }, p: { xs: 3, md: 3 }, position: 'relative', borderRadius: '24px' }}
             >
-              <p style={{ textAlign: "center" }}> ثبت ملک جدید</p>
-              <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-                {steps.map((label) => (
-                  <Step key={label}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
+              {/* Back Button - Top Left */}
+              {activeStep > 0 && (
+                <IconButton
+                  onClick={handleBack}
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+                    color: 'white',
+                    width: '44px',
+                    height: '44px',
+                    boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)',
+                    transition: 'all 0.3s ease',
+                    zIndex: 10,
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #ff5252 0%, #ff3838 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 18px rgba(255, 107, 107, 0.4)',
+                    },
+                  }}
+                >
+                  <ChevronLeftIcon sx={{ fontSize: '24px' }} />
+                </IconButton>
+              )}
+
+              {/* Title */}
+              <p style={{ textAlign: "center", fontSize: '24px', fontWeight: 600, color: '#333', marginBottom: '30px' }}> ثبت ملک جدید</p>
+
+              {/* Creative Top Navigation Bar - Centered */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4, pb: 4, borderBottom: '2px solid #f0f0f0' }}>
+                
+                {/* Step Circles with Titles - Centered */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 3, mb: 4, flexWrap: 'wrap' }}>
+                  {steps.map((label, index) => (
+                    <React.Fragment key={index}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <Button
+                          onClick={() => handleStepClick(index)}
+                          disabled={index > activeStep}
+                          sx={{
+                            minWidth: '50px',
+                            width: '50px',
+                            height: '50px',
+                            borderRadius: '50%',
+                            padding: 0,
+                            fontWeight: 700,
+                            fontSize: '18px',
+                            transition: 'all 0.3s ease',
+                            background: activeStep === index 
+                              ? 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)'
+                              : activeStep > index
+                              ? 'linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%)'
+                              : '#e0e0e0',
+                            color: activeStep === index || activeStep > index ? 'white' : '#999',
+                            boxShadow: activeStep === index ? '0 6px 20px rgba(255, 107, 107, 0.3)' : 'none',
+                            cursor: index < activeStep ? 'pointer' : 'default',
+                            transform: activeStep === index ? 'scale(1.15)' : 'scale(1)',
+                            '&:hover': index < activeStep ? {
+                              background: 'linear-gradient(135deg, #90a4ae 0%, #78909c 100%)',
+                              transform: 'scale(1.2)',
+                            } : {},
+                            '&:disabled': {
+                              opacity: 0.6,
+                              cursor: 'not-allowed',
+                            },
+                          }}
+                        >
+                          {index + 1}
+                        </Button>
+                        <Typography
+                          sx={{
+                            fontSize: '12px',
+                            fontWeight: index < activeStep ? 600 : 500,
+                            color: activeStep === index ? '#ff6b6b' : activeStep > index ? '#666' : '#999',
+                            textAlign: 'center',
+                            maxWidth: '80px',
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          {index === 0 && 'اطلاعات اولیه'}
+                          {index === 1 && 'فیلد ها'}
+                          {index === 2 && 'نقشه'}
+                        </Typography>
+                      </Box>
+                      {index < steps.length - 1 && (
+                        <Box
+                          sx={{
+                            width: '2px',
+                            height: '60px',
+                            background: activeStep > index
+                              ? 'linear-gradient(180deg, #b0bec5 0%, #90a4ae 100%)'
+                              : '#e0e0e0',
+                            transition: 'all 0.3s ease',
+                            alignSelf: 'flex-start',
+                            mt: '15px',
+                          }}
+                        />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </Box>
+              </Box>
+
               {activeStep === steps.length ? (
                 <React.Fragment>
                   <Typography variant="h5" gutterBottom>
@@ -307,7 +431,9 @@ const New = (props) => {
                   </Typography>
                 </React.Fragment>
               ) : (
-                <React.Fragment>{getStepContent(activeStep)}</React.Fragment>
+                <React.Fragment>
+                  {getStepContent(activeStep)}
+                </React.Fragment>
               )}
             </Paper>
             <Copyright />
