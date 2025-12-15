@@ -36,11 +36,11 @@ import {
 import CloseIcon from "@mui/icons-material/Close"
 
 // HINT: These components should be in your /components folder
-import HeroSection from "./components/HeroSection"
-import FeaturesSection from "./components/FeaturesSection"
-import ConsultantsSection from "./components/ConsultantsSection"
-import ContactSection from "./components/ContactSection"
-import PhoneMockup from "./components/PhoneMockup"
+import HeroSection from "../../components/download/HeroSection"
+import FeaturesSection from "../../components/download/FeaturesSection"
+import ConsultantsSection from "../../components/download/ConsultantsSection"
+import ContactSection from "../../components/download/ContactSection"
+import PhoneMockup from "../../components/download/PhoneMockup"
 export default function LandingPage() {
   const containerRef = useRef(null)
   const router = useRouter()

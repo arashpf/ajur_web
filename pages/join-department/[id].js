@@ -242,7 +242,7 @@ function JoinDeparment(props) {
   };
 
   const is_worker_in_range = (worker) => {
-    const is_googd_to_go = true;
+    let is_googd_to_go = true;
     var decoded_pr = JSON.parse(worker.json_properties);
 
     var selected_decoded_pr = decoded_pr.filter((pr) => {
