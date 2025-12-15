@@ -14,7 +14,7 @@ const index = (props) => {
   return (
     <div>
       <Head>
-     <meta charset="UTF-8" />
+     <meta charSet="UTF-8" />
      <meta name="robots" content="max-image-preview:large" />
    <title> مشاور املاک هوشمند آجر | بخش بازاریابی مشاورین املاک   </title>
  <meta name="description" content="بازاریابی اپلیکیشن آجر ، شیوه ای جدید و فرصتی مناسب برای بازاریابان" />

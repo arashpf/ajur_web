@@ -45,7 +45,7 @@ const DepartmentEn = (props) => {
   return (
     <div>
       <Head>
-     <meta charset="UTF-8" />
+     <meta charSet="UTF-8" />
      <meta name="robots" content="max-image-preview:large" />
    <title> مشاور املاک هوشمند آجر |  دپارتمان  مجازی   </title>
  <meta name="description" content="دپارتمان مجازی آجر| مدیریت دپارتمان " />

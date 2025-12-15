@@ -120,7 +120,7 @@ const AgentAgreement = (props) => {
   return (
     <div>
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <title> قوانین و توافق نامه کاربری آجر برای مشاورین آجر</title>
         <meta

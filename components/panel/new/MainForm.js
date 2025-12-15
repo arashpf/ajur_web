@@ -825,8 +825,8 @@ export default function MainForm(props) {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
-        const newWidth = 1200;
-        const newHeight = 900;
+        let newWidth = 1200;
+        let newHeight = 900;
 
         if (img.width < img.height) {
           newWidth = 900;

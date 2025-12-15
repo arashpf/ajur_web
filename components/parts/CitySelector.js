@@ -5,16 +5,26 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SearchIcon from "@mui/icons-material/Search";
 import { useRouter } from "next/router";
 
+// MUI components for the nicer toast/alert
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+
 const CitySelector = ({ handleCitySelect }) => {
   const {
     currentCity,
     updateCity,
     isLoading: contextLoading,
   } = useContext(CityContext);
+
   const [showModal, setShowModal] = useState(false);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Snackbar states
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // "success" | "error"
 
   const router = useRouter();
 
@@ -39,7 +49,6 @@ const CitySelector = ({ handleCitySelect }) => {
           timeout: 5000,
         }
       );
-
       setCities(response.data?.items || getDefaultCities());
     } catch (error) {
       console.error("Error fetching cities:", error);
@@ -61,28 +70,42 @@ const CitySelector = ({ handleCitySelect }) => {
     try {
       const success = await updateCity(city);
       if (success) {
-        // Update URL with city title
         router.push(`/${city.title}`, undefined, { shallow: true });
-
         setShowModal(false);
         setSearchQuery("");
-        alert(`شهر ${city.tie}`)
-      }
 
-      if (handleCitySelect) {
-        handleCitySelect(city);
+        // Success toast
+        setSnackbarMessage(`شهر ${city.title} با موفقیت انتخاب شد`);
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+
+        if (handleCitySelect) {
+          handleCitySelect(city);
+        }
       }
     } catch (error) {
-      alert("خطا", "ذخیره شهر با مشکل مواجه شد");
+      // Error toast
+      setSnackbarMessage("ذخیره شهر با مشکل مواجه شد");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
   const handleCloseModal = () => {
     if (!currentCity) {
-      alert("انتخاب شهر الزامی است", "لطفاً یک شهر را انتخاب کنید");
+      setSnackbarMessage("انتخاب شهر الزامی است");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
       return;
     }
     setShowModal(false);
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   return (
@@ -168,6 +191,27 @@ const CitySelector = ({ handleCitySelect }) => {
           </div>
         </div>
       )}
+
+      {/* Snackbar Toast */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{
+            width: "100%",
+            fontFamily: "sans-serif",
+            fontSize: "1rem",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

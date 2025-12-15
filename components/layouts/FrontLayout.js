@@ -30,9 +30,9 @@ function FrontLayout({ children }) {
       <CityProvider>
         <div>
           {/* Sticky header container: keeps Header or SearchBars fixed at top */}
-          <div style={{ position: 'sticky', top: 0, zIndex: 1100, background: 'white', paddingBottom: '0px' }}>
-            <SearchBars/>
-          </div>
+          <div className="sticky-header sticky top-0 z-50 bg-white shadow-md border-b">
+          <SearchBars />
+        </div>
 
           <GoogleAnalytics />
           <GoogleTagManager id="GTM-WNKQBXPR" />

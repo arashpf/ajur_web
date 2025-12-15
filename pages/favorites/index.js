@@ -67,14 +67,24 @@ const favoritesIndex = (props) => {
           itemsPerPage={6} // adjust as needed
           delay={800}
           renderItem={(worker) => (
-            <Link
+            // <Link
+            //   href={`/worker/${worker.id}?slug=${worker.slug}`}
+            //   key={worker.id}
+            // >
+            //   <Grid item md={4} xs={12} key={worker.id}>
+            //     <WorkerCard worker={worker} />
+            //   </Grid>
+            // </Link>
+
+            <Grid item md={4} xs={12} key={worker.id}>
+          <a
               href={`/worker/${worker.id}?slug=${worker.slug}`}
-              key={worker.id}
-            >
-              <Grid item md={4} xs={12} key={worker.id}>
-                <WorkerCard worker={worker} />
-              </Grid>
-            </Link>
+               key={worker.id}
+          >
+            {/* <WorkerCard worker={worker} /> */}
+            <WorkerCard worker={worker} />
+          </a>
+        </Grid>
           )}
           loadingComponent={
             <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
@@ -170,7 +180,7 @@ const favoritesIndex = (props) => {
   return (
     <div>
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"

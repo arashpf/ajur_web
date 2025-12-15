@@ -538,7 +538,7 @@ function Test({ location, search }) {
     <>
 
      <Head>
-     <meta charset="UTF-8" />
+     <meta charSet="UTF-8" />
      <meta name="robots" content="max-image-preview:large" />
    <title>  {details.name} | مشاور املاک هوشمند آجر </title>
  {/* // TODO: the description need to be fill in the data base for each category for now its just null */}

@@ -32,28 +32,29 @@ const CookieConsent = () => {
         backgroundColor: '#333',
         padding: '20px',
         boxShadow: '0 -2px 5px rgba(0,0,0,0.1)',
-        textAlign: 'center',
+        textAlign: 'right', // تغییر به راست‌چین برای فارسی
         zIndex: 3000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
-        gap: '20px',
+        gap: '10px',
+        direction: 'rtl', // افزودن جهت راست به چپ
       }}
     >
       <img
-        src="/cookie.png" // Add your cookie image file here
-        alt="Cookie"
+        src="/cookie.png" // آدرس تصویر کوکی خود را اینجا قرار دهید
+        alt="کوکی"
         style={{
-          width: '80px',
-          height: '80px',
+          width: '60px',
+          height: '60px',
           borderRadius: '50%',
         }}
       />
       <div>
-        <p style={{ margin: '0', fontSize: '16px',color:'#f9f9f9' }}>
-          We use cookies to improve your experience. By using our website, you consent to our cookies.{' '}
+        <p style={{ margin: '0', fontSize: '12px',color:'#f9f9f9' }}>
+          ما از کوکی‌ها برای بهبود تجربه شما استفاده می‌کنیم. با استفاده از وب‌سایت ما، شما به کوکی‌های ما رضایت می‌دهید.{' '}
           <a href="/privacy-policy" style={{ textDecoration: 'underline', color: '#c08149' }}>
-            Learn more
+            بیشتر بدانید
           </a>
         </p>
         <div style={{ marginTop: '10px' }}>
@@ -70,7 +71,7 @@ const CookieConsent = () => {
                 fontSize: '14px',
               }}
           >
-            Accept
+            پذیرش
           </button>
           <button
             onClick={handleReject}
@@ -85,7 +86,7 @@ const CookieConsent = () => {
                 fontSize: '14px',
             }}
           >
-            Reject
+            رد
           </button>
         </div>
       </div>

@@ -856,7 +856,7 @@ const RealestateSingle = (props) => {
   return (
     <div className="realstate-contents-wrapper">
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"

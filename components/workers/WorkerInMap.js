@@ -43,14 +43,14 @@ const WorkerInMap = (props) => {
                 href={`/worker/${worker.slug}?id=${worker.id}`}
                 key={worker.id}
               >
-                <a>
+                
                   <div className={Styles['more-info-button']}>
 
                         <a>مشاهده جزییات</a>
 
 
                   </div>
-                </a>
+              
 
          </Link>
 

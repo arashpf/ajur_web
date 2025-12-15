@@ -285,17 +285,27 @@ const RealestateSingle = (props) => {
           items={filteredWorkers} // Use filteredWorkers here
           itemsPerPage={6}
           renderItem={(worker) => (
-            <Link
-              href={`/worker/${worker.id}?slug=${worker.slug}`}
-              key={worker.id}
+            // <Link
+            //   href={`/worker/${worker.id}?slug=${worker.slug}`}
+            //   key={worker.id}
+            // >
+            //   <Grid item md={4} xs={12} key={worker.id}>
+                
+            //       {/* FIX: Pass individual worker object, not the filteredWorkers array */}
+            //       <WorkerCard worker={worker} />
+                
+            //   </Grid>
+            // </Link>
+
+            <Grid item md={4} xs={12} key={worker.id}>
+            <a
+               href={`/worker/${worker.id}?slug=${worker.slug}`}
+               key={worker.id}
             >
-              <Grid item md={4} xs={12} key={worker.id}>
-                <a>
-                  {/* FIX: Pass individual worker object, not the filteredWorkers array */}
-                  <WorkerCard worker={worker} />
-                </a>
-              </Grid>
-            </Link>
+              {/* <WorkerCard worker={worker} /> */}
+              <WorkerCard worker={worker} />
+            </a>
+          </Grid>
           )}
           loadingComponent={
             <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>

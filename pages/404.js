@@ -15,19 +15,21 @@ export default function Custom404() {
         <div style={{ textAlign: 'center', padding: '50px 20px' }}>
           <h1>404 - صفحه مورد نظر پیدا نشد</h1>
           <p>متأسفیم، صفحه‌ای که به دنبال آن هستید وجود ندارد.</p>
-          <Link href="/">
-            <a style={{ 
-              display: 'inline-block', 
-              marginTop: '20px', 
-              padding: '10px 20px', 
-              backgroundColor: '#0070f3', 
-              color: 'white', 
-              textDecoration: 'none',
-              borderRadius: '5px'
-            }}>
-              بازگشت به صفحه اصلی
-            </a>
-          </Link>
+          <Link 
+      href="/"
+      style={{ 
+        display: 'inline-block', 
+        marginTop: '20px', 
+        padding: '10px 20px', 
+        backgroundColor: '#0070f3', 
+        color: 'white', 
+        textDecoration: 'none',
+        borderRadius: '5px'
+      }}
+    >
+      بازگشت به صفحه اصلی
+    </Link>
+          
         </div>
       </main>
     </div>

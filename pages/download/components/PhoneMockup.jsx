@@ -21,7 +21,7 @@
  *
  * =============================================================================
  */
-
+import Image from 'next/image';
 import {
   FileText,
   Contact,
@@ -98,7 +98,7 @@ function HomeScreen({ disableScroll = false }) {
         <Settings className="w-5 h-5 text-gray-500" />
         <span className="font-bold text-gray-800">دستیار هوشمند</span>
         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
-          <img src="/placeholder.svg?height=32&width=32" alt="Profile" className="w-full h-full object-cover" />
+          <img src="/img/ajur.png?height=32&width=32" alt="Profile" className="w-full h-full object-cover" />
         </div>
       </div>
 
@@ -121,7 +121,16 @@ function HomeScreen({ disableScroll = false }) {
         {/* Featured property image */}
         <div className="mt-4 rounded-xl overflow-hidden shadow-md relative h-32 w-full">
           {/* HINT: Update this src to match your image path */}
-          <img src="/modern-living-room.png" alt="Living room" className="w-full h-full object-cover" />
+          {/* <img src="/modern-living-room.png" alt="Living room" className="w-full h-full object-cover" /> */}
+
+          <Image 
+  src="/img/espinas.jpg" 
+  alt="Living room" 
+  fill
+  className="object-cover"
+  sizes="100vw"
+/>
+         
           <div className="absolute bottom-2 right-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">جدید</div>
         </div>
 
@@ -202,8 +211,8 @@ function ConsultantsScreen() {
 
       {/* Consultants list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-20 bg-gray-50">
-        <ConsultantCard name="مسعود قهرمانی" role="مشاور . ستاره شهر" rating={5} />
-        <ConsultantCard name="علیرضا عباسی" role="مشاور . ستاره شهر" rating={5} verified />
+        <ConsultantCard name="مسعود قهرمانی" role="مشاور . ستاره شهر" rating={5} logo/>
+        <ConsultantCard name="علیرضا عباسی" role="مشاور . ستاره شهر" rating={5} logo verified />
         <ConsultantCard name="پویا عباسی" role="دپارتمان املاک ۲۴" rating={0} logo />
       </div>
     </>
@@ -247,7 +256,7 @@ function ConsultantCard({ name, role, rating, verified = false, logo = false }) 
                 LOGO
               </div>
             ) : (
-              <img src="/placeholder.svg" alt={name} className="w-full h-full object-cover" />
+              <img src="/img/ajur.png" alt={name} className="w-full h-full object-cover" />
             )}
           </div>
           {/* Verified badge */}

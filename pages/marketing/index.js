@@ -149,7 +149,7 @@ const index = (props) => {
   return (
     <div>
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <title> مشاور املاک هوشمند آجر | بخش بازاریابی </title>
         <meta

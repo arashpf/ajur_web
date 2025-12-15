@@ -8,7 +8,7 @@ const Counseling = (props) => {
   const renderMeta = () => {
     return(
       <Head>
-       <meta charset="UTF-8" />
+       <meta charSet="UTF-8" />
        <meta name="robots" content="max-image-preview:large" />
        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"></meta>
        <title>  آجر :  درخواست خرید و فروش و رهن و اجاره </title>

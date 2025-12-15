@@ -200,7 +200,7 @@ export default function LandingPage() {
       className="h-screen w-screen overflow-y-auto snap-y snap-mandatory scroll-smooth snap-container"
     >
       {/* Header Title Above Cards */}
-      <div className="w-full flex justify-center mt-8 mb-4">
+      <div className="w-full flex justify-center mt-6 mb-4">
         <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-800 font-iransans">
           آجر، مشاور املاک هوشمند
         </h1>

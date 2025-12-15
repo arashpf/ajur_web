@@ -164,9 +164,9 @@ function WorkerDetails(props){
               href={`/realestates/${realstate.id}?slug=${realstate.slug}`}
               key={realstate.id}
             >
-              <a>
+              {/* <a> */}
                   <WorkerRealstateCard realstate={realstate}/>
-              </a>
+              {/* </a> */}
 
         </Link>
 

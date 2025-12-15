@@ -100,9 +100,9 @@ export default function SharePage() {
         >
           {items.map((item) => (
             <Link key={item.id} href={`/worker/${item.id}?slug=${item.slug}`}>
-              <a>
+             
                 <WorkerCard worker={item} />
-              </a>
+             
             </Link>
           ))}
         </Box>

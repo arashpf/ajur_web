@@ -6,6 +6,18 @@ body {
 @tailwind components;
 @tailwind utilities;
 
+.sticky-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+}
+
+/* Override any parent overflow issues */
+html, body, #__next, body > div {
+  overflow: visible !important;
+}
+
+
 .notailwind {
   /* avoid forcing a fixed height which breaks grid row sizing; allow natural height */
   width: 100%;
@@ -386,7 +398,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 /* Centralized spinner-image rules: keep the GIF centered and preserve its
@@ -422,7 +434,7 @@ body {
 
 body {
   display: block;
-  overflow-x: hidden;
+ /* overflow-x: hidden; */
 }
 
 .main-content {
@@ -431,3 +443,5 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+

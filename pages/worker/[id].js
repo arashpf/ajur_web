@@ -180,14 +180,24 @@ const WorkerSingle = (props) => {
         delay={800}
         renderItem={(worker) => (
          
-          <Link
-            href={`/worker/${worker.id}?slug=${worker.slug}`}
-            key={worker.id}
+          // <Link
+          //   href={`/worker/${worker.id}?slug=${worker.slug}`}
+          //   key={worker.id}
+          // >
+          //   <Grid item md={4} xs={12} key={worker.id}>
+          //   <WorkerCard worker={worker} />
+          //   </Grid>
+          // </Link>
+
+          <Grid item md={4} xs={12} key={worker.id}>
+          <a
+             href={`/worker/${worker.id}?slug=${worker.slug}`}
+             key={worker.id}
           >
-            <Grid item md={4} xs={12} key={worker.id}>
+            {/* <WorkerCard worker={worker} /> */}
             <WorkerCard worker={worker} />
-            </Grid>
-          </Link>
+          </a>
+        </Grid>
         )}
         loadingComponent={
           <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>

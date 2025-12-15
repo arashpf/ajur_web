@@ -75,7 +75,7 @@ const WorkerSingle = (props) => {
   const renderSeoHeader = () => {
     return (
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"

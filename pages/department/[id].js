@@ -130,9 +130,9 @@ const singleDeparment = (props) => {
             key={worker.id}
           >
             <Grid item md={4} xs={12} key={worker.id}>
-              <a>
+              
                 <WorkerCard worker={worker} />
-              </a>
+              
             </Grid>
           </Link>
         )}
@@ -209,9 +209,9 @@ const singleDeparment = (props) => {
               realstate.user_id ? realstate.user_id : realstate.id
             }?slug=${realstate.slug}`}
           >
-            <a>
+           
               <RealStateSmalCard key={realstate.id} realstate={realstate} />
-            </a>
+          
           </Link>
         </SwiperSlide>
       ));

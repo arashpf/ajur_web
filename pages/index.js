@@ -1,4 +1,971 @@
-import React, { useState, useEffect } from "react";
+// import React, { useState, useEffect } from "react";
+// import Head from "next/head";
+// import Image from "next/image";
+// import styles from "../styles/Home.module.css";
+// import SearchDiv from "../components/others/SearchDiv";
+// import WorkerCard from "../components/cards/WorkerCard";
+// import RealStateSmalCard from "../components/cards/realestate/RealStateSmalCard";
+// import DepartmentSmalCard from "../components/cards/department/DepartmentSmalCard";
+// import CatCard from "../components/cards/CatCard";
+// import MainCatCard from "../components/cards/MainCatCard";
+// import PropTypes from "prop-types";
+// import Slider from "react-slick";
+// import axios from "axios";
+// import Link from "next/link";
+// import FileRequest from "../components/request/FileRequest.jsx";
+// import Cookies from "js-cookie";
+// import { useRouter } from "next/router";
+// import dynamic from "next/dynamic";
+// const FeaturesHub = dynamic(() => import("../components/accesshub"), {
+//   ssr: false,
+// });
+// import LandingPage from "./assistant/G-ads/landing-page";
+// import Dialog from "@mui/material/Dialog";
+// import DialogTitle from "@mui/material/DialogTitle";
+// import DialogContent from "@mui/material/DialogContent";
+// import DialogActions from "@mui/material/DialogActions";
+// import Button from "@mui/material/Button";
+// // simplified buttons: using plain HTML buttons instead of animated ActionButton
+// import DealButton from "../components/parts/DealButton";
+// import ActionCard from "../components/ActionButton";
+// // import Cards (from your Desktop file)
+// import Cards from "../components/Cards";
+// import Download from "../components/Download";
+// import BestSection from "../components/bestsection";
+
+// import ForwardIcon from "@mui/icons-material/Forward";
+
+// import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
+// import { Swiper, SwiperSlide } from "swiper/react";
+// import SwiperCore, { Autoplay } from "swiper";
+// // Import Swiper styles
+// import "swiper/css";
+// import "swiper/css/pagination";
+// import "swiper/css/navigation";
+// import { display, style } from "@mui/system";
+// // import "./styles.css";
+// // import required modules
+
+// function Home(props) {
+//   const router = useRouter();
+//   // Register Autoplay only on the client to avoid server-side runtime issues
+//   useEffect(() => {
+//     if (typeof window !== "undefined") {
+//       SwiperCore.use([Autoplay]);
+//     }
+//   }, []);
+
+//   const [loading, set_loading] = useState(true);
+//   const [error, set_error] = useState(false);
+//   const [cats, set_cats] = useState();
+//   const [main_cats, set_main_cats] = useState();
+//   const [sub_cats, set_sub_cats] = useState();
+//   const [realestates, set_realestates] = useState();
+//   const [departments, set_departments] = useState();
+//   const [title1, set_title1] = useState();
+//   const [title2, set_title2] = useState();
+//   const [title3, set_title3] = useState();
+//   const [collection1, set_collection1] = useState();
+//   const [collection2, set_collection2] = useState();
+//   const [collection3, set_collection3] = useState();
+//   const [the_city, set_the_city] = useState();
+//   const [the_neighborhoods, set_the_neighborhoods] = useState();
+
+//   const [is_have_favorited, set_is_have_favorited] = useState(false);
+//   const [is_have_history, set_is_have_history] = useState(false);
+
+//   const [favorite_workers, set_favorite_workers] = useState([]);
+//   const [history_workers, set_history_workers] = useState([]);
+//   const [clickedAction, setClickedAction] = useState(null);
+//   const [buyVisible, setBuyVisible] = useState(true);
+//   const [rentVisible, setRentVisible] = useState(true);
+//   const [isStacked, setIsStacked] = useState(true); // true when buttons are stacked (narrow screens)
+//   const [dealCats, setDealCats] = useState();
+//   const [animState, setAnimState] = useState(null); // null | 'pushed' | 'pullIn'
+//   const [dealAnim, setDealAnim] = useState(null); // null | 'popOut'
+//   const [showVpnDialog, setShowVpnDialog] = useState(false);
+//   const [vpnChecked, setVpnChecked] = useState(false);
+
+//   const homepageCardsFeatures = [
+//     {
+//       id: 1,
+//       title: "خرید",
+//       description: "آگهی‌های خرید ملک، خانه و آپارتمان",
+//       illustration: "/img/card1.png",
+//       action: "مشاهده آگهی‌ها",
+//       onClick: () => selectAction("buy"),
+//     },
+//     {
+//       id: 2,
+//       title: "ثبت آگهی",
+//       description: "ملک خود را برای فروش یا اجاره در آجر ثبت کنید",
+//       illustration: "/img/card2.png",
+//       action: "ثبت آگهی",
+//       onClick: () => router.push("/panel/new"),
+//     },
+//     {
+//       id: 3,
+//       title: "اجاره",
+//       description: "آگهی‌های اجاره مسکونی، تجاری و اداری",
+//       illustration: "/img/card3.png",
+//       action: "مشاهده آگهی‌ها",
+//       onClick: () => selectAction("rent"),
+//     },
+//   ];
+
+//   // simplified visibility control
+//   const selectAction = (type) => {
+//     // start push animation; after animation finishes, show deal grid and hide buttons
+//     setAnimState("pushed");
+//     setTimeout(() => {
+//       setClickedAction(type);
+//       setBuyVisible(false);
+//       setRentVisible(false);
+//     }, 420);
+//   };
+
+//   const clearAction = () => {
+//     // first pop out the deal grid, then show main buttons from the top
+//     setDealAnim("popOut");
+//     // wait for pop-out animation to finish, then remove deal grid and pull in buttons
+//     setTimeout(() => {
+//       setDealAnim(null);
+//       setClickedAction(null);
+//       setBuyVisible(true);
+//       setRentVisible(true);
+//       setAnimState("pullIn");
+//       setTimeout(() => setAnimState(null), 520);
+//     }, 240); // matches dealPopOutAnim duration (220ms) plus small buffer
+//   };
+
+//   console.log(dealCats);
+
+//   useEffect(() => {
+//     // update stacked/side-by-side state based on viewport width
+//     function updateStacked() {
+//       // keep in sync with CSS breakpoint (600px)
+//       setIsStacked(
+//         typeof window !== "undefined" ? window.innerWidth < 600 : true
+//       );
+//     }
+
+//     updateStacked();
+//     window.addEventListener("resize", updateStacked);
+//     return () => window.removeEventListener("resize", updateStacked);
+//   }, []);
+
+//   // Lightweight VPN/proxy detection using a public IP info service and heuristics.
+//   // If detected, show a dialog asking user to disable VPN. Respect a cookie "hide_vpn_warning" when set.
+//   async function detectVpn() {
+//     try {
+//       const res = await fetch("https://ipapi.co/json/");
+//       if (!res.ok) return false;
+//       const data = await res.json();
+
+//       const org = (data.org || data.asn || "").toString().toLowerCase();
+//       // Keywords that commonly indicate VPN / proxy / datacenter providers.
+//       const vpnKeywords = [
+//         "vpn",
+//         "proxy",
+//         "vpn service",
+//         "expressvpn",
+//         "nordvpn",
+//         "surfshark",
+//         "private internet access",
+//         "pia",
+//         "ipvanish",
+//         "purevpn",
+//         "windscribe",
+//         "protonvpn",
+//         "torguard",
+//         "openvpn",
+//         "digitalocean",
+//         "amazon",
+//         "amazon.com",
+//         "amazon web services",
+//         "google cloud",
+//         "google llc",
+//         "microsoft",
+//         "linode",
+//         "hetzner",
+//         "ovh",
+//         "vultr",
+//         "cloudflare",
+//       ];
+
+//       for (const k of vpnKeywords) {
+//         if (org.includes(k)) return true;
+//       }
+
+//       return false;
+//     } catch (e) {
+//       // network errors or blocked requests — silently fail
+//       // console.warn('vpn detect failed', e);
+//       return false;
+//     }
+//   }
+
+//   useEffect(() => {
+//     // run detection once on client when not hidden by cookie
+//     if (typeof window === "undefined") return;
+//     if (Cookies.get("hide_vpn_warning")) {
+//       setVpnChecked(true);
+//       return;
+//     }
+
+//     let mounted = true;
+//     detectVpn().then((isVpn) => {
+//       if (!mounted) return;
+//       if (isVpn) setShowVpnDialog(true);
+//       setVpnChecked(true);
+//     });
+
+//     return () => {
+//       mounted = false;
+//     };
+//   }, []);
+
+//   const handleBackButtons = () => {
+//     clearAction();
+//   };
+
+//   useEffect(() => {
+//     // Set up timeout first
+//     const timeoutId = setTimeout(() => {
+//       if (loading) {
+//         console.error("Loading timeout - showing error state");
+//         set_loading(false);
+//         set_error(true);
+//       }
+//     }, 10000); // 10 second timeout
+
+//     //  Cookies.set('selected_city','');
+//     var selected_city = props.trigeredcity;
+
+//     //  if(props.url_city){
+//     //   alert('city set in url');
+//     //   Cookies.set('selected_city',props.url_city);
+//     //  }else
+
+//     if (!selected_city) {
+//       //  router.push("/city-selection");
+//       // Cookies.set('selected_city','رباط کریم');
+//       selected_city = "رباط کریم";
+//       //   Cookies.set('selected_city_lat', '35.47229675', { expires: 365 });
+//       // Cookies.set('selected_city_lng', '51.08457936', { expires: 365 });
+//     }
+
+//     axios({
+//       method: "get",
+//       url: "https://api.ajur.app/api/base",
+//       params: {
+//         city: props.url_city ? props.url_city : selected_city,
+//       },
+//     })
+//       .then(function (response) {
+//         // Clear timeout on success
+//         clearTimeout(timeoutId);
+
+//         set_cats(response.data.cats);
+//         set_the_city(response.data.the_city);
+//         set_the_neighborhoods(response.data.the_neighborhoods);
+//         set_main_cats(response.data.main_cats);
+//         set_sub_cats(response.data.sub_cats);
+//         set_realestates(response.data.realstates);
+//         setDealCats(response.data.sub_cats);
+
+//         console.log("the maincat data in base is --------------------");
+//         console.log(response.data.main_cats);
+
+//         console.log(response.data.sub_cats);
+
+//         set_realestates(response.data.realstates);
+
+//         console.log("the departments data in base is --------------------");
+//         console.log(response.data.departments);
+
+//         set_departments(response.data.departments);
+
+//         set_title1(response.data.title1);
+
+//         set_title2(response.data.title2);
+
+//         set_title3(response.data.title3);
+
+//         set_collection1(response.data.collection1);
+//         set_collection2(response.data.collection2);
+//         set_collection3(response.data.collection3);
+
+//         set_loading(false);
+//         set_error(false);
+//       })
+//       .catch(function (error) {
+//         // Clear timeout on error
+//         clearTimeout(timeoutId);
+//         console.error("API request failed:", error);
+//         set_loading(false);
+//         set_error(true);
+//       });
+
+//     // Cleanup function
+//     return () => {
+//       clearTimeout(timeoutId);
+//     };
+//   }, [props.trigeredcity]);
+
+//   useEffect(() => {
+//     var faviorited = Cookies.get("favorited");
+
+//     if (!faviorited) {
+//       return;
+//     }
+
+//     // const newProduct = JSON.parse(faviorited);
+//     const newProduct = JSON.parse(faviorited);
+
+//     axios({
+//       method: "get",
+//       url: "https://api.ajur.app/api/history-workers",
+//       params: {
+//         workers_holder: newProduct,
+//       },
+//     })
+//       .then(function (response) {
+//         set_favorite_workers(response.data);
+
+//         if (response.data.length == 0) {
+//           console.log("trigered no post error");
+//           set_is_have_favorited(false);
+//         } else {
+//           set_is_have_favorited(true);
+//         }
+//         console.log("the data now is+++++++++++++++++++++ ");
+//         console.log(response.data);
+//       })
+//       .catch(function (error) {
+//         console.error("Error loading favorite workers:", error);
+//         set_is_have_favorited(false);
+//       });
+
+//     // alert(newProduct);
+//   }, []);
+
+//   useEffect(() => {
+//     var history = Cookies.get("history");
+
+//     if (!history) {
+//       return;
+//     }
+
+//     // const newProduct = JSON.parse(faviorited);
+//     const newProduct = JSON.parse(history);
+
+//     axios({
+//       method: "get",
+//       url: "https://api.ajur.app/api/history-workers",
+//       params: {
+//         workers_holder: newProduct,
+//       },
+//     })
+//       .then(function (response) {
+//         set_history_workers(response.data);
+
+//         if (response.data.length == 0) {
+//           console.log("trigered no post error");
+//           set_is_have_history(false);
+//         } else {
+//           set_is_have_history(true);
+//         }
+//         console.log("the data now is+++++++++++++++++++++ ");
+//         console.log(response.data);
+//       })
+//       .catch(function (error) {
+//         console.error("Error loading history workers:", error);
+//         set_is_have_history(false);
+//       });
+
+//     // alert(newProduct);
+//   }, []);
+
+//   function AlterLoading() {
+//     console.log("loading is fired ~~~~~");
+//     set_loading(!loading);
+//   }
+
+//   function renderDefaultCity() {
+//     if (1) {
+//       return "رباط کریم";
+//     }
+//   }
+
+//   const renderSliderCategories = () => {
+//     var selected_city = Cookies.get("selected_city");
+
+//     return main_cats.map((cat) => (
+//       <SwiperSlide
+//         key={cat.id}
+//         onClick={AlterLoading}
+//         className={styles["single_cat_swipper"]}
+//       >
+//         <Link
+//           href={`/${
+//             props.trigeredcity ? props.trigeredcity : renderDefaultCity()
+//           }/${cat.name}`}
+//         >
+//           <a>
+//             <MainCatCard key={cat.id} cat={cat} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSliderOne = () => {
+//     return collection1.map((worker) => (
+//       <SwiperSlide key={worker.id} onClick={AlterLoading}>
+//         <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
+//           <a>
+//             <WorkerCard key={worker.id} worker={worker} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSlidertwo = () => {
+//     return collection2.map((worker) => (
+//       <SwiperSlide key={worker.id} onClick={AlterLoading}>
+//         <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
+//           <a>
+//             <WorkerCard key={worker.id} worker={worker} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSliderthree = () => {
+//     return collection3.map((worker) => (
+//       <SwiperSlide key={worker.id} onClick={AlterLoading}>
+//         <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
+//           <a>
+//             <WorkerCard key={worker.id} worker={worker} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSliderDepartments = () => {
+//     return departments.map((department) => (
+//       <SwiperSlide key={department.id} onClick={AlterLoading}>
+//         <Link href={`/department/${department.id}?slug=${department.slug}`}>
+//           <a>
+//             <DepartmentSmalCard key={department.id} department={department} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSliderRealState = () => {
+//     return realestates.map((realstate) => (
+//       <SwiperSlide key={realstate.id} onClick={AlterLoading}>
+//         <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
+//           <a>
+//             <RealStateSmalCard key={realstate.id} realstate={realstate} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSomeHistoryeWorkers = () => {
+//     return history_workers.map((worker) => (
+//       <SwiperSlide key={worker.id} onClick={AlterLoading}>
+//         <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
+//           <a>
+//             <WorkerCard key={worker.id} worker={worker} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const renderSomeFavoriteWorkers = () => {
+//     return favorite_workers.map((worker) => (
+//       <SwiperSlide key={worker.id} onClick={AlterLoading}>
+//         <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
+//           <a>
+//             <WorkerCard key={worker.id} worker={worker} />
+//           </a>
+//         </Link>
+//       </SwiperSlide>
+//     ));
+//   };
+
+//   const handleRecentsClick = () => {
+//     router.push("/recents");
+//   };
+
+//   const handleFavoritesClick = () => {
+//     router.push("/favorites");
+//   };
+
+//   const renderHistoryWorkers = () => {
+//     if (1) {
+//       return (
+//         history_workers.length > 0 && (
+//           <div style={{ paddingBottom: 10 }}>
+//             <div className={styles["title"]}>
+//               <h2 onClick={handleRecentsClick}>آخرین بازدید های شما</h2>
+//             </div>
+//             <Swiper
+//               slidesPerView={1}
+//               spaceBetween={20}
+//               autoplay={{
+//                 delay: 3000,
+//                 disableOnInteraction: true,
+//                 pauseOnMouseEnter: true,
+//               }}
+//               pagination={{ clickable: true }}
+//               breakpoints={{
+//                 200: {
+//                   slidesPerView: 1,
+//                   spaceBetween: 20,
+
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+
+//                 640: {
+//                   slidesPerView: 2,
+//                   spaceBetween: 20,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//                 1050: {
+//                   slidesPerView: 3,
+//                   spaceBetween: 20,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//                 1400: {
+//                   slidesPerView: 4,
+//                   spaceBetween: 20,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//               }}
+//               modules={[Pagination, Navigation, Autoplay]}
+//               className={styles["worker-swiper"]}
+//             >
+//               {renderSomeHistoryeWorkers()}
+//             </Swiper>
+//           </div>
+//         )
+//       );
+//     }
+//   };
+
+//   const renderFavoriteWorkers = () => {
+//     if (1) {
+//       return (
+//         favorite_workers.length > 0 && (
+//           <div style={{ paddingBottom: 20 }}>
+//             <div className={styles["title"]}>
+//               <h2 onClick={handleFavoritesClick}>آخرین مورد پسند های شما</h2>
+//             </div>
+//             <Swiper
+//               slidesPerView={1}
+//               spaceBetween={8}
+//               autoplay={{
+//                 delay: 3000,
+//                 disableOnInteraction: true,
+//                 pauseOnMouseEnter: true,
+//               }}
+//               pagination={{ clickable: true }}
+//               breakpoints={{
+//                 200: {
+//                   slidesPerView: 1,
+//                   spaceBetween: 2,
+
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+
+//                 640: {
+//                   slidesPerView: 2,
+//                   spaceBetween: 3,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//                 1050: {
+//                   slidesPerView: 3,
+//                   spaceBetween: 20,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//                 1400: {
+//                   slidesPerView: 4,
+//                   spaceBetween: 20,
+//                   navigation: {
+//                     enabled: true,
+//                   },
+//                 },
+//               }}
+//               modules={[Pagination, Navigation, Autoplay]}
+//               className={styles["worker-swiper"]}
+//             >
+//               {renderSomeFavoriteWorkers()}
+//             </Swiper>
+//           </div>
+//         )
+//       );
+//     }
+//   };
+
+//   const renderOrSpinner = () => {
+//     if (error) {
+//       return (
+//         <div style={{ textAlign: "center", padding: "50px 20px" }}>
+//           <h2>مشکلی در بارگذاری داده‌ها پیش آمده است</h2>
+//           <button
+//             onClick={() => window.location.reload()}
+//             style={{
+//               padding: "10px 20px",
+//               margin: "10px",
+//               backgroundColor: "#0070f3",
+//               color: "white",
+//               border: "none",
+//               borderRadius: "5px",
+//               cursor: "pointer",
+//             }}
+//           >
+//             تلاش مجدد
+//           </button>
+//         </div>
+//       );
+//     }
+//     if (loading) {
+//       return (
+//         <div className="spinnerImageView">
+//           <img
+//             className="spinner-image"
+//             src="/logo/ajour-gif.gif"
+//             alt="ajur logo"
+//           />
+//         </div>
+//       );
+//     } else {
+//       return (
+//         <div>
+//           <main className={styles["main"]}>
+
+//             {/* Header Title Above Cards */}
+//             <div className={`max-w-7xl mx-auto mt-32 mb-10 text-center iransans ${styles.headerTitleHover}`}>
+//               <h1 className="iransans-heading text-3xl sm:text-4xl md:text-6xl font-extrabold leading-tight">
+//                 <span className="text-red-600">آجر</span>، مشاور املاک هوشمند
+//               </h1>
+//             </div>
+//             <Cards features={homepageCardsFeatures} />
+
+//             {/* Services heading */}
+//             <div className="max-w-7xl mx-auto my-6 text-center iransans">
+//               <h1 className="iransans-heading text-3xl md:text-4xl font-bold">خدمات آجر</h1>
+//             </div>
+
+//             {/* Quick access / features hub (renders after Cards) */}
+//             <FeaturesHub />
+
+//             <div className="max-w-7xl mx-auto my-6 pt-14 text-center iransans">
+//               <h1 className="iransans-heading text-3xl md:text-4xl font-bold">بهترین‌های آجر</h1>
+//             </div>
+
+//             <BestSection />
+
+//             {/* Insert the new FileRequest section right after the Cards
+//                 Pass the original CTA handlers: call and open file-request page */}
+//             <FileRequest
+//               onCallClick={() => (window.location.href = "tel:+989124161970")}
+//               onActionClick={() => router.push("/file-request")}
+//             />
+
+//             {/* Download section */}
+//             <Download />
+
+//             {/* Full screen modal for subcategories */}
+//             {(clickedAction === "buy" || clickedAction === "rent") && (
+//               <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+//                 {/* Modal Header */}
+//                 <div className="sticky top-0 mt-5 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
+//                   {/* Left side - Arrow back button */}
+//                   <button
+//                     onClick={() => setClickedAction(null)}
+//                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
+//                     aria-label="بازگشت"
+//                   >
+//                     <svg
+//                       className="w-6 h-6"
+//                       viewBox="0 0 24 24"
+//                       fill="none"
+//                       xmlns="http://www.w3.org/2000/svg"
+//                     >
+//                       <path
+//                         d="M20 12 H8"
+//                         stroke="currentColor"
+//                         strokeWidth="2"
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                       />
+//                       <path
+//                         d="M9 7 L4 12 L9 17"
+//                         stroke="currentColor"
+//                         strokeWidth="2"
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                       />
+//                     </svg>
+//                     <span className="mr-2 text-sm font-medium">بازگشت</span>
+//                   </button>
+
+//                   {/* Center - Title */}
+//                   <div className="text-xl font-bold text-gray-900">
+//                     {clickedAction === "buy"
+//                       ? "دسته‌بندی‌های خرید"
+//                       : "دسته‌بندی‌های اجاره"}
+//                   </div>
+
+//                   {/* Right side - X close button */}
+//                   <button
+//                     onClick={() => setClickedAction(null)}
+//                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+//                     aria-label="بستن"
+//                   >
+//                     <svg
+//                       className="w-6 h-6"
+//                       viewBox="0 0 24 24"
+//                       fill="none"
+//                       xmlns="http://www.w3.org/2000/svg"
+//                     >
+//                       <path
+//                         d="M18 6L6 18"
+//                         stroke="currentColor"
+//                         strokeWidth="2"
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                       />
+//                       <path
+//                         d="M6 6L18 18"
+//                         stroke="currentColor"
+//                         strokeWidth="2"
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                       />
+//                     </svg>
+//                   </button>
+//                 </div>
+
+//                 {/* Subcategories Grid */}
+//                 <div className="p-6">
+//                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+//                     {sub_cats
+//                       .filter((c) =>
+//                         clickedAction === "buy"
+//                           ? c.type === "sell"
+//                           : c.type === "rent"
+//                       )
+//                       .map((cat, idx) => (
+//                         <DealButton
+//                           key={cat.id}
+//                           title={cat.name}
+//                           src={`/cats_image/sub-cats/${cat.id}.png`}
+//                           onClick={() => {
+//                             const city = props.trigeredcity
+//                               ? props.trigeredcity
+//                               : renderDefaultCity();
+//                             router.push(
+//                               `/${encodeURIComponent(
+//                                 city
+//                               )}/${encodeURIComponent(cat.name)}`
+//                             );
+//                           }}
+//                           style={{ animationDelay: `${idx * 80}ms` }}
+//                         />
+//                       ))}
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
+
+//             <div className={styles["main-row"]}>
+//               {renderHistoryWorkers()}
+//               {renderFavoriteWorkers()}
+
+//               {/* ...existing FileRequest removed from here to avoid duplicate ... */}
+
+//               {/* Removed duplicate 'بهترین دپارتمان‌های املاک آجر' and 'بهترین مشاورین املاک آجر' sections per request */}
+//             </div>
+//           </main>
+//         </div>
+//       );
+//     }
+//   };
+//   return (
+//     <div className={styles.container}>
+//       <Head>
+//         <meta charSet="UTF-8" />
+//         <meta name="robots" content="max-image-preview:large" />
+//         <meta
+//           name="viewport"
+//           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+//         />
+//         <title> آجر : مشاور املاک هوشمند </title>
+//         <meta
+//           name="description"
+//           content="مشاور املاک هوشمند آجر مشاور املاکی به وسعت ایران با صدها مشاور مسلط به منطقه"
+//         />
+//         <meta
+//           name="robots"
+//           content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+//         />
+//         <meta property="og:locale" content="fa_IR" />
+//         <meta property="og:type" content="website" />
+//         <meta property="og:locale" content="fa_IR" />
+//         <meta property="og:type" content="website" />
+//         <meta property="og:title" content="آجر : مشاور املاک هوشمند " />
+//         <meta
+//           property="og:description"
+//           content="از خرید و فروش خانه و ویلا تا مشاوره برای سرمایه گزاری در مشاور املاک هوشمند آجر"
+//         />
+//         <meta property="og:url" content="https://ajur.app" />
+//         <meta property="og:site_name" content="آجر : مشاور املاک هوشمند " />
+//         <meta
+//           property="article:published_time"
+//           content="2020-05-19T21:34:43+00:00"
+//         />
+//         <meta
+//           property="article:modified_time"
+//           content="2022-01-28T03:47:57+00:00"
+//         />
+//         <meta
+//           property="og:image"
+//           content="https://ajur.app/logo/ajour-meta-image.jpg"
+//         />
+//         <meta property="og:image:width" content="1080" />
+//         <meta property="og:image:height" content="702" />
+//         <meta name="twitter:card" content="summary_large_image" />
+//         <meta name="twitter:label1" content="Written by" />
+//         <meta name="twitter:data1" content="آرش پیمانی فر" />
+//         <link rel="icon" href="/favicon.ico" />
+//         <link rel="canonical" href="https://ajur.app" />
+//       </Head>
+
+//       {/* VPN warning dialog - non-modal floating widget on bottom-left */}
+//       <Dialog
+//         open={showVpnDialog}
+//         onClose={(event, reason) => {
+//           // ignore backdrop clicks (we hide backdrop) so clicks on page don't close it
+//           if (reason === "backdropClick") return;
+//           setShowVpnDialog(false);
+//         }}
+//         aria-labelledby="vpn-warning-title"
+//         hideBackdrop
+//         // prevent focus trapping so background remains interactive
+//         disableEnforceFocus
+//         disableAutoFocus
+//         // ModalProps: make the modal container pass pointer events through so page stays interactive
+//         ModalProps={{
+//           keepMounted: true,
+//           disableEnforceFocus: true,
+//           disableAutoFocus: true,
+//           // make container ignore pointer events so clicks go through to the page
+//           style: { pointerEvents: "none" },
+//         }}
+//         // PaperProps: position fixed bottom-left and accept pointer events
+//         PaperProps={{
+//           style: {
+//             pointerEvents: "auto",
+//             position: "fixed",
+//             bottom: 16,
+//             left: 16,
+//             margin: 0,
+//             borderRadius: 12,
+//             padding: "10px 14px",
+//             minWidth: 220,
+//             zIndex: 1400,
+//           },
+//           className: styles.vpnDialogPaper,
+//         }}
+//       >
+//         <DialogTitle id="vpn-warning-title"></DialogTitle>
+//         <DialogContent>
+//           برای استفاده بهتر از آجر، لطفا فیلترشکن خود را خاموش کنید
+//         </DialogContent>
+//         <DialogActions>
+//           <Button
+//             onClick={() => {
+//               // hide for the rest of today (until local midnight)
+//               try {
+//                 const now = new Date();
+//                 const endOfDay = new Date(
+//                   now.getFullYear(),
+//                   now.getMonth(),
+//                   now.getDate() + 1
+//                 );
+//                 Cookies.set("hide_vpn_warning", "1", { expires: endOfDay });
+//               } catch (e) {
+//                 // fallback to 1 day expiry if Date isn't accepted
+//                 Cookies.set("hide_vpn_warning", "1", { expires: 1 });
+//               }
+//               setShowVpnDialog(false);
+//             }}
+//             color="primary"
+//           >
+//             بستن
+//           </Button>
+//           <Button
+//             onClick={() => {
+//               // set cookie to hide future warnings for 365 days
+//               Cookies.set("hide_vpn_warning", "1", { expires: 365 });
+//               setShowVpnDialog(false);
+//             }}
+//             color="primary"
+//           >
+//             دیگر نمایش نده
+//           </Button>
+//         </DialogActions>
+//       </Dialog>
+
+//       <main className={`${styles.main} iransans`}>{renderOrSpinner()}</main>
+//     </div>
+//   );
+// }
+
+// // This gets called on every request
+
+// export function getServerSideProps(props) {
+//   // const city = context.query.city ? context.query.city : false;
+//   const city = props.city ? props.city : false;
+
+//   return {
+//     props: {
+//       url_city: city,
+//     }, // will be passed to the page component as props
+//   };
+// }
+
+// export default Home;
+
+
+import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
@@ -8,7 +975,6 @@ import RealStateSmalCard from "../components/cards/realestate/RealStateSmalCard"
 import DepartmentSmalCard from "../components/cards/department/DepartmentSmalCard";
 import CatCard from "../components/cards/CatCard";
 import MainCatCard from "../components/cards/MainCatCard";
-import PropTypes from "prop-types";
 import Slider from "react-slick";
 import axios from "axios";
 import Link from "next/link";
@@ -35,6 +1001,9 @@ import BestSection from "../components/bestsection";
 
 import ForwardIcon from "@mui/icons-material/Forward";
 
+
+
+
 import { Navigation, Pagination, Scrollbar, A11y } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import SwiperCore, { Autoplay } from "swiper";
@@ -42,47 +1011,42 @@ import SwiperCore, { Autoplay } from "swiper";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import { display, style } from "@mui/system";
-// import "./styles.css";
-// import required modules
+
+// Remove PropTypes import - deprecated in modern React
+// import PropTypes from "prop-types";
 
 function Home(props) {
   const router = useRouter();
-  // Register Autoplay only on the client to avoid server-side runtime issues
+  
+  // Initialize Swiper modules on client only
   useEffect(() => {
     if (typeof window !== "undefined") {
-      SwiperCore.use([Autoplay]);
+      SwiperCore.use([Autoplay, Navigation, Pagination]);
     }
   }, []);
 
-  const [loading, set_loading] = useState(true);
-  const [error, set_error] = useState(false);
-  const [cats, set_cats] = useState();
-  const [main_cats, set_main_cats] = useState();
-  const [sub_cats, set_sub_cats] = useState();
-  const [realestates, set_realestates] = useState();
-  const [departments, set_departments] = useState();
-  const [title1, set_title1] = useState();
-  const [title2, set_title2] = useState();
-  const [title3, set_title3] = useState();
-  const [collection1, set_collection1] = useState();
-  const [collection2, set_collection2] = useState();
-  const [collection3, set_collection3] = useState();
-  const [the_city, set_the_city] = useState();
-  const [the_neighborhoods, set_the_neighborhoods] = useState();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [cats, setCats] = useState([]);
+  const [mainCats, setMainCats] = useState([]);
+  const [subCats, setSubCats] = useState([]);
+  const [realestates, setRealestates] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [title1, setTitle1] = useState("");
+  const [title2, setTitle2] = useState("");
+  const [title3, setTitle3] = useState("");
+  const [collection1, setCollection1] = useState([]);
+  const [collection2, setCollection2] = useState([]);
+  const [collection3, setCollection3] = useState([]);
+  const [theCity, setTheCity] = useState("");
+  const [theNeighborhoods, setTheNeighborhoods] = useState([]);
 
-  const [is_have_favorited, set_is_have_favorited] = useState(false);
-  const [is_have_history, set_is_have_history] = useState(false);
+  const [isHaveFavorited, setIsHaveFavorited] = useState(false);
+  const [isHaveHistory, setIsHaveHistory] = useState(false);
 
-  const [favorite_workers, set_favorite_workers] = useState([]);
-  const [history_workers, set_history_workers] = useState([]);
+  const [favoriteWorkers, setFavoriteWorkers] = useState([]);
+  const [historyWorkers, setHistoryWorkers] = useState([]);
   const [clickedAction, setClickedAction] = useState(null);
-  const [buyVisible, setBuyVisible] = useState(true);
-  const [rentVisible, setRentVisible] = useState(true);
-  const [isStacked, setIsStacked] = useState(true); // true when buttons are stacked (narrow screens)
-  const [dealCats, setDealCats] = useState();
-  const [animState, setAnimState] = useState(null); // null | 'pushed' | 'pullIn'
-  const [dealAnim, setDealAnim] = useState(null); // null | 'popOut'
   const [showVpnDialog, setShowVpnDialog] = useState(false);
   const [vpnChecked, setVpnChecked] = useState(false);
 
@@ -113,84 +1077,35 @@ function Home(props) {
     },
   ];
 
-  // simplified visibility control
-  const selectAction = (type) => {
-    // start push animation; after animation finishes, show deal grid and hide buttons
-    setAnimState("pushed");
-    setTimeout(() => {
-      setClickedAction(type);
-      setBuyVisible(false);
-      setRentVisible(false);
-    }, 420);
-  };
-
-  const clearAction = () => {
-    // first pop out the deal grid, then show main buttons from the top
-    setDealAnim("popOut");
-    // wait for pop-out animation to finish, then remove deal grid and pull in buttons
-    setTimeout(() => {
-      setDealAnim(null);
-      setClickedAction(null);
-      setBuyVisible(true);
-      setRentVisible(true);
-      setAnimState("pullIn");
-      setTimeout(() => setAnimState(null), 520);
-    }, 240); // matches dealPopOutAnim duration (220ms) plus small buffer
-  };
-
-  console.log(dealCats);
-
-  useEffect(() => {
-    // update stacked/side-by-side state based on viewport width
-    function updateStacked() {
-      // keep in sync with CSS breakpoint (600px)
-      setIsStacked(
-        typeof window !== "undefined" ? window.innerWidth < 600 : true
-      );
-    }
-
-    updateStacked();
-    window.addEventListener("resize", updateStacked);
-    return () => window.removeEventListener("resize", updateStacked);
+  // Simplified visibility control
+  const selectAction = useCallback((type) => {
+    setClickedAction(type);
   }, []);
 
-  // Lightweight VPN/proxy detection using a public IP info service and heuristics.
-  // If detected, show a dialog asking user to disable VPN. Respect a cookie "hide_vpn_warning" when set.
-  async function detectVpn() {
+  const clearAction = useCallback(() => {
+    setClickedAction(null);
+  }, []);
+
+  // Lightweight VPN/proxy detection
+  const detectVpn = useCallback(async () => {
     try {
-      const res = await fetch("https://ipapi.co/json/");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch("https://ipapi.co/json/", {
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!res.ok) return false;
       const data = await res.json();
 
       const org = (data.org || data.asn || "").toString().toLowerCase();
-      // Keywords that commonly indicate VPN / proxy / datacenter providers.
       const vpnKeywords = [
-        "vpn",
-        "proxy",
-        "vpn service",
-        "expressvpn",
-        "nordvpn",
-        "surfshark",
-        "private internet access",
-        "pia",
-        "ipvanish",
-        "purevpn",
-        "windscribe",
-        "protonvpn",
-        "torguard",
-        "openvpn",
-        "digitalocean",
-        "amazon",
-        "amazon.com",
-        "amazon web services",
-        "google cloud",
-        "google llc",
-        "microsoft",
-        "linode",
-        "hetzner",
-        "ovh",
-        "vultr",
-        "cloudflare",
+        "vpn", "proxy", "expressvpn", "nordvpn", "surfshark",
+        "digitalocean", "amazon", "google cloud", "microsoft",
+        "linode", "hetzner", "ovh", "vultr", "cloudflare"
       ];
 
       for (const k of vpnKeywords) {
@@ -199,21 +1114,21 @@ function Home(props) {
 
       return false;
     } catch (e) {
-      // network errors or blocked requests — silently fail
-      // console.warn('vpn detect failed', e);
+      console.warn('VPN detection failed', e);
       return false;
     }
-  }
+  }, []);
 
   useEffect(() => {
-    // run detection once on client when not hidden by cookie
     if (typeof window === "undefined") return;
+    
     if (Cookies.get("hide_vpn_warning")) {
       setVpnChecked(true);
       return;
     }
 
     let mounted = true;
+    
     detectVpn().then((isVpn) => {
       if (!mounted) return;
       if (isVpn) setShowVpnDialog(true);
@@ -223,416 +1138,253 @@ function Home(props) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [detectVpn]);
 
-  const handleBackButtons = () => {
-    clearAction();
-  };
-
+  // Main data fetching effect
   useEffect(() => {
-    // Set up timeout first
+    const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.error("Loading timeout - showing error state");
-        set_loading(false);
-        set_error(true);
+        setLoading(false);
+        setError(true);
       }
-    }, 10000); // 10 second timeout
+    }, 15000);
 
-    //  Cookies.set('selected_city','');
-    var selected_city = props.trigeredcity;
+    const selectedCity = props.trigeredcity || props.url_city || "رباط کریم";
 
-    //  if(props.url_city){
-    //   alert('city set in url');
-    //   Cookies.set('selected_city',props.url_city);
-    //  }else
+    const fetchData = async () => {
+      try {
+        const response = await axios({
+          method: "get",
+          url: "https://api.ajur.app/api/base",
+          params: { city: selectedCity },
+          signal: controller.signal,
+        });
 
-    if (!selected_city) {
-      //  router.push("/city-selection");
-      // Cookies.set('selected_city','رباط کریم');
-      selected_city = "رباط کریم";
-      //   Cookies.set('selected_city_lat', '35.47229675', { expires: 365 });
-      // Cookies.set('selected_city_lng', '51.08457936', { expires: 365 });
-    }
-
-    axios({
-      method: "get",
-      url: "https://api.ajur.app/api/base",
-      params: {
-        city: props.url_city ? props.url_city : selected_city,
-      },
-    })
-      .then(function (response) {
-        // Clear timeout on success
         clearTimeout(timeoutId);
+        
+        setCats(response.data.cats || []);
+        setTheCity(response.data.the_city || "");
+        setTheNeighborhoods(response.data.the_neighborhoods || []);
+        setMainCats(response.data.main_cats || []);
+        setSubCats(response.data.sub_cats || []);
+        setRealestates(response.data.realstates || []);
+        setDepartments(response.data.departments || []);
+        setTitle1(response.data.title1 || "");
+        setTitle2(response.data.title2 || "");
+        setTitle3(response.data.title3 || "");
+        setCollection1(response.data.collection1 || []);
+        setCollection2(response.data.collection2 || []);
+        setCollection3(response.data.collection3 || []);
 
-        set_cats(response.data.cats);
-        set_the_city(response.data.the_city);
-        set_the_neighborhoods(response.data.the_neighborhoods);
-        set_main_cats(response.data.main_cats);
-        set_sub_cats(response.data.sub_cats);
-        set_realestates(response.data.realstates);
-        setDealCats(response.data.sub_cats);
-
-        console.log("the maincat data in base is --------------------");
-        console.log(response.data.main_cats);
-
-        console.log(response.data.sub_cats);
-
-        set_realestates(response.data.realstates);
-
-        console.log("the departments data in base is --------------------");
-        console.log(response.data.departments);
-
-        set_departments(response.data.departments);
-
-        set_title1(response.data.title1);
-
-        set_title2(response.data.title2);
-
-        set_title3(response.data.title3);
-
-        set_collection1(response.data.collection1);
-        set_collection2(response.data.collection2);
-        set_collection3(response.data.collection3);
-
-        set_loading(false);
-        set_error(false);
-      })
-      .catch(function (error) {
-        // Clear timeout on error
+        setLoading(false);
+        setError(false);
+      } catch (error) {
+        if (axios.isCancel(error)) return;
+        
         clearTimeout(timeoutId);
         console.error("API request failed:", error);
-        set_loading(false);
-        set_error(true);
-      });
+        setLoading(false);
+        setError(true);
+      }
+    };
 
-    // Cleanup function
+    fetchData();
+
     return () => {
+      controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [props.trigeredcity]);
+  }, [props.trigeredcity, props.url_city]);
 
+  // Fetch favorite workers
   useEffect(() => {
-    var faviorited = Cookies.get("favorited");
+    const fetchFavoriteWorkers = async () => {
+      const favorited = Cookies.get("favorited");
+      if (!favorited) return;
 
-    if (!faviorited) {
-      return;
-    }
+      try {
+        const response = await axios({
+          method: "get",
+          url: "https://api.ajur.app/api/history-workers",
+          params: { workers_holder: JSON.parse(favorited) },
+        });
 
-    // const newProduct = JSON.parse(faviorited);
-    const newProduct = JSON.parse(faviorited);
-
-    axios({
-      method: "get",
-      url: "https://api.ajur.app/api/history-workers",
-      params: {
-        workers_holder: newProduct,
-      },
-    })
-      .then(function (response) {
-        set_favorite_workers(response.data);
-
-        if (response.data.length == 0) {
-          console.log("trigered no post error");
-          set_is_have_favorited(false);
-        } else {
-          set_is_have_favorited(true);
-        }
-        console.log("the data now is+++++++++++++++++++++ ");
-        console.log(response.data);
-      })
-      .catch(function (error) {
+        setFavoriteWorkers(response.data || []);
+        setIsHaveFavorited(response.data?.length > 0);
+      } catch (error) {
         console.error("Error loading favorite workers:", error);
-        set_is_have_favorited(false);
-      });
+        setIsHaveFavorited(false);
+      }
+    };
 
-    // alert(newProduct);
+    fetchFavoriteWorkers();
   }, []);
 
+  // Fetch history workers
   useEffect(() => {
-    var history = Cookies.get("history");
+    const fetchHistoryWorkers = async () => {
+      const history = Cookies.get("history");
+      if (!history) return;
 
-    if (!history) {
-      return;
-    }
+      try {
+        const response = await axios({
+          method: "get",
+          url: "https://api.ajur.app/api/history-workers",
+          params: { workers_holder: JSON.parse(history) },
+        });
 
-    // const newProduct = JSON.parse(faviorited);
-    const newProduct = JSON.parse(history);
-
-    axios({
-      method: "get",
-      url: "https://api.ajur.app/api/history-workers",
-      params: {
-        workers_holder: newProduct,
-      },
-    })
-      .then(function (response) {
-        set_history_workers(response.data);
-
-        if (response.data.length == 0) {
-          console.log("trigered no post error");
-          set_is_have_history(false);
-        } else {
-          set_is_have_history(true);
-        }
-        console.log("the data now is+++++++++++++++++++++ ");
-        console.log(response.data);
-      })
-      .catch(function (error) {
+        setHistoryWorkers(response.data || []);
+        setIsHaveHistory(response.data?.length > 0);
+      } catch (error) {
         console.error("Error loading history workers:", error);
-        set_is_have_history(false);
-      });
+        setIsHaveHistory(false);
+      }
+    };
 
-    // alert(newProduct);
+    fetchHistoryWorkers();
   }, []);
 
-  function AlterLoading() {
-    console.log("loading is fired ~~~~~");
-    set_loading(!loading);
-  }
+  const alterLoading = useCallback(() => {
+    setLoading(prev => !prev);
+  }, []);
 
-  function renderDefaultCity() {
-    if (1) {
-      return "رباط کریم";
-    }
-  }
+  const renderDefaultCity = useCallback(() => {
+    return "رباط کریم";
+  }, []);
 
-  const renderSliderCategories = () => {
-    var selected_city = Cookies.get("selected_city");
-
-    return main_cats.map((cat) => (
+  // Render functions
+  const renderSliderCategories = useCallback(() => {
+    const selectedCity = props.trigeredcity || renderDefaultCity();
+    
+    return mainCats.map((cat) => (
       <SwiperSlide
         key={cat.id}
-        onClick={AlterLoading}
+        onClick={alterLoading}
         className={styles["single_cat_swipper"]}
       >
-        <Link
-          href={`/${
-            props.trigeredcity ? props.trigeredcity : renderDefaultCity()
-          }/${cat.name}`}
+        <Link 
+          href={`/${encodeURIComponent(selectedCity)}/${encodeURIComponent(cat.name)}`}
+          legacyBehavior
         >
           <a>
-            <MainCatCard key={cat.id} cat={cat} />
+            <MainCatCard cat={cat} />
           </a>
         </Link>
       </SwiperSlide>
     ));
-  };
+  }, [mainCats, props.trigeredcity, alterLoading, renderDefaultCity]);
 
-  const renderSliderOne = () => {
-    return collection1.map((worker) => (
-      <SwiperSlide key={worker.id} onClick={AlterLoading}>
-        <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
-          <a>
-            <WorkerCard key={worker.id} worker={worker} />
-          </a>
+  const renderWorkerSlider = useCallback((workers) => {
+    return workers.map((worker) => (
+      <SwiperSlide key={worker.id} onClick={alterLoading}>
+        <Link href={`/worker/${worker.id}?slug=${worker.slug}`} legacyBehavior>
+          
+            <WorkerCard worker={worker} />
+          
         </Link>
       </SwiperSlide>
     ));
-  };
+  }, [alterLoading]);
 
-  const renderSlidertwo = () => {
-    return collection2.map((worker) => (
-      <SwiperSlide key={worker.id} onClick={AlterLoading}>
-        <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
-          <a>
-            <WorkerCard key={worker.id} worker={worker} />
-          </a>
-        </Link>
-      </SwiperSlide>
-    ));
-  };
-
-  const renderSliderthree = () => {
-    return collection3.map((worker) => (
-      <SwiperSlide key={worker.id} onClick={AlterLoading}>
-        <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
-          <a>
-            <WorkerCard key={worker.id} worker={worker} />
-          </a>
-        </Link>
-      </SwiperSlide>
-    ));
-  };
-
-  const renderSliderDepartments = () => {
+  const renderSliderDepartments = useCallback(() => {
     return departments.map((department) => (
-      <SwiperSlide key={department.id} onClick={AlterLoading}>
-        <Link href={`/department/${department.id}?slug=${department.slug}`}>
-          <a>
-            <DepartmentSmalCard key={department.id} department={department} />
-          </a>
+      <SwiperSlide key={department.id} onClick={alterLoading}>
+        <Link href={`/department/${department.id}?slug=${department.slug}`} legacyBehavior>
+          
+            <DepartmentSmalCard department={department} />
+          
         </Link>
       </SwiperSlide>
     ));
-  };
+  }, [departments, alterLoading]);
 
-  const renderSliderRealState = () => {
+  const renderSliderRealState = useCallback(() => {
     return realestates.map((realstate) => (
-      <SwiperSlide key={realstate.id} onClick={AlterLoading}>
-        <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
-          <a>
-            <RealStateSmalCard key={realstate.id} realstate={realstate} />
-          </a>
+      <SwiperSlide key={realstate.id} onClick={alterLoading}>
+        <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`} legacyBehavior>
+          
+            <RealStateSmalCard realstate={realstate} />
+          
         </Link>
       </SwiperSlide>
     ));
-  };
+  }, [realestates, alterLoading]);
 
-  const renderSomeHistoryeWorkers = () => {
-    return history_workers.map((worker) => (
-      <SwiperSlide key={worker.id} onClick={AlterLoading}>
-        <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
-          <a>
-            <WorkerCard key={worker.id} worker={worker} />
-          </a>
-        </Link>
-      </SwiperSlide>
-    ));
-  };
-
-  const renderSomeFavoriteWorkers = () => {
-    return favorite_workers.map((worker) => (
-      <SwiperSlide key={worker.id} onClick={AlterLoading}>
-        <Link href={`/worker/${worker.id}?slug=${worker.slug}`}>
-          <a>
-            <WorkerCard key={worker.id} worker={worker} />
-          </a>
-        </Link>
-      </SwiperSlide>
-    ));
-  };
-
-  const handleRecentsClick = () => {
+  const handleRecentsClick = useCallback(() => {
     router.push("/recents");
-  };
+  }, [router]);
 
-  const handleFavoritesClick = () => {
+  const handleFavoritesClick = useCallback(() => {
     router.push("/favorites");
-  };
+  }, [router]);
 
-  const renderHistoryWorkers = () => {
-    if (1) {
-      return (
-        history_workers.length > 0 && (
-          <div style={{ paddingBottom: 10 }}>
-            <div className={styles["title"]}>
-              <h2 onClick={handleRecentsClick}>آخرین بازدید های شما</h2>
-            </div>
-            <Swiper
-              slidesPerView={1}
-              spaceBetween={20}
-              autoplay={{
-                delay: 3000,
-                disableOnInteraction: true,
-                pauseOnMouseEnter: true,
-              }}
-              pagination={{ clickable: true }}
-              breakpoints={{
-                200: {
-                  slidesPerView: 1,
-                  spaceBetween: 20,
+  const renderHistoryWorkers = useCallback(() => {
+    if (historyWorkers.length === 0) return null;
 
-                  navigation: {
-                    enabled: true,
-                  },
-                },
+    return (
+      <div style={{ paddingBottom: 10 }}>
+        <div className={styles["title"]}>
+          <h2 onClick={handleRecentsClick}>آخرین بازدید های شما</h2>
+        </div>
+        <Swiper
+          slidesPerView={1}
+          spaceBetween={20}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: true,
+            pauseOnMouseEnter: true,
+          }}
+          pagination={{ clickable: true }}
+          breakpoints={{
+            200: { slidesPerView: 1, spaceBetween: 20 },
+            640: { slidesPerView: 2, spaceBetween: 20 },
+            1050: { slidesPerView: 3, spaceBetween: 20 },
+            1400: { slidesPerView: 4, spaceBetween: 20 },
+          }}
+          modules={[Pagination, Navigation, Autoplay]}
+          className={styles["worker-swiper"]}
+        >
+          {renderWorkerSlider(historyWorkers)}
+        </Swiper>
+      </div>
+    );
+  }, [historyWorkers, handleRecentsClick, renderWorkerSlider]);
 
-                640: {
-                  slidesPerView: 2,
-                  spaceBetween: 20,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-                1050: {
-                  slidesPerView: 3,
-                  spaceBetween: 20,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-                1400: {
-                  slidesPerView: 4,
-                  spaceBetween: 20,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-              }}
-              modules={[Pagination, Navigation, Autoplay]}
-              className={styles["worker-swiper"]}
-            >
-              {renderSomeHistoryeWorkers()}
-            </Swiper>
-          </div>
-        )
-      );
-    }
-  };
+  const renderFavoriteWorkers = useCallback(() => {
+    if (favoriteWorkers.length === 0) return null;
 
-  const renderFavoriteWorkers = () => {
-    if (1) {
-      return (
-        favorite_workers.length > 0 && (
-          <div style={{ paddingBottom: 20 }}>
-            <div className={styles["title"]}>
-              <h2 onClick={handleFavoritesClick}>آخرین مورد پسند های شما</h2>
-            </div>
-            <Swiper
-              slidesPerView={1}
-              spaceBetween={8}
-              autoplay={{
-                delay: 3000,
-                disableOnInteraction: true,
-                pauseOnMouseEnter: true,
-              }}
-              pagination={{ clickable: true }}
-              breakpoints={{
-                200: {
-                  slidesPerView: 1,
-                  spaceBetween: 2,
+    return (
+      <div style={{ paddingBottom: 20 }}>
+        <div className={styles["title"]}>
+          <h2 onClick={handleFavoritesClick}>آخرین مورد پسند های شما</h2>
+        </div>
+        <Swiper
+          slidesPerView={1}
+          spaceBetween={8}
+          autoplay={{
+            delay: 3000,
+            disableOnInteraction: true,
+            pauseOnMouseEnter: true,
+          }}
+          pagination={{ clickable: true }}
+          breakpoints={{
+            200: { slidesPerView: 1, spaceBetween: 2 },
+            640: { slidesPerView: 2, spaceBetween: 3 },
+            1050: { slidesPerView: 3, spaceBetween: 20 },
+            1400: { slidesPerView: 4, spaceBetween: 20 },
+          }}
+          modules={[Pagination, Navigation, Autoplay]}
+          className={styles["worker-swiper"]}
+        >
+          {renderWorkerSlider(favoriteWorkers)}
+        </Swiper>
+      </div>
+    );
+  }, [favoriteWorkers, handleFavoritesClick, renderWorkerSlider]);
 
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-
-                640: {
-                  slidesPerView: 2,
-                  spaceBetween: 3,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-                1050: {
-                  slidesPerView: 3,
-                  spaceBetween: 20,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-                1400: {
-                  slidesPerView: 4,
-                  spaceBetween: 20,
-                  navigation: {
-                    enabled: true,
-                  },
-                },
-              }}
-              modules={[Pagination, Navigation, Autoplay]}
-              className={styles["worker-swiper"]}
-            >
-              {renderSomeFavoriteWorkers()}
-            </Swiper>
-          </div>
-        )
-      );
-    }
-  };
-
-  const renderOrSpinner = () => {
+  const renderOrSpinner = useCallback(() => {
     if (error) {
       return (
         <div style={{ textAlign: "center", padding: "50px 20px" }}>
@@ -654,180 +1406,132 @@ function Home(props) {
         </div>
       );
     }
+    
     if (loading) {
       return (
-        <div className="spinnerImageView">
-          <img
-            className="spinner-image"
+        <div className="spinnerImageView" style={{ textAlign: 'center', padding: '100px 0' }}>
+          <Image
             src="/logo/ajour-gif.gif"
             alt="ajur logo"
+            width={500}
+            height={500}
+            unoptimized
           />
         </div>
       );
-    } else {
-      return (
-        <div>
-          <main className={styles["main"]}>
-
-            {/* Header Title Above Cards */}
-            <div className={`max-w-7xl mx-auto mt-32 mb-10 text-center iransans ${styles.headerTitleHover}`}>
-              <h1 className="iransans-heading text-3xl sm:text-4xl md:text-6xl font-extrabold leading-tight">
-                <span className="text-red-600">آجر</span>، مشاور املاک هوشمند
-              </h1>
-            </div>
-            <Cards features={homepageCardsFeatures} />
-
-            {/* Services heading */}
-            <div className="max-w-7xl mx-auto my-6 text-center iransans">
-              <h1 className="iransans-heading text-3xl md:text-4xl font-bold">خدمات آجر</h1>
-            </div>
-
-            {/* Quick access / features hub (renders after Cards) */}
-            <FeaturesHub />
-
-            <div className="max-w-7xl mx-auto my-6 pt-14 text-center iransans">
-              <h1 className="iransans-heading text-3xl md:text-4xl font-bold">بهترین‌های آجر</h1>
-            </div>
-
-            <BestSection />
-
-            {/* Insert the new FileRequest section right after the Cards
-                Pass the original CTA handlers: call and open file-request page */}
-            <FileRequest
-              onCallClick={() => (window.location.href = "tel:+989124161970")}
-              onActionClick={() => router.push("/file-request")}
-            />
-
-            {/* Download section */}
-            <Download />
-
-            {/* Full screen modal for subcategories */}
-            {(clickedAction === "buy" || clickedAction === "rent") && (
-              <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-                {/* Modal Header */}
-                <div className="sticky top-0 mt-5 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
-                  {/* Left side - Arrow back button */}
-                  <button
-                    onClick={() => setClickedAction(null)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
-                    aria-label="بازگشت"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M20 12 H8"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M9 7 L4 12 L9 17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span className="mr-2 text-sm font-medium">بازگشت</span>
-                  </button>
-
-                  {/* Center - Title */}
-                  <div className="text-xl font-bold text-gray-900">
-                    {clickedAction === "buy"
-                      ? "دسته‌بندی‌های خرید"
-                      : "دسته‌بندی‌های اجاره"}
-                  </div>
-
-                  {/* Right side - X close button */}
-                  <button
-                    onClick={() => setClickedAction(null)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    aria-label="بستن"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M18 6L6 18"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M6 6L18 18"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Subcategories Grid */}
-                <div className="p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-                    {sub_cats
-                      .filter((c) =>
-                        clickedAction === "buy"
-                          ? c.type === "sell"
-                          : c.type === "rent"
-                      )
-                      .map((cat, idx) => (
-                        <DealButton
-                          key={cat.id}
-                          title={cat.name}
-                          src={`/cats_image/sub-cats/${cat.id}.png`}
-                          onClick={() => {
-                            const city = props.trigeredcity
-                              ? props.trigeredcity
-                              : renderDefaultCity();
-                            router.push(
-                              `/${encodeURIComponent(
-                                city
-                              )}/${encodeURIComponent(cat.name)}`
-                            );
-                          }}
-                          style={{ animationDelay: `${idx * 80}ms` }}
-                        />
-                      ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className={styles["main-row"]}>
-              {renderHistoryWorkers()}
-              {renderFavoriteWorkers()}
-
-              {/* ...existing FileRequest removed from here to avoid duplicate ... */}
-
-              {/* Removed duplicate 'بهترین دپارتمان‌های املاک آجر' and 'بهترین مشاورین املاک آجر' sections per request */}
-            </div>
-          </main>
-        </div>
-      );
     }
-  };
+
+    return (
+      <div>
+        <main className={styles["main"]}>
+          {/* Header Title Above Cards */}
+          <div className={`max-w-7xl mx-auto mt-16 mb-2 text-center iransans ${styles.headerTitleHover}`}>
+            <h1 className="iransans-heading text-3xl sm:text-4xl md:text-6xl font-extrabold leading-tight">
+              <span className="text-red-600">آجر</span>، مشاور املاک هوشمند
+            </h1>
+          </div>
+          
+          <Cards features={homepageCardsFeatures} />
+
+          {/* Services heading */}
+          <div className="max-w-7xl mx-auto my-6 text-center iransans">
+            <h1 className="iransans-heading text-3xl md:text-4xl font-bold">خدمات آجر</h1>
+          </div>
+
+          {/* Quick access / features hub */}
+          <FeaturesHub />
+
+          <div className="max-w-7xl mx-auto my-6 pt-14 text-center iransans">
+            <h1 className="iransans-heading text-3xl md:text-4xl font-bold">بهترین‌های آجر</h1>
+          </div>
+
+          <BestSection />
+
+          {/* FileRequest section */}
+          <FileRequest
+            onCallClick={() => (window.location.href = "tel:+989124161970")}
+            onActionClick={() => router.push("/file-request")}
+          />
+
+          {/* Download section */}
+          <Download />
+
+          {/* Modal for subcategories */}
+          {(clickedAction === "buy" || clickedAction === "rent") && (
+            <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 mt-5 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm z-10">
+                <button
+                  onClick={clearAction}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
+                  aria-label="بازگشت"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 12 H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M9 7 L4 12 L9 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  <span className="mr-2 text-sm font-medium">بازگشت</span>
+                </button>
+
+                <div className="text-xl font-bold text-gray-900">
+                  {clickedAction === "buy" ? "دسته‌بندی‌های خرید" : "دسته‌بندی‌های اجاره"}
+                </div>
+
+                <button
+                  onClick={clearAction}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="بستن"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Subcategories Grid */}
+              <div className="p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 max-w-6xl mx-auto px-4 sm:px-6">
+  {subCats
+    .filter((c) => clickedAction === "buy" ? c.type === "sell" : c.type === "rent")
+    .map((cat, idx) => (
+      <DealButton
+        key={cat.id}
+        title={cat.name}
+        src={`/cats_image/sub-cats/${cat.id}.png`}
+        onClick={() => {
+          const city = props.trigeredcity || renderDefaultCity();
+          router.push(
+            `/${encodeURIComponent(city)}/${encodeURIComponent(cat.name)}`
+          );
+        }}
+        style={{ animationDelay: `${idx * 70}ms` }}
+      />
+    ))}
+</div>
+              </div>
+            </div>
+          )}
+
+          <div className={styles["main-row"]}>
+            {renderHistoryWorkers()}
+            {renderFavoriteWorkers()}
+          </div>
+        </main>
+      </div>
+    );
+  }, [error, loading, homepageCardsFeatures, clickedAction, subCats, props.trigeredcity, router, clearAction, renderDefaultCity, renderHistoryWorkers, renderFavoriteWorkers]);
+
   return (
     <div className={styles.container}>
       <Head>
-        <meta charset="UTF-8" />
+        <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
-        <title> آجر : مشاور املاک هوشمند </title>
+        <title>آجر : مشاور املاک هوشمند</title>
         <meta
           name="description"
           content="مشاور املاک هوشمند آجر مشاور املاکی به وسعت ایران با صدها مشاور مسلط به منطقه"
@@ -838,127 +1542,93 @@ function Home(props) {
         />
         <meta property="og:locale" content="fa_IR" />
         <meta property="og:type" content="website" />
-        <meta property="og:locale" content="fa_IR" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="آجر : مشاور املاک هوشمند " />
+        <meta property="og:title" content="آجر : مشاور املاک هوشمند" />
         <meta
           property="og:description"
           content="از خرید و فروش خانه و ویلا تا مشاوره برای سرمایه گزاری در مشاور املاک هوشمند آجر"
         />
         <meta property="og:url" content="https://ajur.app" />
-        <meta property="og:site_name" content="آجر : مشاور املاک هوشمند " />
-        <meta
-          property="article:published_time"
-          content="2020-05-19T21:34:43+00:00"
-        />
-        <meta
-          property="article:modified_time"
-          content="2022-01-28T03:47:57+00:00"
-        />
-        <meta
-          property="og:image"
-          content="https://ajur.app/logo/ajour-meta-image.jpg"
-        />
+        <meta property="og:site_name" content="آجر : مشاور املاک هوشمند" />
+        <meta property="og:image" content="https://ajur.app/logo/ajour-meta-image.jpg" />
         <meta property="og:image:width" content="1080" />
         <meta property="og:image:height" content="702" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:label1" content="Written by" />
-        <meta name="twitter:data1" content="آرش پیمانی فر" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://ajur.app" />
       </Head>
 
-      {/* VPN warning dialog - non-modal floating widget on bottom-left */}
-      <Dialog
-        open={showVpnDialog}
-        onClose={(event, reason) => {
-          // ignore backdrop clicks (we hide backdrop) so clicks on page don't close it
-          if (reason === "backdropClick") return;
-          setShowVpnDialog(false);
-        }}
-        aria-labelledby="vpn-warning-title"
-        hideBackdrop
-        // prevent focus trapping so background remains interactive
-        disableEnforceFocus
-        disableAutoFocus
-        // ModalProps: make the modal container pass pointer events through so page stays interactive
-        ModalProps={{
-          keepMounted: true,
-          disableEnforceFocus: true,
-          disableAutoFocus: true,
-          // make container ignore pointer events so clicks go through to the page
-          style: { pointerEvents: "none" },
-        }}
-        // PaperProps: position fixed bottom-left and accept pointer events
-        PaperProps={{
-          style: {
-            pointerEvents: "auto",
-            position: "fixed",
-            bottom: 16,
-            left: 16,
-            margin: 0,
-            borderRadius: 12,
-            padding: "10px 14px",
-            minWidth: 220,
-            zIndex: 1400,
-          },
-          className: styles.vpnDialogPaper,
-        }}
-      >
-        <DialogTitle id="vpn-warning-title"></DialogTitle>
-        <DialogContent>
-          برای استفاده بهتر از آجر، لطفا فیلترشکن خود را خاموش کنید
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              // hide for the rest of today (until local midnight)
-              try {
+      {/* VPN warning dialog */}
+      {showVpnDialog && (
+        <Dialog
+          open={showVpnDialog}
+          onClose={(event, reason) => {
+            if (reason === "backdropClick") return;
+            setShowVpnDialog(false);
+          }}
+          hideBackdrop
+          disableEnforceFocus
+          disableAutoFocus
+          ModalProps={{
+            style: { pointerEvents: "none" },
+          }}
+          PaperProps={{
+            style: {
+              pointerEvents: "auto",
+              position: "fixed",
+              bottom: 16,
+              left: 16,
+              margin: 0,
+              borderRadius: 12,
+              padding: "10px 14px",
+              minWidth: 220,
+              zIndex: 1400,
+            },
+          }}
+        >
+          <DialogContent>
+            برای استفاده بهتر از آجر، لطفا فیلترشکن خود را خاموش کنید
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
                 const now = new Date();
-                const endOfDay = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  now.getDate() + 1
-                );
+                const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
                 Cookies.set("hide_vpn_warning", "1", { expires: endOfDay });
-              } catch (e) {
-                // fallback to 1 day expiry if Date isn't accepted
-                Cookies.set("hide_vpn_warning", "1", { expires: 1 });
-              }
-              setShowVpnDialog(false);
-            }}
-            color="primary"
-          >
-            بستن
-          </Button>
-          <Button
-            onClick={() => {
-              // set cookie to hide future warnings for 365 days
-              Cookies.set("hide_vpn_warning", "1", { expires: 365 });
-              setShowVpnDialog(false);
-            }}
-            color="primary"
-          >
-            دیگر نمایش نده
-          </Button>
-        </DialogActions>
-      </Dialog>
+                setShowVpnDialog(false);
+              }}
+              color="primary"
+            >
+              بستن
+            </Button>
+            <Button
+              onClick={() => {
+                Cookies.set("hide_vpn_warning", "1", { expires: 365 });
+                setShowVpnDialog(false);
+              }}
+              color="primary"
+            >
+              دیگر نمایش نده
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
-      <main className={`${styles.main} iransans`}>{renderOrSpinner()}</main>
+      <main className={`${styles.main} iransans`}>
+        {renderOrSpinner()}
+      </main>
     </div>
   );
 }
 
-// This gets called on every request
-
-export function getServerSideProps(props) {
-  // const city = context.query.city ? context.query.city : false;
-  const city = props.city ? props.city : false;
+// Remove getServerSideProps or update it
+export async function getServerSideProps(context) {
+  const { query } = context;
+  const city = query.city || null;
 
   return {
     props: {
       url_city: city,
-    }, // will be passed to the page component as props
+    },
   };
 }
 
