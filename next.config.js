@@ -5,7 +5,7 @@ const nextConfig = {
   
   // Remove or comment out the turbo: false line
   // experimental: {
-  //   turbo: false,
+ turbo: true,
   // },
   
   images: {

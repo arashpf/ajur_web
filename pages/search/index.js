@@ -88,6 +88,9 @@ import 'swiper/css/navigation';
         set_collection3(response.data.collection3);
        
         set_loading(false);
+      }).catch(function (error) {
+        console.error('Error fetching base data:', error);
+        set_loading(false);
       });
 
       },[])

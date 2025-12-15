@@ -97,6 +97,7 @@ const formatNumberWithWords = (num) => {
 const WorkerFilter = ({
   workers = [],
   onFilteredWorkersChange,
+  onLoadingChange = null,
   initialCategory = null,
   onCategoryChange = null,
 }) => {
@@ -122,79 +123,124 @@ const WorkerFilter = ({
   const [loading, setLoading] = useState(true);
   const [focusedField, setFocusedField] = useState(null); // Track which field is focused
   const [filterTimeout, setFilterTimeout] = useState(null); // Timeout for debouncing
-  const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(false); // State for collapsible filters
+  const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(true); // State for collapsible filters - open by default
+  const [featuresExpanded, setFeaturesExpanded] = useState(false); // State for features dropdown
 
   // Data
   const [categories, setCategories] = useState([]);
   const [neighborhoods, setNeighborhoods] = useState([]);
 
-  // Define all possible features
-  const allFeatures = [
-    { id: 1, name: "پارکینگ", value: "پارکینگ" },
-    { id: 2, name: "آسانسور", value: "آسانسور" },
-    { id: 3, name: "انباری", value: "انباری" },
-  ];
+  // State for dynamically extracted filters
+  const [dynamicRangeFilters, setDynamicRangeFilters] = useState([]);
+  const [dynamicFeatures, setDynamicFeatures] = useState([]);
 
-  // Define range filter fields
-  const rangeFilterFields = [
-    { id: 1, name: "متراژ", value: "متراژ", unit: "متر", min: 0, max: 10000 },
-    {
-      id: 2,
-      name: "قیمت",
-      value: "قیمت",
-      unit: "تومان",
-      min: 0,
-      max: 1000000000000,
-    },
-    {
-      id: 3,
-      name: "تعداد اتاق",
-      value: "تعداد اتاق",
-      unit: "اتاق",
-      min: 0,
-      max: 20,
-    },
-  ];
-
-  // Category type mappings
-  const categoryTypeMappings = {
-    residential: [16, 17, 25, 26],
-    commercial: [23, 24, 27, 28],
-    land: [18, 19, 20, 21, 22, 65],
-    industrial: [3, 6],
+  // Get suggested values based on field name and type
+  const getSuggestionsByFieldName = (fieldName) => {
+    const lowerField = fieldName.toLowerCase();
+    
+    // Price suggestions for price-related fields
+    if (lowerField.includes("قیمت")) {
+      return [
+        { value: 500000000, label: "۵۰۰ میلیون" },
+        { value: 1000000000, label: "۱ میلیارد" },
+        { value: 1500000000, label: "۱/۵ میلیارد" },
+        { value: 2000000000, label: "۲ میلیارد" },
+        { value: 2500000000, label: "۲/۵ میلیارد" },
+        { value: 3000000000, label: "۳ میلیارد" },
+        { value: 5000000000, label: "۵ میلیارد" },
+        { value: 10000000000, label: "۱۰ میلیارد" },
+      ];
+    }
+    
+    // Area suggestions for area-related fields
+    if (lowerField.includes("متراژ")) {
+      return [
+        { value: 50, label: "۵۰ متر" },
+        { value: 70, label: "۷۰ متر" },
+        { value: 100, label: "۱۰۰ متر" },
+        { value: 120, label: "۱۲۰ متر" },
+        { value: 150, label: "۱۵۰ متر" },
+        { value: 200, label: "۲۰۰ متر" },
+        { value: 250, label: "۲۵۰ متر" },
+        { value: 300, label: "۳۰۰ متر" },
+      ];
+    }
+    
+    return [];
   };
 
-  // Feature availability by category type
-  const featureAvailability = {
-    residential: ["پارکینگ", "آسانسور", "انباری"],
-    commercial: ["پارکینگ", "آسانسور", "انباری"],
-    land: [],
-    industrial: ["پارکینگ", "انباری"],
+  // Extract filters from actual category data
+  const extractCategoryFilters = (categoryId) => {
+    if (!categoryId || !workers || workers.length === 0) {
+      setDynamicRangeFilters([]);
+      setDynamicFeatures([]);
+      return;
+    }
+
+    // Get all workers for this category
+    const categoryWorkers = workers.filter(
+      (w) => parseInt(w.category_id) === categoryId
+    );
+
+    if (categoryWorkers.length === 0) {
+      setDynamicRangeFilters([]);
+      setDynamicFeatures([]);
+      return;
+    }
+
+    // Extract all unique properties from json_properties
+    const allProperties = new Map();
+    const booleanProperties = new Map();
+
+    categoryWorkers.forEach((worker) => {
+      try {
+        const props = JSON.parse(worker.json_properties || "[]");
+        props.forEach((prop) => {
+          // kind: 1 = numeric, 2 = boolean, 3 = select
+          if (prop.kind === 1 && !allProperties.has(prop.name)) {
+            allProperties.set(prop.name, {
+              name: prop.name,
+              value: prop.name,
+              unit: prop.name === "متراژ" ? "متر" : "تومان",
+              kind: 1,
+              order: prop.order,
+              min: 0,
+              max: 10000, // Default, will be calculated
+            });
+          }
+          if (prop.kind === 2 && !booleanProperties.has(prop.name)) {
+            booleanProperties.set(prop.name, {
+              id: Math.random(),
+              name: prop.name,
+              value: prop.name,
+            });
+          }
+        });
+      } catch (e) {
+        console.error("Error parsing json_properties:", e);
+      }
+    });
+
+    // Calculate proper min/max for numeric fields
+    const rangeFilters = Array.from(allProperties.values())
+      .sort((a, b) => (a.order || 0) - (b.order || 0))
+      .map((field, idx) => ({
+        ...field,
+        id: idx + 1,
+      }));
+
+    const features = Array.from(booleanProperties.values());
+
+    setDynamicRangeFilters(rangeFilters);
+    setDynamicFeatures(features);
   };
 
-  // Common price suggestions
-  const priceSuggestions = [
-    { value: 500000000, label: "۵۰۰ میلیون" },
-    { value: 1000000000, label: "۱ میلیارد" },
-    { value: 1500000000, label: "۱/۵ میلیارد" },
-    { value: 2000000000, label: "۲ میلیارد" },
-    { value: 2500000000, label: "۲/۵ میلیارد" },
-    { value: 3000000000, label: "۳ میلیارد" },
-    { value: 5000000000, label: "۵ میلیارد" },
-    { value: 10000000000, label: "۱۰ میلیارد" },
-  ];
-
-  // Common area suggestions
-  const areaSuggestions = [
-    { value: 50, label: "۵۰ متر" },
-    { value: 70, label: "۷۰ متر" },
-    { value: 100, label: "۱۰۰ متر" },
-    { value: 120, label: "۱۲۰ متر" },
-    { value: 150, label: "۱۵۰ متر" },
-    { value: 200, label: "۲۰۰ متر" },
-    { value: 250, label: "۲۵۰ متر" },
-    { value: 300, label: "۳۰۰ متر" },
-  ];
+  // Extract filters when category or workers change
+  useEffect(() => {
+    if (selectedCategory) {
+      extractCategoryFilters(selectedCategory.id);
+    }
+  }, [selectedCategory, workers]);
 
   // Convert number to Persian words
   const numberToPersianWords = (num) => {
@@ -240,16 +286,11 @@ const WorkerFilter = ({
     return result;
   };
 
-  // Get suggestions based on field type
+  // Get suggestions based on filter field name
   const getSuggestions = (fieldId) => {
-    if (fieldId === 2) {
-      // Price field
-      return priceSuggestions;
-    } else if (fieldId === 1) {
-      // Area field
-      return areaSuggestions;
-    }
-    return [];
+    const filter = dynamicRangeFilters.find(f => f.id === fieldId);
+    if (!filter) return [];
+    return getSuggestionsByFieldName(filter.name);
   };
 
   // Handle suggestion click
@@ -259,7 +300,7 @@ const WorkerFilter = ({
         f.id === fieldId
           ? {
               ...f,
-              [type]: value,
+              [type]: value.toString(),
             }
           : f
       )
@@ -267,44 +308,20 @@ const WorkerFilter = ({
     setFocusedField(null); // Close suggestions
   };
 
-  // Initialize range filters with empty values (showing all)
+  // Initialize range filters from dynamic filters
   useEffect(() => {
-    const initialRangeFilters = rangeFilterFields.map((field) => ({
+    const initialRangeFilters = dynamicRangeFilters.map((field) => ({
       ...field,
       low: "", // Empty means no lower limit
       high: "", // Empty means no upper limit
     }));
     setRangeFilters(initialRangeFilters);
-  }, []);
+  }, [dynamicRangeFilters]);
 
   // Sync selectedCategory with initialCategory prop when it changes
   useEffect(() => {
     setSelectedCategory(initialCategory);
   }, [initialCategory]);
-
-  // Get available features based on selected category
-  const getAvailableFeatures = () => {
-    if (!selectedCategory) {
-      return allFeatures;
-    }
-
-    let categoryType = null;
-    for (const [type, categoryIds] of Object.entries(categoryTypeMappings)) {
-      if (categoryIds.includes(selectedCategory.id)) {
-        categoryType = type;
-        break;
-      }
-    }
-
-    if (!categoryType) {
-      return allFeatures;
-    }
-
-    const availableFeatureValues = featureAvailability[categoryType] || [];
-    return allFeatures.filter((feature) =>
-      availableFeatureValues.includes(feature.value)
-    );
-  };
 
   // Fetch categories and neighborhoods
   useEffect(() => {
@@ -324,6 +341,11 @@ const WorkerFilter = ({
 
   // Debounced filter application
   const applyFiltersWithDebounce = () => {
+    // Notify that loading has started
+    if (onLoadingChange) {
+      onLoadingChange(true);
+    }
+
     // Clear existing timeout
     if (filterTimeout) {
       clearTimeout(filterTimeout);
@@ -334,6 +356,11 @@ const WorkerFilter = ({
       const filtered = applyFilters();
       const sorted = sortWorkers(filtered);
       onFilteredWorkersChange(sorted);
+      
+      // Notify that loading is complete
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
     }, 300); // 300ms delay
 
     setFilterTimeout(timeout);
@@ -530,7 +557,7 @@ const WorkerFilter = ({
         f.id === fieldId
           ? {
               ...f,
-              [type]: value === "" ? "" : parseFloat(value) || "",
+              [type]: value,
             }
           : f
       )
@@ -548,8 +575,9 @@ const WorkerFilter = ({
     // Don't clear selected category - only clear other filters
     setSelectedNeighborhoods([]);
     setSelectedFeatures([]);
+    // Reset all range filters
     setRangeFilters(
-      rangeFilterFields.map((field) => ({
+      dynamicRangeFilters.map((field) => ({
         ...field,
         low: "",
         high: "",
@@ -690,70 +718,111 @@ const WorkerFilter = ({
   };
 
   const renderFeatures = () => {
-    const availableFeatures = getAvailableFeatures();
-
-    if (availableFeatures.length === 0) {
+    if (dynamicFeatures.length === 0) {
       return null;
     }
 
     return (
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle2" sx={{ mb: 2, color: "text.secondary" }}>
-          امکانات:
-        </Typography>
+        <Accordion
+          expanded={featuresExpanded}
+          onChange={() => setFeaturesExpanded(!featuresExpanded)}
+          sx={{
+            "&:before": {
+              display: "none",
+            },
+            boxShadow: "0 2px 8px rgba(211, 47, 47, 0.1)",
+            border: "2px solid",
+            borderColor: featuresExpanded ? "#d32f2f" : "#e0e0e0",
+            borderRadius: 3,
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 240, 0.9) 100%)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMore sx={{ color: featuresExpanded ? "#d32f2f" : "#666" }} />}
+            sx={{
+              backgroundColor: featuresExpanded ? "rgba(211, 47, 47, 0.05)" : "transparent",
+              borderBottom: featuresExpanded ? "1px solid #e0e0e0" : "none",
+              borderRadius: featuresExpanded ? "12px 12px 0 0" : "12px",
+              minHeight: "48px",
+              "& .MuiAccordionSummary-content": {
+                margin: "12px 0",
+              },
+              "&:hover": {
+                backgroundColor: "rgba(211, 47, 47, 0.02)",
+              },
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ color: "#d32f2f", fontWeight: 600 }}>
+              امکانات
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 2 }}>
+            <Grid container spacing={1}>
+              {dynamicFeatures.map((feature) => {
+                const isSelected = selectedFeatures.some(
+                  (f) => f.value === feature.value
+                );
 
-        <Grid container spacing={1}>
-          {availableFeatures.map((feature) => {
-            const isSelected = selectedFeatures.some(
-              (f) => f.value === feature.value
-            );
-
-            return (
-              <Grid item xs={12} key={feature.id}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    p: 2,
-                    border: "1px solid",
-                    borderColor: isSelected ? "primary.main" : "grey.300",
-                    borderRadius: 2,
-                    bgcolor: isSelected ? "primary.light" : "white",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleFeatureToggle(feature)}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                return (
+                  <Grid item xs={12} sm={6} key={feature.id}>
                     <Box
                       sx={{
-                        width: 20,
-                        height: 20,
-                        border: "2px solid",
-                        borderColor: isSelected ? "primary.main" : "grey.400",
-                        borderRadius: "4px",
-                        bgcolor: isSelected ? "primary.main" : "transparent",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "space-between",
+                        p: 2,
+                        border: "2px solid",
+                        borderColor: isSelected ? "#d32f2f" : "#e0e0e0",
+                        borderRadius: 3,
+                        background: isSelected 
+                          ? "linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(192, 192, 192, 0.1) 100%)"
+                          : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 240, 240, 0.8) 100%)",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          borderColor: "#d32f2f",
+                          boxShadow: "0 2px 8px rgba(211, 47, 47, 0.15)",
+                        },
                       }}
+                      onClick={() => handleFeatureToggle(feature)}
                     >
-                      {isSelected && (
-                        <CheckBox sx={{ color: "white", fontSize: 16 }} />
-                      )}
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          border: "2px solid",
+                          borderColor: isSelected ? "#d32f2f" : "#999",
+                          borderRadius: "6px",
+                          background: isSelected 
+                            ? "linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)"
+                            : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s ease",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isSelected && (
+                          <CheckBox sx={{ color: "white", fontSize: 18 }} />
+                        )}
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        fontWeight={isSelected ? 600 : 500}
+                        sx={{ color: isSelected ? "#d32f2f" : "#333", ml: 1.5 }}
+                      >
+                        {feature.value}
+                      </Typography>
                     </Box>
-                    <Typography
-                      variant="body2"
-                      fontWeight={isSelected ? "bold" : "normal"}
-                    >
-                      دارای {feature.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            );
-          })}
-        </Grid>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
       </Box>
     );
   };
@@ -767,32 +836,41 @@ const WorkerFilter = ({
           "&:before": {
             display: "none",
           },
-          boxShadow: "none",
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
+          boxShadow: "0 2px 8px rgba(211, 47, 47, 0.1)",
+          border: "2px solid",
+          borderColor: moreFiltersExpanded ? "#d32f2f" : "#e0e0e0",
+          borderRadius: 3,
+          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 240, 240, 0.9) 100%)",
+          transition: "all 0.3s ease",
         }}
       >
         <AccordionSummary
-          expandIcon={<ExpandMore />}
+          expandIcon={<ExpandMore sx={{ color: moreFiltersExpanded ? "#d32f2f" : "#666" }} />}
           sx={{
-            backgroundColor: moreFiltersExpanded ? "grey.50" : "transparent",
-            borderBottom: moreFiltersExpanded ? "1px solid" : "none",
-            borderColor: "divider",
-            borderRadius: moreFiltersExpanded ? "8px 8px 0 0" : "8px",
+            backgroundColor: moreFiltersExpanded ? "rgba(211, 47, 47, 0.05)" : "transparent",
+            borderBottom: moreFiltersExpanded ? "1px solid #e0e0e0" : "none",
+            borderRadius: moreFiltersExpanded ? "12px 12px 0 0" : "12px",
             minHeight: "48px",
             "& .MuiAccordionSummary-content": {
               margin: "12px 0",
             },
+            "&:hover": {
+              backgroundColor: "rgba(211, 47, 47, 0.02)",
+            },
           }}
         >
-          <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+          <Typography variant="subtitle2" sx={{ color: "#d32f2f", fontWeight: 600 }}>
             فیلترهای بیشتر
           </Typography>
         </AccordionSummary>
         <AccordionDetails sx={{ pt: 2 }}>
           <Grid container spacing={2}>
-            {rangeFilters.map((filter) => (
+            {dynamicRangeFilters.map((filter) => {
+              // Find the corresponding rangeFilter with actual values
+              const rangeFilter = rangeFilters.find(rf => rf.id === filter.id);
+              if (!rangeFilter) return null;
+              
+              return (
               <Grid item xs={12} key={filter.id}>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                   {filter.name} ({filter.unit})
@@ -812,7 +890,7 @@ const WorkerFilter = ({
                     <TextField
                       size="small"
                       placeholder="تا"
-                      value={filter.high}
+                      value={rangeFilter.high}
                       onChange={(e) =>
                         handleRangeFilterChange(
                           filter.id,
@@ -849,6 +927,21 @@ const WorkerFilter = ({
                       }}
                       autoComplete="off"
                       name={`filter-${filter.id}-high`}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2.5,
+                          backgroundColor: "rgba(255, 255, 255, 0.8)",
+                          border: "1.5px solid #e0e0e0",
+                          "&:hover": {
+                            borderColor: "#d32f2f",
+                            backgroundColor: "rgba(255, 255, 255, 1)",
+                          },
+                          "&.Mui-focused": {
+                            borderColor: "#d32f2f",
+                            boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                          },
+                        },
+                      }}
                     />
                     {/* Suggestions for upper limit */}
                     {focusedField === `${filter.id}-high` &&
@@ -863,8 +956,11 @@ const WorkerFilter = ({
                             mt: 0.5,
                             maxHeight: 150,
                             overflow: "auto",
+                            borderRadius: 2,
+                            border: "1.5px solid #d32f2f",
+                            boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
                           }}
-                          elevation={3}
+                          elevation={0}
                         >
                           {getSuggestions(filter.id).map(
                             (suggestion, index) => (
@@ -872,12 +968,13 @@ const WorkerFilter = ({
                                 key={index}
                                 data-suggestion="true" // Add data attribute for identification
                                 sx={{
-                                  p: 1,
+                                  p: 1.2,
                                   cursor: "pointer",
-                                  borderBottom: "1px solid",
-                                  borderColor: "divider",
+                                  borderBottom: "1px solid #f0f0f0",
+                                  background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
                                   "&:hover": {
-                                    bgcolor: "action.hover",
+                                    bgcolor: "rgba(211, 47, 47, 0.08)",
+                                    borderBottomColor: "#d32f2f",
                                   },
                                   "&:last-child": {
                                     borderBottom: "none",
@@ -916,7 +1013,7 @@ const WorkerFilter = ({
                     <TextField
                       size="small"
                       placeholder="از"
-                      value={filter.low}
+                      value={rangeFilter.low}
                       onChange={(e) =>
                         handleRangeFilterChange(
                           filter.id,
@@ -944,7 +1041,7 @@ const WorkerFilter = ({
                       type="number"
                       inputProps={{
                         min: filter.min,
-                        max: filter.high || filter.max,
+                        max: rangeFilter.high || filter.max,
                         style: { textAlign: "center" },
                         autoComplete: "off",
                         autoCorrect: "off",
@@ -953,6 +1050,21 @@ const WorkerFilter = ({
                       }}
                       autoComplete="off"
                       name={`filter-${filter.id}-low`}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2.5,
+                          backgroundColor: "rgba(255, 255, 255, 0.8)",
+                          border: "1.5px solid #e0e0e0",
+                          "&:hover": {
+                            borderColor: "#d32f2f",
+                            backgroundColor: "rgba(255, 255, 255, 1)",
+                          },
+                          "&.Mui-focused": {
+                            borderColor: "#d32f2f",
+                            boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                          },
+                        },
+                      }}
                     />
                     {/* Suggestions for lower limit */}
                     {focusedField === `${filter.id}-low` &&
@@ -967,8 +1079,11 @@ const WorkerFilter = ({
                             mt: 0.5,
                             maxHeight: 150,
                             overflow: "auto",
+                            borderRadius: 2,
+                            border: "1.5px solid #d32f2f",
+                            boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
                           }}
-                          elevation={3}
+                          elevation={0}
                         >
                           {getSuggestions(filter.id).map(
                             (suggestion, index) => (
@@ -976,12 +1091,13 @@ const WorkerFilter = ({
                                 key={index}
                                 data-suggestion="true" // Add data attribute for identification
                                 sx={{
-                                  p: 1,
+                                  p: 1.2,
                                   cursor: "pointer",
-                                  borderBottom: "1px solid",
-                                  borderColor: "divider",
+                                  borderBottom: "1px solid #f0f0f0",
+                                  background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
                                   "&:hover": {
-                                    bgcolor: "action.hover",
+                                    bgcolor: "rgba(211, 47, 47, 0.08)",
+                                    borderBottomColor: "#d32f2f",
                                   },
                                   "&:last-child": {
                                     borderBottom: "none",
@@ -997,7 +1113,7 @@ const WorkerFilter = ({
                               >
                                 <Typography
                                   variant="body2"
-                                  sx={{ textAlign: "center" }}
+                                  sx={{ textAlign: "center", color: "#333", fontWeight: 500 }}
                                 >
                                   {suggestion.label}
                                 </Typography>
@@ -1010,29 +1126,36 @@ const WorkerFilter = ({
                 </Box>
 
                 {/* Number in words display */}
-                {(filter.low !== "" || filter.high !== "") && (
+                {(rangeFilter.low !== "" || rangeFilter.high !== "") && (
                   <Box
-                    sx={{ mt: 1, p: 1, bgcolor: "grey.50", borderRadius: 1 }}
+                    sx={{ 
+                      mt: 1.5, 
+                      p: 1.5, 
+                      background: "linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%)",
+                      borderRadius: 2,
+                      border: "1px solid rgba(211, 47, 47, 0.1)",
+                    }}
                   >
-                    <Typography variant="caption" color="text.secondary">
-                      {filter.low !== "" && (
+                    <Typography variant="caption" sx={{ color: "#666", fontWeight: 500 }}>
+                      {rangeFilter.low !== "" && (
                         <span>
-                          از {formatNumber(filter.low)} {filter.unit}{" "}
+                          از {formatNumber(rangeFilter.low)} {filter.unit}{" "}
                         </span>
                       )}
-                      {filter.low !== "" && filter.high !== "" && (
+                      {rangeFilter.low !== "" && rangeFilter.high !== "" && (
                         <span>تا </span>
                       )}
-                      {filter.high !== "" && (
+                      {rangeFilter.high !== "" && (
                         <span>
-                          {formatNumber(filter.high)} {filter.unit}
+                          {formatNumber(rangeFilter.high)} {filter.unit}
                         </span>
                       )}
                     </Typography>
                   </Box>
                 )}
               </Grid>
-            ))}
+            );
+            })}
           </Grid>
         </AccordionDetails>
       </Accordion>
@@ -1075,7 +1198,17 @@ const WorkerFilter = ({
         <Button
           onClick={() => setIsFilterOpen(true)}
           variant="contained"
-          sx={{ width: 56, height: 56, borderRadius: "50%" }}
+          sx={{ 
+            width: 56, 
+            height: 56, 
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
+            color: "white",
+            boxShadow: "0 2px 8px rgba(128,128,128,0.3)",
+            "&:hover": {
+              background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
+            },
+          }}
         >
           <Tune sx={{ fontSize: 24 }} />
         </Button>
@@ -1128,12 +1261,13 @@ const WorkerFilter = ({
         {/* Header */}
         <Box
           sx={{
-            bgcolor: "primary.main",
+            background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
             color: "white",
             p: 2,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            borderBottom: "1px solid #a9a9a9",
           }}
         >
           <Button
@@ -1145,11 +1279,12 @@ const WorkerFilter = ({
               }
             }}
             color="inherit"
+            sx={{ "&:hover": { background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)" } }}
           >
             {filterLevel === "base" ? <Close /> : <ArrowBack />}
           </Button>
-          <Typography variant="h6">فیلترها</Typography>
-          <Button onClick={handleResetAll} color="inherit" size="small">
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>فیلترها</Typography>
+          <Button onClick={handleResetAll} color="inherit" size="small" sx={{ "&:hover": { background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)" } }}>
             حذف همه
           </Button>
         </Box>
@@ -1374,22 +1509,31 @@ const WorkerFilter = ({
               </Box>
               <Divider />
 
-              {/* Features Section - Now above range filters */}
-              {renderFeatures()}
-
               {/* Range Filters Section - Now in collapsible accordion */}
               {renderRangeFilters()}
+
+              {/* Features Section - Now below range filters */}
+              {renderFeatures()}
             </Box>
           )}
         </Box>
 
         {/* Footer */}
         {filterLevel === "base" && (
-          <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+          <Box sx={{ p: 2, borderTop: "1px solid #e0e0e0", bgcolor: "#f5f5f5" }}>
             <Button
               variant="contained"
               fullWidth
               onClick={() => setIsFilterOpen(false)}
+              sx={{
+                background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
+                color: "white",
+                fontWeight: 600,
+                py: 1.5,
+                "&:hover": {
+                  background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
+                },
+              }}
             >
               نمایش {applyFilters().length} آگهی
             </Button>

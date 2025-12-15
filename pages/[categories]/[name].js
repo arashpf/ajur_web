@@ -347,27 +347,41 @@ export async function getServerSideProps(context) {
   const subcat = context.query.subcat ? context.query.subcat : null;
   const neighbor = context.query.neighbor ? context.query.neighbor : null;
 
-  const res = await fetch(
-    `https://api.ajur.app/api/main-category-workers?subcat=${subcat}&catname=${name}&city=${city}`
-  );
-  const data = await res.json();
+  try {
+    const res = await fetch(
+      `https://api.ajur.app/api/main-category-workers?subcat=${subcat}&catname=${name}&city=${city}`
+    );
+    
+    if (!res.ok) {
+      throw new Error(`API returned status ${res.status}`);
+    }
+    
+    const data = await res.json();
 
-  return {
-    props: {
-      details: data.details,
-      workers: data.workers,
-      all_workers: data.workers,
-      specials: data.specials,
-      uppers: data.uppers,
-      subcategories: data.subcategories,
-      main_cats: data.main_cats,
-      name: name,
-      city: city,
-      neighborhoods: data.the_neighborhoods,
-      neighbor: neighbor,
-      subcat: subcat,
-    },
-  };
+    return {
+      props: {
+        details: data.details,
+        workers: data.workers,
+        all_workers: data.workers,
+        specials: data.specials,
+        uppers: data.uppers,
+        subcategories: data.subcategories,
+        main_cats: data.main_cats,
+        name: name,
+        city: city,
+        neighborhoods: data.the_neighborhoods,
+        neighbor: neighbor,
+        subcat: subcat,
+      },
+    };
+  } catch (error) {
+    console.error(`Error fetching category data for ${name}:`, error);
+    
+    // Return a notFound response instead of crashing
+    return {
+      notFound: true,
+    };
+  }
 }
 
 export default SingleCategory;

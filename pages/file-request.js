@@ -385,6 +385,28 @@ export default function FileRequestForm() {
                     borderRadius: 2,
                 }}
             >
+                {/* Back Button */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button
+                        onClick={() => {
+                            if (typeof window !== 'undefined') {
+                                window.history.back();
+                            }
+                        }}
+                        sx={{
+                            textTransform: 'none',
+                            color: '#bc323a',
+                            fontWeight: 600,
+                            fontSize: 14,
+                            '&:hover': {
+                                backgroundColor: '#fef0f1',
+                            }
+                        }}
+                    >
+                        ← بازگشت
+                    </Button>
+                </Box>
+
                 {/* Removed form error hints and main title as requested */}
 
                 {/* Option Buttons */}

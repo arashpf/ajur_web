@@ -996,7 +996,7 @@ import DealButton from "../components/parts/DealButton";
 import ActionCard from "../components/ActionButton";
 // import Cards (from your Desktop file)
 import Cards from "../components/Cards";
-import Download from "../components/Download";
+import Download from "../components/download";
 import BestSection from "../components/bestsection";
 
 import ForwardIcon from "@mui/icons-material/Forward";
