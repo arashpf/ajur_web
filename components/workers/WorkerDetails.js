@@ -31,6 +31,8 @@ import WorkerRealstateCard from '../cards/realestate/WorkerRealstateCard';
 import RealstateSkeleton from '../skeleton/RealstateSkeleton';
 import Statistics from '../others/Statistics';
 
+import ContactSheet from "../contact/ContactSheet";
+
 const emails = ['username@gmail.com', 'user02@gmail.com'];
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -72,6 +74,9 @@ function WorkerDetails(props){
 
   const [open, setOpen] = React.useState(false);
   const [selectedValue, setSelectedValue] = React.useState(emails[1]);
+
+   const [isContactOpen, setIsContactOpen] =  React.useState(false);
+
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -229,8 +234,20 @@ function WorkerDetails(props){
             <Button fullWidth onClick={handleClickOpen} className={Styles['worker-detail-button']}  variant="contained" startIcon={<TourOutlinedIcon />} > بازدید</Button>
           </Grid>
           <Grid item xs={6} md={6}>
-            <Button  fullWidth href={`tel:${realstate ? realstate.phone : details.cellphone}`}  className={Styles['worker-detail-button']}   variant="outlined" startIcon={<CallIcon />}> {realstate ? realstate.phone : details.cellphone} </Button>
+           
+            {/* <Button  fullWidth href={`tel:${realstate ? realstate.phone : details.cellphone}`}  className={Styles['worker-detail-button']}   variant="outlined" startIcon={<CallIcon />}> {realstate ? realstate.phone : details.cellphone} </Button> */}
+            <Button  onClick={() => setIsContactOpen(true)}  fullWidth   className={Styles['worker-detail-button']}   variant="outlined" startIcon={<CallIcon />}>  روش‌ های تماس </Button>
             
+           <div>
+ 
+      
+      <ContactSheet
+        open={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+        phone="09123456789"
+        chatHref="/chat/room/123"
+      />
+    </div> 
           </Grid>
           </Grid>
       </Box>
