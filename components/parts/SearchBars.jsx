@@ -25,12 +25,6 @@ const suggestionsMap = {
     "جستجو مشاور املاک...",
     "مشاور املاک متخصص...",
   ],
-  jobs: [
-    "مثلا : نقاش ساختمان",
-    "دکوراسیون داخلی",
-    "مثلا : بنا",
-    "مثلا : گچ کار",
-  ],
 };
 
 const estateHints = [
@@ -277,6 +271,7 @@ const categoriesData = [
 const SearchBars = ({ realstates }) => {
   const router = useRouter();
   const { currentCity, isLoading } = useContext(CityContext);
+  
   // State management
   const [activeTab, setActiveTab] = useState("buySell");
   const [searchQuery, setSearchQuery] = useState("");
@@ -304,6 +299,7 @@ const SearchBars = ({ realstates }) => {
   const [suggestionDirection, setSuggestionDirection] = useState("down");
   const [snackOpen, setSnackOpen] = useState(false);
   const [snack, setSnack] = useState("");
+  const [inputValue, setInputValue] = useState("");
 
   // Refs
   const inputRef = useRef(null);
@@ -311,6 +307,99 @@ const SearchBars = ({ realstates }) => {
   const loadingTimeoutRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const lastSearchQueryRef = useRef("");
+
+  const [cities, setCities] = useState([]);
+
+  const getDefaultCities = () => [
+    { id: 1, title: "تهران" },
+    { id: 2, title: "رباط کریم" },
+    { id: 3, title: "کرج" },
+    { id: 4, title: "اصفهان" },
+    { id: 5, title: "مشهد" },
+  ];
+
+  // Helper function to normalize text for comparison
+  const normalizeText = (text) => {
+    if (!text) return '';
+    return text
+      .trim()
+      .toLowerCase()
+      .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+      .replace(/\s+/g, ' ')
+      .replace(/[،]/g, '')
+      .normalize('NFC');
+  };
+
+  // Fixed function to find matching categories
+  const findMatchingCategories = (query) => {
+    if (!query || typeof query !== 'string') {
+      return [];
+    }
+    
+    const normalizedQuery = normalizeText(query);
+    const matchedCategories = [];
+    
+    categoriesData.forEach(category => {
+      const categoryName = normalizeText(category.name);
+      
+      // Split query and category into words
+      const queryWords = normalizedQuery.split(' ').filter(word => word.length > 1);
+      const categoryWords = categoryName.split(' ').filter(word => word.length > 1);
+      
+      // Check for exact matches or significant overlaps
+      let matchScore = 0;
+      
+      // Check if any query word is in category name or vice versa
+      queryWords.forEach(queryWord => {
+        categoryWords.forEach(categoryWord => {
+          if (categoryWord.includes(queryWord) || queryWord.includes(categoryWord)) {
+            matchScore += 1;
+          }
+        });
+      });
+      
+      // Check for full match
+      if (categoryName.includes(normalizedQuery) || normalizedQuery.includes(categoryName)) {
+        matchScore += 2;
+      }
+      
+      // Check for common Persian real estate patterns
+      const commonPatterns = [
+        { pattern: 'آپارتمان', category: 'آپارتمان' },
+        { pattern: 'ویلایی', category: 'خانه ویلایی' },
+        { pattern: 'مغازه', category: 'مغازه' },
+        { pattern: 'زمین', category: 'زمین' },
+        { pattern: 'صنعتی', category: 'صنعتی' },
+        { pattern: 'تجاری', category: 'تجاری' },
+        { pattern: 'اداری', category: 'اداری' },
+        { pattern: 'خرید', category: 'خرید' },
+        { pattern: 'اجاره', category: 'اجاره' },
+      ];
+      
+      commonPatterns.forEach(pattern => {
+        if (normalizedQuery.includes(pattern.pattern) && categoryName.includes(pattern.category)) {
+          matchScore += 1;
+        }
+      });
+      
+      if (matchScore > 0) {
+        matchedCategories.push({
+          ...category,
+          matchScore,
+          isExactMatch: categoryName === normalizedQuery || normalizedQuery === categoryName
+        });
+      }
+    });
+    
+    // Sort by match score and exact matches first
+    return matchedCategories
+      .sort((a, b) => {
+        if (a.isExactMatch && !b.isExactMatch) return -1;
+        if (!a.isExactMatch && b.isExactMatch) return 1;
+        return b.matchScore - a.matchScore;
+      });
+  };
 
   // Effects
   useEffect(() => {
@@ -337,12 +426,16 @@ const SearchBars = ({ realstates }) => {
     }
   }, [lastHintPressed]);
 
+  // Load search history from localStorage on component mount
   useEffect(() => {
     const loadSearchHistory = async () => {
       try {
         const history = localStorage.getItem("realEstateSearchHistory");
         if (history) {
-          setSearchHistory(JSON.parse(history));
+          const parsedHistory = JSON.parse(history);
+          // Keep only the last 3 searches
+          const recentHistory = parsedHistory.slice(0, 3);
+          setSearchHistory(recentHistory);
         }
       } catch (error) {
         console.error("Failed to load search history", error);
@@ -351,8 +444,9 @@ const SearchBars = ({ realstates }) => {
     loadSearchHistory();
   }, []);
 
+  // Fixed suggestion interval effect
   useEffect(() => {
-    if (activeTab && !searchQuery && !showModal) {
+    if (activeTab && !searchQuery.trim() && !showModal) {
       suggestionIntervalRef.current = setInterval(() => {
         setSuggestionDirection("up");
 
@@ -367,11 +461,17 @@ const SearchBars = ({ realstates }) => {
         }, 500);
       }, 3000);
     } else {
-      clearInterval(suggestionIntervalRef.current);
+      if (suggestionIntervalRef.current) {
+        clearInterval(suggestionIntervalRef.current);
+      }
       setCurrentSuggestionIndex(0);
       setSuggestionDirection("down");
     }
-    return () => clearInterval(suggestionIntervalRef.current);
+    return () => {
+      if (suggestionIntervalRef.current) {
+        clearInterval(suggestionIntervalRef.current);
+      }
+    };
   }, [activeTab, searchQuery, showModal]);
 
   useEffect(() => {
@@ -385,6 +485,36 @@ const SearchBars = ({ realstates }) => {
       setIsInputReady(false);
     }
   }, [showModal]);
+
+  // Effect to reset search when query is deleted
+  useEffect(() => {
+    if (showModal && !searchQuery.trim() && properties.length > 0) {
+      // Reset properties and show default state when query is cleared
+      setProperties([]);
+      setSearchStatus("جستجو...");
+      setShowAllNeighborhoods(false);
+      
+      // Reset to default tab state
+      if (activeTab === "buySell") {
+        // Clear any intervals and reset suggestion
+        if (suggestionIntervalRef.current) {
+          clearInterval(suggestionIntervalRef.current);
+        }
+        // Restart suggestion animation
+        suggestionIntervalRef.current = setInterval(() => {
+          setSuggestionDirection("up");
+          setTimeout(() => {
+            setCurrentSuggestionIndex((prev) =>
+              prev >= suggestionsMap[activeTab].length - 1 ? 0 : prev + 1
+            );
+            setTimeout(() => {
+              setSuggestionDirection("down");
+            }, 100);
+          }, 500);
+        }, 3000);
+      }
+    }
+  }, [searchQuery, showModal, activeTab, properties.length]);
 
   // Helper functions
   const handleSnackbar = (message) => {
@@ -401,9 +531,9 @@ const SearchBars = ({ realstates }) => {
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         sx={{
           "& .MuiSnackbarContent-root": {
-            fontSize: "1.2rem", // Larger font
-            padding: "16px 24px", // More padding
-            minWidth: "400px", // Minimum width
+            fontSize: "1.2rem",
+            padding: "16px 24px",
+            minWidth: "400px",
           },
         }}
       >
@@ -417,6 +547,23 @@ const SearchBars = ({ realstates }) => {
       </Snackbar>
     );
   };
+
+  const fetch_cities_from_data_base = async () =>  {
+    try {
+      const response = await axios.get(
+        "https://api.ajur.app/api/search-cities",
+        {
+          params: { title: '' || "" },
+          timeout: 5000,
+        }
+      );
+      setCities(response.data?.items || getDefaultCities());
+      console.log("now cities:", response.data?.items);
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+      setCities(getDefaultCities());
+    }
+  }
 
   const getCurrentSuggestion = () => {
     if (searchQuery) return searchQuery;
@@ -441,7 +588,7 @@ const SearchBars = ({ realstates }) => {
         ...searchHistory.filter(
           (item) => item.toLowerCase() !== query.toLowerCase()
         ),
-      ].slice(0, 10);
+      ].slice(0, 3);
       setSearchHistory(updatedHistory);
       localStorage.setItem(
         "realEstateSearchHistory",
@@ -462,32 +609,82 @@ const SearchBars = ({ realstates }) => {
     }
     setActiveTab(tabId);
     setSearchQuery("");
+    setInputValue(""); // Clear input value
     setSearchStatus("جستجو...");
+    setProperties([]);
+    setShowAllNeighborhoods(false);
+    
+    // Restart suggestion animation
+    if (suggestionIntervalRef.current) {
+      clearInterval(suggestionIntervalRef.current);
+    }
+    
+    suggestionIntervalRef.current = setInterval(() => {
+      setSuggestionDirection("up");
+      setTimeout(() => {
+        setCurrentSuggestionIndex((prev) =>
+          prev >= suggestionsMap[tabId].length - 1 ? 0 : prev + 1
+        );
+        setTimeout(() => {
+          setSuggestionDirection("down");
+        }, 100);
+      }, 500);
+    }, 3000);
   };
 
   const handleCloseModal = () => {
     setActiveTab("buySell");
     setShowModal(false);
     setIsRedirecting(false);
+    setSearchQuery("");
+    setInputValue(""); // Clear input value
+    setProperties([]);
     clearTimeout(loadingTimeoutRef.current);
     clearInterval(progressIntervalRef.current);
   };
 
   const handleHintPress = (hint) => {
     setSearchQuery(hint);
+    setInputValue(hint);
     setLastHintPressed(hint);
     handleSearch(true);
   };
 
+  // Fixed text change handler
   const handleTextChange = (text) => {
+    setInputValue(text);
     setSearchQuery(text);
+    
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
+    
     if (text.trim().length > 0) {
       typingTimeoutRef.current = setTimeout(() => {
         handleSearch(false);
       }, TYPING_DELAY);
+    } else {
+      // When query is cleared, reset the display
+      setProperties([]);
+      setSearchStatus("جستجو...");
+      setShowAllNeighborhoods(false);
+      
+      // Reset to default suggestion animation
+      if (suggestionIntervalRef.current) {
+        clearInterval(suggestionIntervalRef.current);
+      }
+      
+      suggestionIntervalRef.current = setInterval(() => {
+        setSuggestionDirection("up");
+        setTimeout(() => {
+          setCurrentSuggestionIndex((prev) =>
+            prev >= suggestionsMap[activeTab].length - 1 ? 0 : prev + 1
+          );
+          setTimeout(() => {
+            setSuggestionDirection("down");
+          }, 100);
+        }, 500);
+      }, 3000);
     }
   };
 
@@ -512,83 +709,31 @@ const SearchBars = ({ realstates }) => {
     }
   };
 
-  const findCategoryById = (categoryId) => {
-    return categoriesData.find((cat) => cat.id === categoryId);
-  };
-
-  const findCategoryByName = (categoryName) => {
-    return categoriesData.find((cat) => {
-      const normalizedInput = categoryName.replace(/\s+/g, " ").trim();
-      const normalizedCatName = cat.name.replace(/\s+/g, " ").trim();
-      return (
-        normalizedCatName === normalizedInput ||
-        normalizedCatName.includes(normalizedInput) ||
-        normalizedInput.includes(normalizedCatName)
-      );
-    });
-  };
-
-  const sendToCat = (item, neighborhoodName = null) => {
-    console.log("Item data:", item);
+  const navigateToCategory = (categoryName, neighborhoodName = null) => {
+    if (!categoryName || !currentCity) {
+      console.error("Missing category name or city");
+      handleSnackbar("خطا در انتقال به صفحه دسته‌بندی");
+      return;
+    }
 
     handleCloseModal();
-
-    let categoryId;
-    let categoryName;
-
-    if (item.category_array && typeof item.category_array === "object") {
-      categoryId = item.category_array.id;
-      categoryName = item.category_array.name || item.category;
-    } else if (
-      Array.isArray(item.category_array) &&
-      item.category_array.length > 0
-    ) {
-      const firstCategory = item.category_array[0];
-      if (typeof firstCategory === "object") {
-        categoryId = firstCategory.id;
-        categoryName = firstCategory.name || item.category;
-      } else {
-        categoryId = firstCategory;
-        categoryName = item.category;
-      }
-    } else {
-      categoryName = item.category;
-      const foundCategory = findCategoryByName(categoryName);
-      if (foundCategory) {
-        categoryId = foundCategory.id;
-      } else {
-        console.error("No category found for item:", item);
-        return;
-      }
-    }
-
-    const queryParams = {
-      name: categoryName,
-      id: categoryId,
-      categories: categoryId,
+    
+    let path = `/${currentCity.title}/${encodeURIComponent(categoryName)}`;
+    
+    const searchContext = {
+      originalQuery: searchQuery,
+      selectedCategory: categoryName,
+      neighborhood: neighborhoodName,
+      timestamp: Date.now()
     };
-
-    if (neighborhoodName) {
-      queryParams.neighbor = neighborhoodName;
-    }
-
-    if (currentCity) {
-      queryParams.city = currentCity.title;
-    }
-
-    console.log("Navigating to category page with params:", queryParams);
-
-    const dynamicPathname = `/${currentCity.title}/${encodeURIComponent(
-      categoryName
-    )}`;
-
-    // Show spinner during redirect
+    
+    localStorage.setItem("lastSearchContext", JSON.stringify(searchContext));
+    
+    console.log("Navigating to:", path);
+    
     setIsRedirecting(true);
-
-    router.push({
-      pathname: dynamicPathname,
-      query: queryParams,
-    });
+    
+    router.push(path);
   };
 
   const handleSearch = async (isManualSearch = true) => {
@@ -596,18 +741,30 @@ const SearchBars = ({ realstates }) => {
       setSearchStatus("لطفاً ابتدا یک شهر را انتخاب کنید");
       return;
     }
-    if (!searchQuery.trim()) {
+    
+    const query = searchQuery.trim();
+    if (!query) {
+      setProperties([]);
+      setSearchStatus("جستجو...");
       return;
     }
 
-    console.log(`Searching for "${searchQuery}" in ${activeTab} tab`);
+    console.log(`Searching for "${query}" in ${activeTab} tab`);
+
+    // Store last query to avoid duplicate searches
+    if (lastSearchQueryRef.current === query) {
+      console.log("Same query, skipping search");
+      return;
+    }
+    
+    lastSearchQueryRef.current = query;
 
     try {
       setLoading(true);
       setSearchStatus("در حال جستجو...");
 
       if (isManualSearch) {
-        await saveToHistory(searchQuery);
+        await saveToHistory(query);
       }
 
       progressIntervalRef.current = setInterval(() => {
@@ -619,100 +776,160 @@ const SearchBars = ({ realstates }) => {
       switch (activeTab) {
         case "buySell":
           try {
-            const response = await axios.post(
-              "https://api.ajur.app/api/search-intent",
-              {
-                query: searchQuery,
-                cityid: currentCity.id,
-              },
-              { timeout: 10000 }
-            );
-
-            clearTimeout(loadingTimeoutRef.current);
-            clearInterval(progressIntervalRef.current);
-
-            if (!response.data || !Array.isArray(response.data)) {
-              throw new Error("پاسخ نامعتبر از سرور دریافت شد");
+            // Find matching categories
+            const matchedCategories = findMatchingCategories(query);
+            console.log("Found matching categories:", matchedCategories);
+            
+            if (matchedCategories.length === 0) {
+              setSearchStatus(`هیچ دسته‌بندی‌ای برای "${query}" یافت نشد`);
+              setProperties([]);
+              break;
             }
-
-            const categoriesWithNeighborhoods = response.data;
-            const allNeighborhoods =
-              categoriesWithNeighborhoods.length > 0
-                ? [
-                    ...new Set(
-                      categoriesWithNeighborhoods.flatMap((c) =>
-                        c.neighborhoods.map((n) => n.name)
-                      )
-                    ),
-                  ]
-                : [];
-
-            set_search_neighborhoods(allNeighborhoods);
-
-            const displayItems = categoriesWithNeighborhoods.map(
-              (categoryData, index) => {
-                const categoryName = categoryData.category_name;
-                const category_array = categoryData.category;
-                const neighborhoods = categoryData.neighborhoods;
-
-                return {
-                  id: `category-${index}-${Date.now()}`,
-                  category: categoryName,
-                  category_array: category_array,
-                  neighborhoods: neighborhoods,
-                  propertyCounts: neighborhoods.reduce((acc, curr) => {
-                    acc[curr.name] = curr.property_count;
-                    return acc;
-                  }, {}),
-                  filters: { category_name: categoryName },
-                  chips: neighborhoods
-                    .filter((n) => n.property_count > 0)
-                    .slice(0, 5)
-                    .map((n) => ({
-                      label: `${n.name} (${n.property_count})`,
-                      value: n.name,
-                    })),
-                  isEmpty: neighborhoods.every((n) => n.property_count === 0),
-                  isPrimary: index === 0,
-                };
-              }
+            
+            // Create display items for each matched category
+            const displayItems = await Promise.all(
+              matchedCategories.map(async (category, index) => {
+                try {
+                  // Fetch neighborhoods for this category
+                  const response = await axios.post(
+                    "https://api.ajur.app/api/search-intent",
+                    {
+                      query: category.name,
+                      original_query: query,
+                      cityid: currentCity.id,
+                      category_id: category.id,
+                      fuzzy_match: true,
+                    },
+                    { 
+                      timeout: 10000,
+                      headers: {
+                        'Content-Type': 'application/json'
+                      }
+                    }
+                  );
+                  
+                  let neighborhoods = [];
+                  let totalProperties = 0;
+                  
+                  // Handle response formats
+                  if (response.data && Array.isArray(response.data)) {
+                    const categoryData = response.data[0];
+                    neighborhoods = categoryData?.neighborhoods || [];
+                    totalProperties = neighborhoods.reduce((sum, n) => sum + (n.property_count || 0), 0);
+                  } else if (response.data && response.data.neighborhoods) {
+                    neighborhoods = response.data.neighborhoods;
+                    totalProperties = neighborhoods.reduce((sum, n) => sum + (n.property_count || 0), 0);
+                  }
+                  
+                  console.log(`Category ${category.name}: ${totalProperties} properties found`);
+                  
+                  return {
+                    id: `category-${category.id}-${Date.now()}`,
+                    category: category.name,
+                    category_array: category,
+                    categories_array: matchedCategories,
+                    neighborhoods: neighborhoods,
+                    propertyCounts: neighborhoods.reduce((acc, curr) => {
+                      acc[curr.name] = curr.property_count || 0;
+                      return acc;
+                    }, {}),
+                    totalProperties: totalProperties,
+                    filters: { category_name: category.name },
+                    chips: neighborhoods
+                      .filter((n) => (n.property_count || 0) > 0)
+                      .slice(0, 5)
+                      .map((n) => ({
+                        label: `${n.name} (${n.property_count || 0})`,
+                        value: n.name,
+                      })),
+                    isEmpty: neighborhoods.length === 0,
+                    hasProperties: totalProperties > 0,
+                    isPrimary: index === 0,
+                  };
+                } catch (error) {
+                  console.error(`Error fetching neighborhoods for ${category.name}:`, error);
+                  
+                  // Return empty but valid category item
+                  return {
+                    id: `error-${category.id}-${Date.now()}`,
+                    category: category.name,
+                    category_array: category,
+                    categories_array: matchedCategories,
+                    neighborhoods: [],
+                    propertyCounts: {},
+                    totalProperties: 0,
+                    filters: { category_name: category.name },
+                    chips: [],
+                    isEmpty: true,
+                    hasProperties: false,
+                    isPrimary: index === 0,
+                  };
+                }
+              })
             );
-
-            if (displayItems.length === 0) {
-              displayItems.push({
-                id: "default-category",
-                category: "",
-                neighborhoods: [],
-                propertyCounts: {},
-                filters: {},
-                chips: [],
-                isEmpty: true,
-                isPrimary: true,
-              });
-            }
-
+            
             setProperties(displayItems);
 
-            const statusText =
-              categoriesWithNeighborhoods.length > 0
-                ? `دسته‌بندی‌ها: ${categoriesWithNeighborhoods
-                    .map((c) => c.category_name)
-                    .join("، ")} در ${currentCity.title}`
-                : `جستجوی عمومی در ${currentCity.title}`;
-
-            setSearchStatus(statusText);
+            // Update search status with accurate property counts
+            const categoriesWithProperties = displayItems.filter(item => item.hasProperties);
+            const totalAllProperties = displayItems.reduce((sum, item) => sum + item.totalProperties, 0);
+            
+            if (displayItems.length === 1) {
+              const item = displayItems[0];
+              if (item.hasProperties) {
+                setSearchStatus(
+                  `${item.category} در ${currentCity.title} (${item.totalProperties} ملک)`
+                );
+              } else {
+                setSearchStatus(
+                  `${item.category} در ${currentCity.title} (هیچ ملکی یافت نشد)`
+                );
+              }
+            } else {
+              if (categoriesWithProperties.length > 0) {
+                const categoryNames = categoriesWithProperties.map(item => item.category).join("، ");
+                setSearchStatus(
+                  `${categoriesWithProperties.length} دسته‌بندی با ${totalAllProperties} ملک: ${categoryNames}`
+                );
+              } else {
+                setSearchStatus(
+                  `${displayItems.length} دسته‌بندی یافت شد (هیچ ملکی یافت نشد)`
+                );
+              }
+            }
+            
           } catch (error) {
             console.error("Search error:", error);
-            setSearchStatus("خطایی در دریافت اطلاعات رخ داده است");
+            
+            // Fallback: Try to find categories without API call
+            const matchedCategories = findMatchingCategories(query);
+            if (matchedCategories.length > 0) {
+              const displayItems = matchedCategories.map((category, index) => ({
+                id: `fallback-${category.id}-${Date.now()}`,
+                category: category.name,
+                category_array: category,
+                categories_array: matchedCategories,
+                neighborhoods: [],
+                propertyCounts: {},
+                totalProperties: 0,
+                filters: { category_name: category.name },
+                chips: [],
+                isEmpty: true,
+                hasProperties: false,
+                isPrimary: index === 0,
+              }));
+              
+              setProperties(displayItems);
+              setSearchStatus(`${matchedCategories.length} دسته‌بندی یافت شد (هیچ ملکی یافت نشد)`);
+            } else {
+              setSearchStatus("خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید");
+              setProperties([]);
+            }
           }
           break;
 
         case "agents":
-          await getAgentsCall(searchQuery);
-          break;
-
-        case "jobs":
-          setSearchStatus("جستجوی مشاغل انجام شد");
+          await getAgentsCall(query);
           break;
 
         default:
@@ -726,13 +943,15 @@ const SearchBars = ({ realstates }) => {
       setSearchStatus("خطا در جستجو");
     } finally {
       setLoading(false);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
   };
 
   const set_modal_active = (status) => {
     if (!currentCity || isLoading) {
       handleSnackbar("لطفاً ابتدا یک شهر را انتخاب کنید");
-      // Trigger the CitySelector modal to open
       const citySelectorButton = document.querySelector(
         '[data-testid="citySelectorButton"]'
       );
@@ -741,9 +960,11 @@ const SearchBars = ({ realstates }) => {
       }
       return;
     }
+    
     setShowAllNeighborhoods(false);
     setProperties([]);
     setSearchQuery("");
+    setInputValue("");
     setShowModal(true);
 
     const timer = setTimeout(() => {
@@ -763,6 +984,99 @@ const SearchBars = ({ realstates }) => {
     </div>
   );
 
+  const renderCategoryCard = (item, itemIndex) => {
+    const hasMultipleCategories = item.categories_array && item.categories_array.length > 1;
+    const totalProperties = item.totalProperties || 
+      Object.values(item.propertyCounts).reduce((sum, count) => sum + count, 0);
+    
+    return (
+      <div
+        key={item.id}
+        className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4"
+      >
+        <div className="flex flex-row-reverse items-center justify-between pb-3 border-b border-gray-100">
+          <div className="flex flex-col items-end">
+            <button 
+              onClick={() => navigateToCategory(item.category)}
+              className="text-right hover:text-blue-800 focus:outline-none"
+            >
+              <div className="text-blue-800 font-bold text-sm">
+                {item.category} در {currentCity.title}
+                {item.hasProperties && (
+                  <span className="text-gray-500 text-sm">
+                    {` (${totalProperties} مورد)`}
+                  </span>
+                )}
+              </div>
+            </button>
+            
+            
+          </div>
+          
+          {item.hasProperties && (
+            <button
+              className="flex flex-row-reverse items-center text-blue-600 hover:text-blue-800 focus:outline-none"
+              onClick={() => navigateToCategory(item.category)}
+            >
+              <span className="text-sm ml-1">همه موارد</span>
+              <span>‹</span>
+            </button>
+          )}
+        </div>
+
+        {/* Neighborhoods - only show if there are actual neighborhoods */}
+        {item.neighborhoods.length > 0 && (
+          <div className="flex flex-row-reverse flex-wrap gap-2 mt-3">
+            {(showAllNeighborhoods
+              ? item.neighborhoods
+              : item.neighborhoods.slice(0, 5)
+            ).map((neighborhood, index) => {
+              const propertyCount = neighborhood.property_count || 0;
+              return (
+                <button
+                  key={`${item.id}-${neighborhood.name}-${index}`}
+                  className={`px-3 py-1 rounded-full text-sm border ${
+                    propertyCount > 0 
+                      ? 'bg-green-50 text-gray-700 border-green-200 hover:bg-green-100' 
+                      : 'bg-gray-100 text-gray-500 border-gray-200'
+                  }`}
+                  onClick={() =>
+                    navigateToCategory(item.category, neighborhood.name)
+                  }
+                  disabled={propertyCount === 0}
+                >
+                  {neighborhood.name}
+                  {propertyCount > 0 && (
+                    <span className="text-gray-500 text-xs mr-1">
+                      {` (${propertyCount} ملک)`}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Show all neighborhoods button - only if there are neighborhoods */}
+        {item.neighborhoods.length > 5 && !showAllNeighborhoods && (
+          <button
+            className="w-full py-2 text-center text-blue-600 hover:text-blue-800 text-sm mt-2 focus:outline-none"
+            onClick={() => setShowAllNeighborhoods(true)}
+          >
+            نمایش همه محلات ({item.neighborhoods.length - 5} مورد دیگر)
+          </button>
+        )}
+        
+        {/* No properties message - only show if API returned no neighborhoods */}
+        {item.neighborhoods.length === 0 && (
+          <div className="text-center py-3 text-gray-500 text-sm">
+            {item.isEmpty ? "هیچ ملکی یافت نشد" : "در حال بررسی موجودی..."}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "buySell":
@@ -772,124 +1086,66 @@ const SearchBars = ({ realstates }) => {
               renderSpinner()
             ) : (
               <div className="space-y-4">
-                {properties.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
-                  >
-                    <div className="flex flex-row-reverse items-center justify-between pb-3 border-b border-gray-100">
-                      <div className="text-blue-800 font-bold text-sm">
-                        {item.category} در {currentCity.title}
-                        <span className="text-gray-500 text-sm">
-                          {` (${Object.values(item.propertyCounts).reduce(
-                            (sum, count) => sum + count,
-                            0
-                          )} مورد)`}
-                        </span>
-                      </div>
-                      <button
-                        className="flex flex-row-reverse items-center text-blue-600 hover:text-blue-800"
-                        onClick={() => sendToCat(item)}
-                      >
-                        <span className="text-sm ml-1">همه موارد</span>
-                        <span>‹</span>
-                      </button>
-                    </div>
-
-                    <div className="flex flex-row-reverse flex-wrap gap-2 mt-3">
-                      {(showAllNeighborhoods
-                        ? item.neighborhoods
-                        : item.neighborhoods.slice(0, 10)
-                      ).map((neighborhood, index) => {
-                        const propertyCount = neighborhood.property_count || 0;
-                        return (
-                          <button
-                            key={`${item.id}-${neighborhood.name}-${index}`}
-                            className={`px-3 py-1 rounded-full text-sm border bg-green-50 text-gray-700 border-green-200 hover:bg-green-100`}
-                            onClick={() =>
-                              // propertyCount > 0 &&
-                              sendToCat(item, neighborhood.name)
-                            }
-                          >
-                            {neighborhood.name}
-                            <span className="text-gray-500 text-xs mr-1">
-                              {` (${propertyCount} ملک)`}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {item.neighborhoods.length > 10 &&
-                      !showAllNeighborhoods && (
-                        <button
-                          className="w-full py-2 text-center text-blue-600 hover:text-blue-800 text-sm mt-2"
-                          onClick={() => setShowAllNeighborhoods(true)}
+                {/* Show recent searches before showing properties */}
+                {searchHistory.length > 0 && properties.length === 0 && !loading && (
+                  <div className="text-right mb-6">
+                    <h3 className="text-gray-500 text-sm mb-2">جستجوهای اخیر:</h3>
+                    <div className="flex flex-row-reverse flex-wrap gap-2">
+                      {searchHistory.map((historyItem, index) => (
+                        <div
+                          key={`history-${index}`}
+                          className="flex flex-row-reverse items-center bg-gray-100 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-200 border border-gray-300"
+                          onClick={() => handleHintPress(historyItem)}
                         >
-                          نمایش همه محلات ({item.neighborhoods.length - 10} مورد
-                          دیگر)
-                        </button>
-                      )}
-                  </div>
-                ))}
-
-                {properties.length === 0 && !loading && (
-                  <div className="text-center space-y-4">
-                    {searchHistory.length > 0 && (
-                      <>
-                        <div className="text-right">
-                          <h3 className="text-gray-500 text-sm mb-2">
-                            جستجوهای اخیر:
-                          </h3>
-                          <div className="flex flex-row-reverse flex-wrap gap-2 justify-end">
-                            {searchHistory.map((historyItem, index) => (
-                              <div
-                                key={`history-${index}`}
-                                className="flex flex-row-reverse items-center bg-gray-200 px-3 py-1 rounded-full cursor-pointer hover:bg-gray-300"
-                                onClick={() => handleHintPress(historyItem)}
-                              >
-                                <span className="text-gray-700 text-sm ml-2">
-                                  {historyItem}
-                                </span>
-                                <button
-                                  className="text-gray-500 hover:text-gray-700 text-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const updatedHistory = searchHistory.filter(
-                                      (_, i) => i !== index
-                                    );
-                                    setSearchHistory(updatedHistory);
-                                    localStorage.setItem(
-                                      "realEstateSearchHistory",
-                                      JSON.stringify(updatedHistory)
-                                    );
-                                  }}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="text-right">
-                      <h3 className="text-gray-500 text-sm mb-2">
-                        پیشنهادهایی برای جستجو:
-                      </h3>
-                      <div className="flex flex-row-reverse flex-wrap gap-2">
-                        {estateHints.map((hint, index) => (
+                          <span className="text-gray-700 text-sm ml-2">
+                            {historyItem}
+                          </span>
                           <button
-                            key={`hint-${index}`}
-                            className="bg-gray-600 text-white px-3 py-1 rounded-full text-sm hover:bg-gray-700"
-                            onClick={() => handleHintPress(hint)}
+                            className="text-gray-500 hover:text-gray-700 text-xs mr-2 focus:outline-none"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updatedHistory = searchHistory.filter(
+                                (_, i) => i !== index
+                              );
+                              setSearchHistory(updatedHistory);
+                              localStorage.setItem(
+                                "realEstateSearchHistory",
+                                JSON.stringify(updatedHistory)
+                              );
+                            }}
                           >
-                            {hint}
+                            ×
                           </button>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Show search hints before properties */}
+                {properties.length === 0 && !loading && (
+                  <div className="text-right">
+                    <h3 className="text-gray-500 text-sm mb-2">
+                      پیشنهادهایی برای جستجو:
+                    </h3>
+                    <div className="flex flex-row-reverse flex-wrap gap-2">
+                      {estateHints.map((hint, index) => (
+                        <button
+                          key={`hint-${index}`}
+                          className="bg-gray-600 text-white px-3 py-1 rounded-full text-sm hover:bg-gray-700 focus:outline-none"
+                          onClick={() => handleHintPress(hint)}
+                        >
+                          {hint}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Show matched properties */}
+                {properties.length > 0 && (
+                  <div className="space-y-4">
+                    {properties.map((item, index) => renderCategoryCard(item, index))}
                   </div>
                 )}
               </div>
@@ -922,21 +1178,6 @@ const SearchBars = ({ realstates }) => {
           </div>
         );
 
-      case "jobs":
-        return (
-          <div className="flex-1 py-2">
-            <div className="text-center text-gray-500 mb-3">{searchStatus}</div>
-            <div className="text-right p-3 text-lg leading-8">
-              اگر شما فعال در زمینه‌های مختلف مشاغل مرتبط با ساخت و ساز هستید،
-              با شماره زیر تماس بگیرید تا از شرایط ثبت پروفایل خود در آجر آگاه
-              شوید
-            </div>
-            <div className="text-center p-3 text-lg text-red-500 font-sans">
-              09382740488
-            </div>
-          </div>
-        );
-
       default:
         return (
           <div className="flex-1 py-2">
@@ -950,9 +1191,7 @@ const SearchBars = ({ realstates }) => {
 
   return (
     <div className="w-full py-2 px-3 bg-white">
-      {/* Header with Logo and Search Bar */}
       <div className="flex items-center gap-4">
-        {/* Search Bar taking remaining space */}
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <CitySelector
@@ -965,9 +1204,7 @@ const SearchBars = ({ realstates }) => {
               className="flex-1 flex flex-row-reverse items-center bg-gray-50 rounded-2xl border border-gray-300 h-14 px-4 cursor-pointer shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
               onClick={() => set_modal_active(true)}
             >
-              {/* Animated Suggestion Container */}
               <div className="flex-1 text-right overflow-hidden relative h-6">
-                {/* Current Suggestion */}
                 <div
                   className={`absolute inset-0 flex items-center transition-all duration-500 ease-in-out ${
                     suggestionDirection === "up"
@@ -980,7 +1217,6 @@ const SearchBars = ({ realstates }) => {
                   </span>
                 </div>
 
-                {/* Next Suggestion */}
                 <div
                   className={`absolute inset-0 flex items-center transition-all duration-500 ease-in-out ${
                     suggestionDirection === "up"
@@ -995,7 +1231,7 @@ const SearchBars = ({ realstates }) => {
               </div>
 
               <button
-                className="w-10 h-10 rounded-xl flex items-center justify-center mr-2 hover:bg-gray-200 transition-colors"
+                className="w-10 h-10 rounded-xl flex items-center justify-center mr-2 hover:bg-gray-200 transition-colors focus:outline-none"
                 onClick={() => set_modal_active(true)}
                 aria-label="جستجو"
               >
@@ -1005,7 +1241,7 @@ const SearchBars = ({ realstates }) => {
 
             <button
               onClick={handleHomeClick}
-              className="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none"
               aria-label="رفتن به صفحه اصلی"
             >
               <img
@@ -1026,82 +1262,74 @@ const SearchBars = ({ realstates }) => {
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={handleCloseModal}
           />
-          {/* Top-down panel: appears from above and replaces the searchbar */}
           <div
             className={`absolute top-0 left-0 right-0 bg-white rounded-b-3xl p-6 max-h-[90vh] overflow-auto flex flex-col animate__animated animate__slideInDown`}
           >
-            {/* Floating close button in the corner */}
             <button
               onClick={handleCloseModal}
               aria-label="بستن"
-              style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                zIndex: 80,
-                background: "transparent",
-                border: "none",
-                fontSize: "1.35rem",
-                cursor: "pointer",
-                padding: 6,
-                lineHeight: 1,
-              }}
+              className="absolute top-4 right-4 z-80 bg-transparent border-none text-2xl cursor-pointer p-2 leading-none focus:outline-none"
+              style={{ fontSize: "1.35rem" }}
             >
               ✕
             </button>
-            {/* Tab Header */}
-            <div className="flex flex-row-reverse items-center mb-4">
+
+            <div className="flex flex-row-reverse items-center mb-4 gap-3">
               <div className="flex-1 flex justify-between gap-3">
-                {Object.entries(suggestionsMap).map(([tabId]) => (
-                  <button
-                    key={tabId}
-                    className={`flex-1 py-3 px-3 rounded-xl text-sm font-medium transition-colors ${
-                      activeTab === tabId
-                        ? "bg-red-500 text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
-                    onClick={() => handleTabPress(tabId)}
-                  >
-                    {tabId === "buySell"
-                      ? "املاک"
-                      : tabId === "agents"
-                      ? "مشاورین"
-                      : "مشاغل"}
-                  </button>
-                ))}
+                {Object.entries(suggestionsMap)
+                  .filter(([tabId]) => tabId !== "jobs")
+                  .map(([tabId]) => (
+                    <button
+                      key={tabId}
+                      className={`flex-1 py-3 px-3 rounded-xl text-sm font-medium transition-colors focus:outline-none ${
+                        activeTab === tabId
+                          ? "bg-red-500 text-white"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                      }`}
+                      onClick={() => handleTabPress(tabId)}
+                    >
+                      {tabId === "buySell" ? "املاک" : "مشاورین"}
+                    </button>
+                  ))}
+              </div>
+              
+              <div className="flex-shrink-0">
+                <CitySelector
+                  handleCitySelect={(city) => {
+                    setShowAllNeighborhoods(false);
+                    if (searchQuery) {
+                      handleSearch(true);
+                    }
+                  }}
+                />
               </div>
             </div>
 
-            {/* Search Input */}
+            {/* Fixed input with controlled value and proper RTL handling */}
             <div className="flex flex-row-reverse items-center bg-white border-2 border-red-500 rounded-2xl h-14 mb-6 px-4">
               <input
                 ref={inputRef}
                 type="text"
-                className="flex-1 h-full text-right text-gray-800 text-base outline-none px-3 bg-white"
-                style={{ backgroundColor: "white" }}
+                className="flex-1 h-full text-right text-gray-800 text-base outline-none px-3 bg-white rtl"
+                style={{ 
+                  backgroundColor: "white",
+                  textAlign: 'right',
+                  direction: 'rtl'
+                }}
                 placeholder={getCurrentSuggestion()}
-                value={searchQuery}
+                value={inputValue}
                 onChange={(e) => handleTextChange(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch(true)}
                 autoFocus={isInputReady}
+                dir="rtl"
               />
-              {/* <div className="ml-3">
-                <CitySelector
-                  handleCitySelect={(city) => {
-                    set_modal_active();
-                    setShowAllNeighborhoods(false);
-                  }}
-                />
-              </div> */}
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto">{renderTabContent()}</div>
           </div>
         </div>
       )}
 
-      {/* Fullscreen Loading Overlay - Only during redirect */}
       {isRedirecting && (
         <div className="fixed inset-0 bg-white bg-opacity-98 flex items-center justify-center z-[9999]">
           <img

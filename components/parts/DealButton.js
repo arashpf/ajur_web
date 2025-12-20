@@ -8,7 +8,7 @@ const DealButton = ({ title, src, onClick, style = {} }) => {
         <div className={styles.icon}>
           <img src={src} alt={title} />
         </div>
-        <div className={styles.title}>{title}</div>
+        <div className={styles.title}>{title} </div>
       </div>
     </button>
   )

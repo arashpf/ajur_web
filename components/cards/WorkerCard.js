@@ -119,7 +119,7 @@ export default function ImgMediaCard(props) {
   const renderNeighborHoodRibbon = () => {
     if (worker.neighbourhood) {
       return (
-        <div className={Styles["card-inside-bottom"]}>
+        <div className={Styles["card-inside-neighbor"]}>
           <p style={{ fontSize: 13, color: "#222", display: "flex" }}>
             {worker.neighbourhood}
           </p>

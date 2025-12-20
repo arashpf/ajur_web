@@ -134,10 +134,51 @@ const WorkerFilter = ({
   const [dynamicRangeFilters, setDynamicRangeFilters] = useState([]);
   const [dynamicFeatures, setDynamicFeatures] = useState([]);
 
+  // Add effect to prevent background scrolling when filter is open
+  useEffect(() => {
+    if (isFilterOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+      
+      // Prevent scrolling on body
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = `-${scrollX}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px';
+      
+      // For iOS Safari
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.width = '100%';
+      document.documentElement.style.height = '100%';
+      
+      return () => {
+        // Restore scrolling when modal closes
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        // For iOS Safari
+        document.documentElement.style.position = '';
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.width = '';
+        document.documentElement.style.height = '';
+        
+        window.scrollTo(scrollX, scrollY);
+      };
+    }
+  }, [isFilterOpen]);
+
   // Get suggested values based on field name and type
   const getSuggestionsByFieldName = (fieldName) => {
     const lowerField = fieldName.toLowerCase();
-    
+
     // Price suggestions for price-related fields
     if (lowerField.includes("قیمت")) {
       return [
@@ -151,7 +192,7 @@ const WorkerFilter = ({
         { value: 10000000000, label: "۱۰ میلیارد" },
       ];
     }
-    
+
     // Area suggestions for area-related fields
     if (lowerField.includes("متراژ")) {
       return [
@@ -165,7 +206,7 @@ const WorkerFilter = ({
         { value: 300, label: "۳۰۰ متر" },
       ];
     }
-    
+
     return [];
   };
 
@@ -299,9 +340,9 @@ const WorkerFilter = ({
       prev.map((f) =>
         f.id === fieldId
           ? {
-              ...f,
-              [type]: value.toString(),
-            }
+            ...f,
+            [type]: value.toString(),
+          }
           : f
       )
     );
@@ -356,7 +397,7 @@ const WorkerFilter = ({
       const filtered = applyFilters();
       const sorted = sortWorkers(filtered);
       onFilteredWorkersChange(sorted);
-      
+
       // Notify that loading is complete
       if (onLoadingChange) {
         onLoadingChange(false);
@@ -556,9 +597,9 @@ const WorkerFilter = ({
       prev.map((f) =>
         f.id === fieldId
           ? {
-              ...f,
-              [type]: value,
-            }
+            ...f,
+            [type]: value,
+          }
           : f
       )
     );
@@ -661,7 +702,7 @@ const WorkerFilter = ({
             .map((filter) => {
               if (filter.low !== "" || filter.high !== "") {
                 let label = `${filter.name}: `;
-                
+
                 if (filter.low !== "" && filter.high !== "") {
                   // Both low and high set
                   label += `${formatNumberWithWords(filter.low)} تا ${formatNumberWithWords(filter.high)} ${filter.unit}`;
@@ -672,7 +713,7 @@ const WorkerFilter = ({
                   // Only high set
                   label += `تا ${formatNumberWithWords(filter.high)}`;
                 }
-                
+
                 return (
                   <Chip
                     key={filter.id}
@@ -776,7 +817,7 @@ const WorkerFilter = ({
                         border: "2px solid",
                         borderColor: isSelected ? "#d32f2f" : "#e0e0e0",
                         borderRadius: 3,
-                        background: isSelected 
+                        background: isSelected
                           ? "linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(192, 192, 192, 0.1) 100%)"
                           : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 240, 240, 0.8) 100%)",
                         cursor: "pointer",
@@ -795,7 +836,7 @@ const WorkerFilter = ({
                           border: "2px solid",
                           borderColor: isSelected ? "#d32f2f" : "#999",
                           borderRadius: "6px",
-                          background: isSelected 
+                          background: isSelected
                             ? "linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)"
                             : "transparent",
                           display: "flex",
@@ -869,292 +910,292 @@ const WorkerFilter = ({
               // Find the corresponding rangeFilter with actual values
               const rangeFilter = rangeFilters.find(rf => rf.id === filter.id);
               if (!rangeFilter) return null;
-              
+
               return (
-              <Grid item xs={12} key={filter.id}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                  {filter.name} ({filter.unit})
-                </Typography>
-
-                {/* Range inputs */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    alignItems: "center",
-                    position: "relative",
-                  }}
-                >
-                  {/* تا (To) - upper limit */}
-                  <Box sx={{ flex: 1, position: "relative" }}>
-                    <TextField
-                      size="small"
-                      placeholder="تا"
-                      value={rangeFilter.high}
-                      onChange={(e) =>
-                        handleRangeFilterChange(
-                          filter.id,
-                          "high",
-                          e.target.value
-                        )
-                      }
-                      onFocus={() => setFocusedField(`${filter.id}-high`)}
-                      onBlur={(e) => {
-                        // Use setTimeout to allow click event to process first
-                        setTimeout(() => {
-                          // Check if the related target (what was clicked) is inside our suggestions
-                          const relatedTarget = e.relatedTarget;
-                          const isClickingSuggestion =
-                            relatedTarget &&
-                            relatedTarget.closest &&
-                            relatedTarget.closest("[data-suggestion]");
-
-                          if (!isClickingSuggestion) {
-                            setFocusedField(null);
-                          }
-                        }, 150);
-                      }}
-                      fullWidth
-                      type="number"
-                      inputProps={{
-                        min: filter.min,
-                        max: filter.max,
-                        style: { textAlign: "center" },
-                        autoComplete: "off",
-                        autoCorrect: "off",
-                        autoCapitalize: "off",
-                        spellCheck: "false",
-                      }}
-                      autoComplete="off"
-                      name={`filter-${filter.id}-high`}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2.5,
-                          backgroundColor: "rgba(255, 255, 255, 0.8)",
-                          border: "1.5px solid #e0e0e0",
-                          "&:hover": {
-                            borderColor: "#d32f2f",
-                            backgroundColor: "rgba(255, 255, 255, 1)",
-                          },
-                          "&.Mui-focused": {
-                            borderColor: "#d32f2f",
-                            boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
-                          },
-                        },
-                      }}
-                    />
-                    {/* Suggestions for upper limit */}
-                    {focusedField === `${filter.id}-high` &&
-                      getSuggestions(filter.id).length > 0 && (
-                        <Paper
-                          sx={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            zIndex: 10,
-                            mt: 0.5,
-                            maxHeight: 150,
-                            overflow: "auto",
-                            borderRadius: 2,
-                            border: "1.5px solid #d32f2f",
-                            boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
-                          }}
-                          elevation={0}
-                        >
-                          {getSuggestions(filter.id).map(
-                            (suggestion, index) => (
-                              <Box
-                                key={index}
-                                data-suggestion="true" // Add data attribute for identification
-                                sx={{
-                                  p: 1.2,
-                                  cursor: "pointer",
-                                  borderBottom: "1px solid #f0f0f0",
-                                  background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
-                                  "&:hover": {
-                                    bgcolor: "rgba(211, 47, 47, 0.08)",
-                                    borderBottomColor: "#d32f2f",
-                                  },
-                                  "&:last-child": {
-                                    borderBottom: "none",
-                                  },
-                                }}
-                                onClick={() => {
-                                  handleSuggestionClick(
-                                    filter.id,
-                                    "high",
-                                    suggestion.value
-                                  );
-                                }}
-                              >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ textAlign: "center" }}
-                                >
-                                  {suggestion.label}
-                                </Typography>
-                              </Box>
-                            )
-                          )}
-                        </Paper>
-                      )}
-                  </Box>
-
-                  <Typography
-                    variant="body2"
-                    sx={{ minWidth: "30px", textAlign: "center" }}
-                  >
-                    تا
+                <Grid item xs={12} key={filter.id}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    {filter.name} ({filter.unit})
                   </Typography>
 
-                  {/* از (From) - lower limit */}
-                  <Box sx={{ flex: 1, position: "relative" }}>
-                    <TextField
-                      size="small"
-                      placeholder="از"
-                      value={rangeFilter.low}
-                      onChange={(e) =>
-                        handleRangeFilterChange(
-                          filter.id,
-                          "low",
-                          e.target.value
-                        )
-                      }
-                      onFocus={() => setFocusedField(`${filter.id}-low`)}
-                      onBlur={(e) => {
-                        // Use setTimeout to allow click event to process first
-                        setTimeout(() => {
-                          // Check if the related target (what was clicked) is inside our suggestions
-                          const relatedTarget = e.relatedTarget;
-                          const isClickingSuggestion =
-                            relatedTarget &&
-                            relatedTarget.closest &&
-                            relatedTarget.closest("[data-suggestion]");
-
-                          if (!isClickingSuggestion) {
-                            setFocusedField(null);
-                          }
-                        }, 150);
-                      }}
-                      fullWidth
-                      type="number"
-                      inputProps={{
-                        min: filter.min,
-                        max: rangeFilter.high || filter.max,
-                        style: { textAlign: "center" },
-                        autoComplete: "off",
-                        autoCorrect: "off",
-                        autoCapitalize: "off",
-                        spellCheck: "false",
-                      }}
-                      autoComplete="off"
-                      name={`filter-${filter.id}-low`}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2.5,
-                          backgroundColor: "rgba(255, 255, 255, 0.8)",
-                          border: "1.5px solid #e0e0e0",
-                          "&:hover": {
-                            borderColor: "#d32f2f",
-                            backgroundColor: "rgba(255, 255, 255, 1)",
-                          },
-                          "&.Mui-focused": {
-                            borderColor: "#d32f2f",
-                            boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
-                          },
-                        },
-                      }}
-                    />
-                    {/* Suggestions for lower limit */}
-                    {focusedField === `${filter.id}-low` &&
-                      getSuggestions(filter.id).length > 0 && (
-                        <Paper
-                          sx={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            zIndex: 10,
-                            mt: 0.5,
-                            maxHeight: 150,
-                            overflow: "auto",
-                            borderRadius: 2,
-                            border: "1.5px solid #d32f2f",
-                            boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
-                          }}
-                          elevation={0}
-                        >
-                          {getSuggestions(filter.id).map(
-                            (suggestion, index) => (
-                              <Box
-                                key={index}
-                                data-suggestion="true" // Add data attribute for identification
-                                sx={{
-                                  p: 1.2,
-                                  cursor: "pointer",
-                                  borderBottom: "1px solid #f0f0f0",
-                                  background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
-                                  "&:hover": {
-                                    bgcolor: "rgba(211, 47, 47, 0.08)",
-                                    borderBottomColor: "#d32f2f",
-                                  },
-                                  "&:last-child": {
-                                    borderBottom: "none",
-                                  },
-                                }}
-                                onClick={() => {
-                                  handleSuggestionClick(
-                                    filter.id,
-                                    "low",
-                                    suggestion.value
-                                  );
-                                }}
-                              >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ textAlign: "center", color: "#333", fontWeight: 500 }}
-                                >
-                                  {suggestion.label}
-                                </Typography>
-                              </Box>
-                            )
-                          )}
-                        </Paper>
-                      )}
-                  </Box>
-                </Box>
-
-                {/* Number in words display */}
-                {(rangeFilter.low !== "" || rangeFilter.high !== "") && (
+                  {/* Range inputs */}
                   <Box
-                    sx={{ 
-                      mt: 1.5, 
-                      p: 1.5, 
-                      background: "linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%)",
-                      borderRadius: 2,
-                      border: "1px solid rgba(211, 47, 47, 0.1)",
+                    sx={{
+                      display: "flex",
+                      gap: 1,
+                      alignItems: "center",
+                      position: "relative",
                     }}
                   >
-                    <Typography variant="caption" sx={{ color: "#666", fontWeight: 500 }}>
-                      {rangeFilter.low !== "" && (
-                        <span>
-                          از {formatNumber(rangeFilter.low)} {filter.unit}{" "}
-                        </span>
-                      )}
-                      {rangeFilter.low !== "" && rangeFilter.high !== "" && (
-                        <span>تا </span>
-                      )}
-                      {rangeFilter.high !== "" && (
-                        <span>
-                          {formatNumber(rangeFilter.high)} {filter.unit}
-                        </span>
-                      )}
+                    {/* تا (To) - upper limit */}
+                    <Box sx={{ flex: 1, position: "relative" }}>
+                      <TextField
+                        size="small"
+                        placeholder="تا"
+                        value={rangeFilter.high}
+                        onChange={(e) =>
+                          handleRangeFilterChange(
+                            filter.id,
+                            "high",
+                            e.target.value
+                          )
+                        }
+                        onFocus={() => setFocusedField(`${filter.id}-high`)}
+                        onBlur={(e) => {
+                          // Use setTimeout to allow click event to process first
+                          setTimeout(() => {
+                            // Check if the related target (what was clicked) is inside our suggestions
+                            const relatedTarget = e.relatedTarget;
+                            const isClickingSuggestion =
+                              relatedTarget &&
+                              relatedTarget.closest &&
+                              relatedTarget.closest("[data-suggestion]");
+
+                            if (!isClickingSuggestion) {
+                              setFocusedField(null);
+                            }
+                          }, 150);
+                        }}
+                        fullWidth
+                        type="number"
+                        inputProps={{
+                          min: filter.min,
+                          max: filter.max,
+                          style: { textAlign: "center" },
+                          autoComplete: "off",
+                          autoCorrect: "off",
+                          autoCapitalize: "off",
+                          spellCheck: "false",
+                        }}
+                        autoComplete="off"
+                        name={`filter-${filter.id}-high`}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2.5,
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                            border: "1.5px solid #e0e0e0",
+                            "&:hover": {
+                              borderColor: "#d32f2f",
+                              backgroundColor: "rgba(255, 255, 255, 1)",
+                            },
+                            "&.Mui-focused": {
+                              borderColor: "#d32f2f",
+                              boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                            },
+                          },
+                        }}
+                      />
+                      {/* Suggestions for upper limit */}
+                      {focusedField === `${filter.id}-high` &&
+                        getSuggestions(filter.id).length > 0 && (
+                          <Paper
+                            sx={{
+                              position: "absolute",
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              zIndex: 10,
+                              mt: 0.5,
+                              maxHeight: 150,
+                              overflow: "auto",
+                              borderRadius: 2,
+                              border: "1.5px solid #d32f2f",
+                              boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
+                            }}
+                            elevation={0}
+                          >
+                            {getSuggestions(filter.id).map(
+                              (suggestion, index) => (
+                                <Box
+                                  key={index}
+                                  data-suggestion="true" // Add data attribute for identification
+                                  sx={{
+                                    p: 1.2,
+                                    cursor: "pointer",
+                                    borderBottom: "1px solid #f0f0f0",
+                                    background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
+                                    "&:hover": {
+                                      bgcolor: "rgba(211, 47, 47, 0.08)",
+                                      borderBottomColor: "#d32f2f",
+                                    },
+                                    "&:last-child": {
+                                      borderBottom: "none",
+                                    },
+                                  }}
+                                  onClick={() => {
+                                    handleSuggestionClick(
+                                      filter.id,
+                                      "high",
+                                      suggestion.value
+                                    );
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ textAlign: "center" }}
+                                  >
+                                    {suggestion.label}
+                                  </Typography>
+                                </Box>
+                              )
+                            )}
+                          </Paper>
+                        )}
+                    </Box>
+
+                    <Typography
+                      variant="body2"
+                      sx={{ minWidth: "30px", textAlign: "center" }}
+                    >
+                      تا
                     </Typography>
+
+                    {/* از (From) - lower limit */}
+                    <Box sx={{ flex: 1, position: "relative" }}>
+                      <TextField
+                        size="small"
+                        placeholder="از"
+                        value={rangeFilter.low}
+                        onChange={(e) =>
+                          handleRangeFilterChange(
+                            filter.id,
+                            "low",
+                            e.target.value
+                          )
+                        }
+                        onFocus={() => setFocusedField(`${filter.id}-low`)}
+                        onBlur={(e) => {
+                          // Use setTimeout to allow click event to process first
+                          setTimeout(() => {
+                            // Check if the related target (what was clicked) is inside our suggestions
+                            const relatedTarget = e.relatedTarget;
+                            const isClickingSuggestion =
+                              relatedTarget &&
+                              relatedTarget.closest &&
+                              relatedTarget.closest("[data-suggestion]");
+
+                            if (!isClickingSuggestion) {
+                              setFocusedField(null);
+                            }
+                          }, 150);
+                        }}
+                        fullWidth
+                        type="number"
+                        inputProps={{
+                          min: filter.min,
+                          max: rangeFilter.high || filter.max,
+                          style: { textAlign: "center" },
+                          autoComplete: "off",
+                          autoCorrect: "off",
+                          autoCapitalize: "off",
+                          spellCheck: "false",
+                        }}
+                        autoComplete="off"
+                        name={`filter-${filter.id}-low`}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 2.5,
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                            border: "1.5px solid #e0e0e0",
+                            "&:hover": {
+                              borderColor: "#d32f2f",
+                              backgroundColor: "rgba(255, 255, 255, 1)",
+                            },
+                            "&.Mui-focused": {
+                              borderColor: "#d32f2f",
+                              boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                            },
+                          },
+                        }}
+                      />
+                      {/* Suggestions for lower limit */}
+                      {focusedField === `${filter.id}-low` &&
+                        getSuggestions(filter.id).length > 0 && (
+                          <Paper
+                            sx={{
+                              position: "absolute",
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              zIndex: 10,
+                              mt: 0.5,
+                              maxHeight: 150,
+                              overflow: "auto",
+                              borderRadius: 2,
+                              border: "1.5px solid #d32f2f",
+                              boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
+                            }}
+                            elevation={0}
+                          >
+                            {getSuggestions(filter.id).map(
+                              (suggestion, index) => (
+                                <Box
+                                  key={index}
+                                  data-suggestion="true" // Add data attribute for identification
+                                  sx={{
+                                    p: 1.2,
+                                    cursor: "pointer",
+                                    borderBottom: "1px solid #f0f0f0",
+                                    background: "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
+                                    "&:hover": {
+                                      bgcolor: "rgba(211, 47, 47, 0.08)",
+                                      borderBottomColor: "#d32f2f",
+                                    },
+                                    "&:last-child": {
+                                      borderBottom: "none",
+                                    },
+                                  }}
+                                  onClick={() => {
+                                    handleSuggestionClick(
+                                      filter.id,
+                                      "low",
+                                      suggestion.value
+                                    );
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ textAlign: "center", color: "#333", fontWeight: 500 }}
+                                  >
+                                    {suggestion.label}
+                                  </Typography>
+                                </Box>
+                              )
+                            )}
+                          </Paper>
+                        )}
+                    </Box>
                   </Box>
-                )}
-              </Grid>
-            );
+
+                  {/* Number in words display */}
+                  {(rangeFilter.low !== "" || rangeFilter.high !== "") && (
+                    <Box
+                      sx={{
+                        mt: 1.5,
+                        p: 1.5,
+                        background: "linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%)",
+                        borderRadius: 2,
+                        border: "1px solid rgba(211, 47, 47, 0.1)",
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 500 }}>
+                        {rangeFilter.low !== "" && (
+                          <span>
+                            از {formatNumber(rangeFilter.low)} {filter.unit}{" "}
+                          </span>
+                        )}
+                        {rangeFilter.low !== "" && rangeFilter.high !== "" && (
+                          <span>تا </span>
+                        )}
+                        {rangeFilter.high !== "" && (
+                          <span>
+                            {formatNumber(rangeFilter.high)} {filter.unit}
+                          </span>
+                        )}
+                      </Typography>
+                    </Box>
+                  )}
+                </Grid>
+              );
             })}
           </Grid>
         </AccordionDetails>
@@ -1164,32 +1205,13 @@ const WorkerFilter = ({
 
   return (
     <>
-      {/* Apply margin to body/content when filter is open on desktop */}
-      {!isMobile && isFilterOpen && (
-        <style jsx global>{`
-          body {
-            margin-right: 500px;
-            transition: margin-right 0.3s ease-in-out;
-          }
-        `}</style>
-      )}
-
-      {!isMobile && !isFilterOpen && (
-        <style jsx global>{`
-          body {
-            margin-right: 0;
-            transition: margin-right 0.3s ease-in-out;
-          }
-        `}</style>
-      )}
-
       {/* Filter & Sort Buttons */}
       <Box
         sx={{
           position: "fixed",
           top: isMobile ? 125 : 80,
           right: 16,
-          zIndex: 1000,
+          zIndex: 10 ,
           display: "flex",
           flexDirection: "column",
           gap: 1,
@@ -1198,19 +1220,25 @@ const WorkerFilter = ({
         <Button
           onClick={() => setIsFilterOpen(true)}
           variant="contained"
-          sx={{ 
-            width: 56, 
-            height: 56, 
-            borderRadius: "50%",
+          sx={{
+            width: "auto",
+            height: 56,
+            borderRadius: "50px",
             background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
             color: "white",
             boxShadow: "0 2px 8px rgba(128,128,128,0.3)",
+            px: 2,
             "&:hover": {
               background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
             },
           }}
         >
-          <Tune sx={{ fontSize: 24 }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              فیلترها
+            </Typography>
+            <Tune sx={{ fontSize: 24 }} />
+          </Box>
         </Button>
       </Box>
 
@@ -1501,8 +1529,7 @@ const WorkerFilter = ({
                     ? `محلات: ${selectedNeighborhoods
                         .slice(0, 2)
                         .map((n) => n.name)
-                        .join("، ")}${
-                        selectedNeighborhoods.length > 2 ? "..." : ""
+                        .join("، ")}${selectedNeighborhoods.length > 2 ? "..." : ""
                       }`
                     : "انتخاب محلات"}
                 </span>
@@ -1518,9 +1545,18 @@ const WorkerFilter = ({
           )}
         </Box>
 
-        {/* Footer */}
+        {/* Footer - FIXED VERSION */}
         {filterLevel === "base" && (
-          <Box sx={{ p: 2, borderTop: "1px solid #e0e0e0", bgcolor: "#f5f5f5" }}>
+          <Box 
+            sx={{ 
+              p: 2, 
+              borderTop: "1px solid #e0e0e0", 
+              bgcolor: "#f5f5f5",
+              position: "sticky",
+              bottom: 0,
+              zIndex: 1300,
+            }}
+          >
             <Button
               variant="contained"
               fullWidth
@@ -1571,7 +1607,7 @@ const WorkerFilter = ({
             maxHeight: "100px",
             overflow: "auto",
             bgcolor: "background.paper",
-            zIndex: 100,
+            zIndex: 10,
             display:
               selectedCategory ||
               selectedNeighborhoods.length > 0 ||

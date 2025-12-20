@@ -256,8 +256,9 @@ export default function FileRequest({
               <button
                 className="fr-cta primary"
                 onClick={
+                  
                   onCallClick ||
-                  (() => (window.location.href = "tel:+982191000000"))
+                  (() => (window.location.href = "tel:+989392740488"))
                 }
               >
                 <svg className="fr-cta-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
