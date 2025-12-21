@@ -1,50 +1,51 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import Styles from '../styles/WorkerDetails.module.css';
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
-import { styled } from '@mui/material/styles';
-import Link from 'next/link';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import CallIcon from '@mui/icons-material/Call';
-import TourOutlinedIcon from '@mui/icons-material/TourOutlined';
-import DoneIcon from '@mui/icons-material/Done';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Dialog from '@mui/material/Dialog';
-import PersonIcon from '@mui/icons-material/Person';
-import AddIcon from '@mui/icons-material/Add';
-import Typography from '@mui/material/Typography';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import DialogTitle from '@mui/material/DialogTitle';
-import Avatar from '@mui/material/Avatar';
-import { blue } from '@mui/material/colors';
+import React from "react";
+import PropTypes from "prop-types";
+import Styles from "../styles/WorkerDetails.module.css";
+import Grid from "@mui/material/Grid";
+import Button from "@mui/material/Button";
+import { styled } from "@mui/material/styles";
+import Link from "next/link";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import CallIcon from "@mui/icons-material/Call";
+import TourOutlinedIcon from "@mui/icons-material/TourOutlined";
+import DoneIcon from "@mui/icons-material/Done";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Dialog from "@mui/material/Dialog";
+import PersonIcon from "@mui/icons-material/Person";
+import AddIcon from "@mui/icons-material/Add";
+import Typography from "@mui/material/Typography";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import DialogTitle from "@mui/material/DialogTitle";
+import Avatar from "@mui/material/Avatar";
+import { blue } from "@mui/material/colors";
+import ElevatorIcon from "@mui/icons-material/Elevator";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import StorageIcon from "@mui/icons-material/Storage";
+import AspectRatioIcon from "@mui/icons-material/AspectRatio";
+import ApartmentIcon from "@mui/icons-material/Apartment";
 
+import TourDialog from "../dialogs/TourDialog";
+import WorkerRealstateCard from "../cards/realestate/WorkerRealstateCard";
+import RealstateSkeleton from "../skeleton/RealstateSkeleton";
+import Statistics from "../others/Statistics";
 
-
-import TourDialog from '../dialogs/TourDialog';
-import WorkerRealstateCard from '../cards/realestate/WorkerRealstateCard';
-import RealstateSkeleton from '../skeleton/RealstateSkeleton';
-import Statistics from '../others/Statistics';
-
-const emails = ['username@gmail.com', 'user02@gmail.com'];
+const emails = ["username@gmail.com", "user02@gmail.com"];
 
 const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
   ...theme.typography.body2,
   padding: theme.spacing(1),
-  textAlign: 'center',
+  textAlign: "center",
   color: theme.palette.text.secondary,
 }));
 
-
 function SimpleDialog(props) {
-  const { onClose, selectedValue, open,details,realstate } = props;
-
+  const { onClose, selectedValue, open, details, realstate } = props;
 
   const handleClose = () => {
     onClose(selectedValue);
@@ -56,16 +57,16 @@ function SimpleDialog(props) {
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <TourDialog realstate={realstate} details={details} handleClose={handleClose}/>
+      <TourDialog
+        realstate={realstate}
+        details={details}
+        handleClose={handleClose}
+      />
     </Dialog>
   );
 }
 
-
-
-
-
-function WorkerDetails(props){
+function WorkerDetails(props) {
   let details = props.details;
   let properties = props.properties;
   let realstate = props.realstate;
@@ -82,175 +83,460 @@ function WorkerDetails(props){
     setSelectedValue(value);
   };
 
+  // Function to calculate time ago
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return "";
 
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
+    if (diffHours < 1) return "لحظاتی پیش";
+    if (diffHours < 24) return `${diffHours} ساعت پیش`;
+    if (diffDays === 1) return "دیروز";
+    if (diffDays < 7) return `${diffDays} روز پیش`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} هفته پیش`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} ماه پیش`;
+    return `${Math.floor(diffDays / 365)} سال پیش`;
+  };
 
-  function renderPropertiesKinds1(pro){
-    if(pro.type == '1'){
-      return(
-        <div className={Styles['worker-properties-list']}>
-            <div className={Styles['worker-properties-list-left']} >
+  // Extract key features from properties
+  const getFeatureValue = (key) => {
+    const property = properties.find((p) => p.key?.includes(key));
+    return property ? property.value : null;
+  };
+
+  // Get main features
+  const area = getFeatureValue("متراژ") || getFeatureValue("مساحت");
+  const rooms = getFeatureValue("اتاق") || getFeatureValue("خواب");
+  const yearMade = getFeatureValue("سال ساخت") || getFeatureValue("ساخت");
+  const price =
+    getFeatureValue("قیمت") ||
+    getFeatureValue("قیمت کل") ||
+    getFeatureValue("price");
+  const deposit = getFeatureValue("پول پیش") || getFeatureValue("پیش پرداخت");
+  const monthlyRent =
+    getFeatureValue("اجاره ماهیانه") || getFeatureValue("اجاره");
+
+  // Get amenities (type 2 properties which are checkmarks)
+  const amenities = properties.filter((p) => p.type === "2");
+  const hasElevator = amenities.some((a) => a.key?.includes("آسانسور"));
+  const hasParking = amenities.some((a) => a.key?.includes("پارکینگ"));
+  const hasStorage = amenities.some(
+    (a) => a.key?.includes("انبار") || a.key?.includes("ذخیره")
+  );
+
+  function renderPropertiesKinds1(pro) {
+    if (pro.type == "1") {
+      return (
+        <div className={Styles["worker-properties-list"]}>
+          <div className={Styles["worker-properties-list-left"]}>
             <p>{pro.key}</p>
-            </div>
-            <div className={Styles['worker-properties-list-right']} >
+          </div>
+          <div className={Styles["worker-properties-list-right"]}>
             <p>{pro.value}</p>
-            </div>
+          </div>
         </div>
-
-
-      )
+      );
     }
-
   }
 
-  function renderPropertiesKinds2(pro){
-    if(pro.type == '2'){
-      return(
-        <Button className={Styles['worker-properties-button']}  variant="outlined" color="success" startIcon={<DoneIcon />} >
-        {pro.key}
-
+  function renderPropertiesKinds2(pro) {
+    if (pro.type == "2") {
+      return (
+        <Button
+          className={Styles["worker-properties-button"]}
+          variant="outlined"
+          color="success"
+          startIcon={<DoneIcon />}
+        >
+          {pro.key}
         </Button>
-      )
+      );
     }
-
   }
 
-  function renderPropertiesKinds3(pro){
-    if(pro.type == '3'){
-      return(
-        <div className={Styles['worker-properties-list']}>
-            <div className={Styles['worker-properties-list-left']}>
+  function renderPropertiesKinds3(pro) {
+    if (pro.type == "3") {
+      return (
+        <div className={Styles["worker-properties-list"]}>
+          <div className={Styles["worker-properties-list-left"]}>
             <p>{pro.key}</p>
-            </div>
-            <div  className={Styles['worker-properties-list-right']}>
+          </div>
+          <div className={Styles["worker-properties-list-right"]}>
             <p>{pro.value}</p>
-            </div>
+          </div>
         </div>
-
-
-      )
+      );
     }
-
   }
 
   const renderProperties1 = () => {
-    return properties.map(pro =>
-      <Grid key={pro.id}   xs={12} md={12}>
+    const excludeKeys = [
+      "متراژ",
+      "مساحت",
+      "اتاق",
+      "خواب",
+      "سال ساخت",
+      "ساخت",
+      "قیمت",
+      "price",
+      "قیمت هر متر",
+      "پول پیش",
+      "پیش پرداخت",
+      "اجاره ماهیانه",
+      "اجاره",
+    ];
+    return properties
+      .filter((pro) => !excludeKeys.some((key) => pro.key?.includes(key)))
+      .map((pro) => (
+        <Grid key={pro.id} xs={12} md={12}>
           {renderPropertiesKinds1(pro)}
-      </Grid>
-    );
-  }
+        </Grid>
+      ));
+  };
 
   const renderProperties2 = () => {
-    return properties.map(pro =>
-      <div key={pro.id}>
-          {renderPropertiesKinds2(pro)}
-      </div>
-    );
-  }
+    const excludeKeys = ["آسانسور", "پارکینگ", "انبار", "ذخیره"];
+    return properties
+      .filter((pro) => !excludeKeys.some((key) => pro.key?.includes(key)))
+      .map((pro) => <div key={pro.id}>{renderPropertiesKinds2(pro)}</div>);
+  };
 
   const renderProperties3 = () => {
-    return properties.map(pro =>
-      <Grid key={pro.id}  xs={12} md={12}>
-          {renderPropertiesKinds3(pro)}
+    return properties.map((pro) => (
+      <Grid key={pro.id} xs={12} md={12}>
+        {renderPropertiesKinds3(pro)}
       </Grid>
-    );
-  }
+    ));
+  };
 
   const renderRealstate = () => {
-    if(realstate.id){
-      return(
+    if (realstate.id) {
+      return (
         <Link
-              href={`/realestates/${realstate.id}?slug=${realstate.slug}`}
-              key={realstate.id}
-            >
-              {/* <a> */}
-                  <WorkerRealstateCard realstate={realstate}/>
-              {/* </a> */}
-
+          href={`/realestates/${realstate.id}?slug=${realstate.slug}`}
+          key={realstate.id}
+        >
+          {/* <a> */}
+          <WorkerRealstateCard realstate={realstate} />
+          {/* </a> */}
         </Link>
-
-
-      )
-    }else{
-      return(
-        <RealstateSkeleton />
-      )
+      );
+    } else {
+      return <RealstateSkeleton />;
     }
-  }
+  };
 
- 
+  const renderHighlights = () => {
+    return (
+      <div className={Styles["highlights-section"]}>
+        {/* Main Features Row */}
+        <div className={Styles["highlights-row"]}>
+          {area && (
+            <div className={Styles["highlight-item"]}>
+              <span className={Styles["highlight-label"]}>متراژ</span>
+              <span className={Styles["highlight-value"]}>{area}</span>
+            </div>
+          )}
+          {rooms && (
+            <div className={Styles["highlight-item"]}>
+              <span className={Styles["highlight-label"]}>اتاق</span>
+              <span className={Styles["highlight-value"]}>{rooms}</span>
+            </div>
+          )}
+          {yearMade && details.category_name !== "رهن و اجاره" && (
+            <div className={Styles["highlight-item"]}>
+              <span className={Styles["highlight-label"]}>سال ساخت</span>
+              <span className={Styles["highlight-value"]}>{yearMade}</span>
+            </div>
+          )}
+        </div>
 
-
+        {/* Amenities Row */}
+        <div className={Styles["amenities-row"]}>
+          <div
+            className={`${Styles["amenity-item"]} ${
+              hasElevator ? Styles["active"] : Styles["inactive"]
+            }`}
+          >
+            <ElevatorIcon
+              style={{ width: "44px", height: "44px", fontSize: "44px" }}
+            />
+            <span>آسانسور</span>
+          </div>
+          <div
+            className={`${Styles["amenity-item"]} ${
+              hasParking ? Styles["active"] : Styles["inactive"]
+            }`}
+          >
+            <DirectionsCarIcon
+              style={{ width: "44px", height: "44px", fontSize: "44px" }}
+            />
+            <span>پارکینگ</span>
+          </div>
+          <div
+            className={`${Styles["amenity-item"]} ${
+              hasStorage ? Styles["active"] : Styles["inactive"]
+            }`}
+          >
+            <StorageIcon
+              style={{ width: "44px", height: "44px", fontSize: "44px" }}
+            />
+            <span>انبار</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div  className={Styles['worker-details-wrapper']} >
-     
-      <h1 className={Styles['worker-detail-header']} > {details.name} </h1>
-      <h3 className={Styles['worker-detail-category']}>
-         <bold>{details.category_name}</bold>
-         {' '}
-         <bold>{details.city}</bold>
-         {' '}
-         <bold>{details.neighbourhood}</bold>
-      </h3>
-     
-     
-      
-
-
-
-      
-
-
-
-      <Box component="div" >
-
-          {renderProperties1()}
-
-      </Box>
-
-      <Box component="div" sx={{ p: 2 }}>
-        <Grid className={Styles['worker-details-property-grid']}   container spacing={2}>
-          {renderProperties2()}
-          </Grid>
-      </Box>
-
-      <Box component="div" >
-
-          {renderProperties3()}
-
-      </Box>
-      <div className={Styles['contact-wrapper']}>
-
-      <Box component="div" sx={{ p: 2, border: '1px dashed grey',margin:'5px',textAlign:'center' }}>
-        <Grid container spacing={1}>
-          <Grid item xs={6} md={6}>
-            <Button fullWidth onClick={handleClickOpen} className={Styles['worker-detail-button']}  variant="contained" startIcon={<TourOutlinedIcon />} > بازدید</Button>
-          </Grid>
-          <Grid item xs={6} md={6}>
-            <Button  fullWidth href={`tel:${realstate ? realstate.phone : details.cellphone}`}  className={Styles['worker-detail-button']}   variant="outlined" startIcon={<CallIcon />}> {realstate ? realstate.phone : details.cellphone} </Button>
-            
-          </Grid>
-          </Grid>
-      </Box>
-
+    <div className={Styles["worker-details-wrapper"]}>
+      <div className={Styles["worker-header-section"]}>
+        <h1 className={Styles["worker-detail-header"]}>{details.name}</h1>
+        <p className={Styles["worker-detail-subtitle"]}>
+          {getTimeAgo(details.created_at)} در {details.neighbourhood}
+        </p>
       </div>
 
-      <Statistics  total_view={details.total_view} total_day={details.total_day}/>
-     
-      <Box component="div" sx={{ p: 1 }}>
-        <Grid >
-        <p className={Styles['worker-description']}>
-          {details.description}
-          </p>
-          </Grid>
-      </Box>
-      {renderRealstate()}
+      {/* Action Buttons Section */}
+      <div
+        className={Styles["action-buttons-section"]}
+        style={{
+          display: "flex",
+          gap: "12px",
+          direction: "rtl",
+          marginBottom: "24px",
+        }}
+      >
+        <a
+          href={`tel:${realstate?.phone || details.cellphone}`}
+          style={{
+            flex: 1,
+            padding: "12px 16px",
+            background: "#fff",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            textDecoration: "none",
+            textAlign: "center",
+            fontWeight: "600",
+            color: "#222",
+            fontSize: "16px",
+            cursor: "pointer",
+            transition: "all 0.2s",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#f9f9f9";
+            e.currentTarget.style.borderColor = "#bbb";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#fff";
+            e.currentTarget.style.borderColor = "#ddd";
+          }}
+        >
+          <CallIcon style={{ fontSize: "20px" }} />
+          {realstate?.phone || details.cellphone}
+        </a>
+        <button
+          style={{
+            flex: 1,
+            padding: "12px 16px",
+            background: "#fff",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            fontWeight: "600",
+            color: "#999",
+            fontSize: "16px",
+            cursor: "not-allowed",
+            transition: "all 0.2s",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#f9f9f9";
+            e.currentTarget.style.borderColor = "#bbb";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#fff";
+            e.currentTarget.style.borderColor = "#ddd";
+          }}
+          disabled
+        >
+          چت (به زودی)
+        </button>
+      </div>
 
-      <h3 className={Styles['worker-detail-address']}>
-      آدرس :  <bold>{details.formatted}</bold>
-      </h3>
+      {/* Highlights Section */}
+      {renderHighlights()}
+
+      {/* Price/Rent Section */}
+      {(price || monthlyRent) && (
+        <div
+          style={{
+            marginBottom: "32px",
+            marginTop: "24px",
+            textAlign: "right",
+            direction: "rtl",
+          }}
+        >
+          {/* Buy Price */}
+          {price && (
+            <>
+              <div
+                style={{
+                  fontSize: "33px",
+                  fontWeight: "700",
+                  color: "#222",
+                  marginBottom: "12px",
+                }}
+              >
+                قیمت: {Number(price).toLocaleString("en-US")} تومان
+              </div>
+              {area && (
+                <div
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: "700",
+                    color: "#666",
+                    marginBottom: "24px",
+                  }}
+                >
+                  قیمت هر متر:{" "}
+                  {(Number(price) / parseInt(area)).toLocaleString("en-US", {
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Rent Info */}
+          {monthlyRent && (
+            <>
+              {deposit && (
+                <div
+                  style={{
+                    fontSize: "33px",
+                    fontWeight: "700",
+                    color: "#222",
+                    marginBottom: "12px",
+                    marginRight: "25px",
+                  }}
+                >
+                  پول پیش: {Number(deposit).toLocaleString("en-US")} تومان
+                </div>
+              )}
+              <div
+                style={{
+                  fontSize: "22px",
+                  fontWeight: "700",
+                  color: "#666",
+                  marginRight: "25px",
+                }}
+              >
+                اجاره ماهیانه: {Number(monthlyRent).toLocaleString("en-US")}{" "}
+                تومان
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <Box component="div">{renderProperties1()}</Box>
+
+      <Box component="div" sx={{ p: 2 }}>
+        <Grid
+          className={Styles["worker-details-property-grid"]}
+          container
+          spacing={2}
+        >
+          {renderProperties2()}
+        </Grid>
+      </Box>
+
+      <Box component="div">{renderProperties3()}</Box>
+
+      <Statistics
+        total_view={details.total_view}
+        total_day={details.total_day}
+      />
+
+      {/* Description Section */}
+      {details.description && (
+        <div
+          style={{
+            marginBottom: "24px",
+            padding: "16px",
+            background: "#f9f9f9",
+            borderRadius: "12px",
+            textAlign: "right",
+            direction: "rtl",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#888",
+              fontWeight: "500",
+              marginBottom: "8px",
+            }}
+          >
+            توضیحات
+          </div>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#444",
+              lineHeight: "1.8",
+              margin: "0",
+            }}
+          >
+            {details.description}
+          </p>
+        </div>
+      )}
+
+      {/* Address Section */}
+      {details.formatted && (
+        <div
+          style={{
+            marginBottom: "24px",
+            padding: "16px",
+            background: "#f9f9f9",
+            borderRadius: "12px",
+            textAlign: "right",
+            direction: "rtl",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#888",
+              fontWeight: "500",
+              marginBottom: "8px",
+            }}
+          >
+            آدرس
+          </div>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#444",
+              margin: "0",
+              lineHeight: "1.8",
+            }}
+          >
+            {details.formatted}
+          </p>
+        </div>
+      )}
+
       <SimpleDialog
         selectedValue={selectedValue}
         open={open}
@@ -259,7 +545,7 @@ function WorkerDetails(props){
         details={details}
       />
     </div>
-  )
+  );
 }
 
-export default WorkerDetails
+export default WorkerDetails;

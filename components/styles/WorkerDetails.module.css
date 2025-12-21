@@ -1,7 +1,7 @@
 @media only screen and (min-width: 600px) {
   .worker-details-wrapper{
-    height: 80vh;
-    overflow: scroll;
+    height: auto;
+    overflow: visible;
 
   }
 
@@ -54,14 +54,171 @@
 
 }
 
-.worker-detail-header {
-  color: #444;
+.worker-details-wrapper {
+  padding: 0;
+}
+
+.action-buttons-section {
+  display: none !important;
+}
+
+@media (min-width: 600px) {
+  .action-buttons-section {
+    display: flex !important;
+  }
+}
+
+.worker-header-section {
+  padding: 20px;
   text-align: right;
   direction: rtl;
-  padding-right: 20px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+.worker-detail-header {
+  color: #444;
   font-family: iransans;
-  font-size: 1.4em;
-  /* display: none; */
+  font-size: 1.6em;
+  font-weight: 600;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.worker-detail-subtitle {
+  color: #999;
+  font-family: iransans;
+  font-size: 0.95em;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Highlights Section */
+.highlights-section {
+  width: 100%;
+  margin-left: 0;
+  background-color: #fafafa;
+  border-bottom: 1px solid #eee;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.highlights-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  direction: rtl;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+
+.highlight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+  padding: 12px 16px;
+}
+
+.highlight-icon {
+  font-size: 28px;
+  color: #0066cc;
+  display: none;
+}
+
+.highlight-value {
+  font-family: iransans;
+  font-size: 2.8em;
+  font-weight: 900;
+  color: #333;
+}
+
+.highlight-label {
+  font-family: iransans;
+  font-size: 1.1em;
+  color: #777;
+  font-weight: 700;
+}
+
+/* Amenities Row */
+.amenities-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  direction: rtl;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+
+.amenity-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 28px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-family: iransans;
+  font-size: 1.05em;
+}
+
+.amenity-item.active {
+  background-color: rgba(0, 102, 204, 0.1);
+  color: #0066cc;
+}
+
+.amenity-item.active svg {
+  color: #0066cc;
+}
+
+.amenity-item.inactive {
+  background-color: rgba(200, 200, 200, 0.1);
+  color: #999;
+}
+
+.amenity-item.inactive svg {
+  color: #ccc;
+}
+
+.amenity-item svg {
+  font-size: 56px;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .highlights-row {
+    gap: 12px;
+    padding: 0 12px;
+  }
+
+  .highlight-item {
+    min-width: 60px;
+  }
+
+  .highlight-icon {
+    font-size: 24px;
+  }
+
+  .highlight-value {
+    font-size: 1.2em;
+  }
+
+  .amenities-row {
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  .amenity-item {
+    padding: 10px 12px;
+    font-size: 0.75em;
+  }
+
+  .amenity-item svg {
+    font-size: 20px;
+  }
 }
 
 .worker-detail-category {

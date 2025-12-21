@@ -41,6 +41,7 @@ class MapErrorBoundary extends Component {
 const Location = (props) => {
   const lat = props.details.lat;
   const long = props.details.long;
+  const mapHeight = props.mapHeight || '300px';
   const [drag_status, set_drag_status] = useState(false);
   const [mapError, setMapError] = useState(false);
 
@@ -84,14 +85,14 @@ const Location = (props) => {
   const position = [parseFloat(lat), parseFloat(long)];
 
   return (
-    <div className={Styles['location-wrapper']}>
+    <div className={Styles['location-wrapper']} style={{ height: mapHeight, width: '100%' }}>
       <MapErrorBoundary>
         <MapContainer 
           className={Styles['location']} 
           center={position} 
           zoom={20} 
           dragging={drag_status}
-          style={{height:'300px',width:'100%'}}
+          style={{height: '100%', width:'100%'}}
           key={`${lat}-${long}`} // Force re-render when coordinates change
         >
           <LayersControl>
