@@ -21,16 +21,13 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import Link from "next/link";
 
 // Components
+import WorkerMedia from "../../components/workers/WorkerMedia";
 import WorkerCard from "../../components/cards/WorkerCard";
-const WorkerMedia = dynamic(() => import("../../components/workers/WorkerMedia"), {
-  ssr: false,
-});
-const WorkerDetails = dynamic(() => import("../../components/workers/WorkerDetails"), { ssr: false });
+import WorkerDetails from "../../components/workers/WorkerDetails";
 import WorkerRealstateCard from "../../components/cards/realestate/WorkerRealstateCard";
 import WorkerShare from "../../components/workers/WorkerShare";
 import LazyLoader from "../../components/lazyLoader/Loading";
 import Breadcrumb from "../../components/common/Breadcrumb";
-// use site GIF loader
 
 // Dynamic imports
 const LocationNoSsr = dynamic(() => import("../../components/map/Location"), {
@@ -48,16 +45,6 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-// Helper function to clean text from HTML entities and zero-width characters
-const cleanText = (text) => {
-  if (!text || typeof text !== 'string') return '';
-  return text
-    .replace(/&[a-z]+;/g, '') // Remove &zwj;, &shy;, &lrm;, etc.
-    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
-
 const WorkerSingle = (props) => {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -65,9 +52,8 @@ const WorkerSingle = (props) => {
   const router = useRouter();
   const { slug, id } = router.query;
 
-  // Clean all incoming props
   const {
-    details: rawDetails,
+    details,
     properties,
     realstate,
     relateds,
@@ -75,25 +61,6 @@ const WorkerSingle = (props) => {
     videos,
     virtual_tours,
   } = props;
-
-  // Clean details object
-  const details = {
-    ...rawDetails,
-    name: cleanText(rawDetails.name || ''),
-    category_name: cleanText(rawDetails.category_name || ''),
-    region: cleanText(rawDetails.region || ''),
-    city: cleanText(rawDetails.city || ''),
-    neighbourhood: cleanText(rawDetails.neighbourhood || ''),
-    address: cleanText(rawDetails.address || ''),
-    description: cleanText(rawDetails.description || ''),
-  };
-
-  // Clean realstate name for display
-  const cleanRealstate = {
-    ...realstate,
-    name: cleanText(realstate?.name || ''),
-    slug: realstate?.slug || '',
-  };
 
   useEffect(() => {
     // Check if this worker is favorited
@@ -153,16 +120,8 @@ const WorkerSingle = (props) => {
       ? details.description.substring(0, 160)
       : `${details.name} - ${details.category_name} در ${details.region}, ${details.city}. مشاور منتخب برای مشاوره و راهنمایی در ${details.category_name}`;
 
-    // Clean realstate name if exists
-    const cleanRealstateName = cleanText(realstate?.name || '');
-    
     // Generate keywords
-    const keywords = `${details.name}, ${details.category_name}, ${details.city}, ${details.region}, ${details.neighbourhood}, مشاور, مشاوره, ${cleanRealstateName}`.trim();
-
-    // Generate page title
-    const pageTitle = details.name 
-      ? `${details.name} - ${details.category_name} در ${details.region}, ${details.city} | آجر`
-      : 'آجر | بازارگاه املاک و خدمات';
+    const keywords = `${details.name}, ${details.category_name}, ${details.city}, ${details.region}, ${details.neighbourhood}, مشاور, مشاوره, ${realstate?.name || ''}`.trim();
 
     // Structured data for Person/Professional
     const structuredData = {
@@ -183,7 +142,7 @@ const WorkerSingle = (props) => {
       areaServed: details.city,
       priceRange: details.price_range || "$$",
       category: details.category_name,
-      department: cleanRealstateName,
+      department: realstate?.name || "",
       geo: {
         "@type": "GeoCoordinates",
         latitude: details.latitude || 0,
@@ -195,20 +154,18 @@ const WorkerSingle = (props) => {
     return (
       <Head>
         <meta charSet="UTF-8" />
-        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-        <meta httpEquiv="Content-Language" content="fa" />
-        <meta name="content-language" content="fa" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
-        <meta name="format-detection" content="telephone=no" />
          
         {/* Primary Meta Tags */}
-        <title>{pageTitle}</title>
+        <title>
+          {details.name} - {details.category_name} در {details.region}, {details.city} | آجر
+        </title>
         <meta name="description" content={metaDescription} />
         <meta name="keywords" content={keywords} />
-        <meta name="author" content={cleanRealstateName || "آجر"} />
+        <meta name="author" content={realstate?.name || "آجر"} />
         
         {/* Robots & Indexing */}
         <meta
@@ -221,17 +178,21 @@ const WorkerSingle = (props) => {
         
         {/* Open Graph (Social Media) */}
         <meta property="og:locale" content="fa_IR" />
-        <meta property="og:locale:alternate" content="fa_IR" />
         <meta property="og:type" content="business.business" />
         <meta property="og:site_name" content="آجر - مشاور هوشمند" />
-        <meta property="og:title" content={pageTitle} />
+        <meta
+          property="og:title"
+          content={`${details.name} - ${details.category_name} در ${details.city}`}
+        />
         <meta property="og:description" content={metaDescription} />
-        <meta property="og:url" content={`https://ajur.app/worker/${details.id}`} />
+        <meta
+          property="og:url"
+          content={`https://ajur.app/worker/${details.id}`}
+        />
         <meta property="og:image" content={details.thumb} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:alt" content={`${details.name} - ${details.category_name}`} />
         
         {/* Article Meta Tags */}
         {details.created_at && (
@@ -240,17 +201,19 @@ const WorkerSingle = (props) => {
         {details.updated_at && (
           <meta property="article:modified_time" content={details.updated_at} />
         )}
-        <meta property="article:author" content={cleanRealstateName || "آجر"} />
+        <meta property="article:author" content={realstate?.name || "آجر"} />
         <meta property="article:section" content={details.category_name} />
         <meta property="article:tag" content={details.city} />
         <meta property="article:tag" content={details.region} />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
+        <meta
+          name="twitter:title"
+          content={`${details.name} - ${details.category_name}`}
+        />
         <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content={details.thumb} />
-        <meta name="twitter:image:alt" content={`${details.name} - ${details.category_name}`} />
         
         {/* Canonical URL */}
         <link rel="canonical" href={`https://ajur.app/worker/${details.id}`} />
@@ -268,6 +231,10 @@ const WorkerSingle = (props) => {
     );
   };
 
+  const goToRelatedWorker = (worker) => {
+    window.location.href = `/worker/${worker.id}?slug=${worker.slug}`;
+  };
+
   const renderRelatedWorkers = () => {
     if (!Array.isArray(relateds) || relateds.length === 0) {
       return <p>هیچ مورد مشابهی یافت نشد</p>;
@@ -275,27 +242,35 @@ const WorkerSingle = (props) => {
 
     return (
       <LazyLoader
-        items={relateds}
+        items={relateds} // ✅ the whole array
         itemsPerPage={8}
         delay={800}
         renderItem={(worker) => (
+         
+          // <Link
+          //   href={`/worker/${worker.id}?slug=${worker.slug}`}
+          //   key={worker.id}
+          // >
+          //   <Grid item md={4} xs={12} key={worker.id}>
+          //   <WorkerCard worker={worker} />
+          //   </Grid>
+          // </Link>
+
           <Grid item md={4} xs={12} key={worker.id}>
-            <Link 
-              href={`/worker/${worker.id}?slug=${worker.slug}`}
-              passHref
-              legacyBehavior
-            >
-              <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                <WorkerCard worker={worker} />
-              </a>
-            </Link>
-          </Grid>
+          <a
+             href={`/worker/${worker.id}?slug=${worker.slug}`}
+             key={worker.id}
+          >
+            {/* <WorkerCard worker={worker} /> */}
+            <WorkerCard worker={worker} />
+          </a>
+        </Grid>
         )}
         loadingComponent={
           <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
         }
         endComponent={
-          <p style={{ textAlign: "center" }}>همه موارد بارگذاری شدند</p>
+          <p style={{ textAlign: "center" }}>همه فایل‌ها بارگذاری شدند✅</p>
         }
         grid={true}
         gridProps={{ spacing: 2 }}
@@ -303,15 +278,6 @@ const WorkerSingle = (props) => {
       />
     );
   };
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <img src="/logo/ajour-gif.gif" alt="loading" style={{ height: 200, width: "auto", objectFit: "contain" }} />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -395,14 +361,8 @@ const WorkerSingle = (props) => {
 
               {/* Realstate Card - Desktop Only */}
               <Box sx={{ display: { xs: "none", md: "block" }, marginTop: "24px" }}>
-                <Link 
-                  href={`/realestates/${cleanRealstate.id}?slug=${cleanRealstate.slug}`}
-                  passHref
-                  legacyBehavior
-                >
-                  <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                    <WorkerRealstateCard realstate={cleanRealstate} />
-                  </a>
+                <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
+                  <WorkerRealstateCard realstate={realstate} />
                 </Link>
               </Box>
             </Grid>
@@ -414,7 +374,7 @@ const WorkerSingle = (props) => {
                   onFavoriteToggle={toggleFavorite}
                   details={details}
                   properties={properties}
-                  realstate={cleanRealstate}
+                  realstate={realstate}
                 />
               </div>
 
@@ -451,14 +411,8 @@ const WorkerSingle = (props) => {
 
               {/* Realstate Card - Mobile Only */}
               <Box sx={{ display: { xs: "block", md: "none" }, marginTop: "24px" }}>
-                <Link 
-                  href={`/realestates/${cleanRealstate.id}?slug=${cleanRealstate.slug}`}
-                  passHref
-                  legacyBehavior
-                >
-                  <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                    <WorkerRealstateCard realstate={cleanRealstate} />
-                  </a>
+                <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
+                  <WorkerRealstateCard realstate={realstate} />
                 </Link>
               </Box>
             </Grid>
@@ -480,7 +434,7 @@ const WorkerSingle = (props) => {
           }}
         >
           <a
-            href={`tel:${cleanRealstate?.phone || details.cellphone}`}
+            href={`tel:${realstate?.phone || details.cellphone}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -505,7 +459,7 @@ const WorkerSingle = (props) => {
               e.currentTarget.style.background = "#0066cc";
             }}
           >
-            تماس: {cleanRealstate?.phone || details.cellphone}
+            تماس: {realstate?.phone || details.cellphone}
           </a>
         </Box>
 
@@ -516,11 +470,11 @@ const WorkerSingle = (props) => {
           fullWidth
           sx={{ "& .MuiDialog-paper": { height: "90vh" } }}
         >
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "8px", backgroundColor: "#f5f5f5", borderBottom: "1px solid #ddd" }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", p: "8px", backgroundColor: "#f5f5f5", borderBottom: "1px solid #ddd" }}>
             <IconButton
               onClick={() => {
-                const lat = details.lat || details.latitude;
-                const long = details.long || details.longitude;
+                const lat = details.lat;
+                const long = details.long;
                 const mapsUrl = `https://maps.google.com/?q=${lat},${long}`;
                 window.open(mapsUrl, "_blank");
               }}
@@ -532,7 +486,7 @@ const WorkerSingle = (props) => {
               <CloseIcon />
             </IconButton>
           </div>
-          <DialogContent sx={{ padding: 0, height: "calc(100% - 56px)" }}>
+          <DialogContent sx={{ p: 0, height: "calc(100% - 56px)" }}>
             <LocationNoSsr details={details} mapHeight="100%" />
           </DialogContent>
         </Dialog>
@@ -573,42 +527,14 @@ export async function getServerSideProps(context) {
     const res = await fetch(`https://api.ajur.app/api/posts/${id}`);
     const data = await res.json();
 
-    // Clean text function for server-side
-    const cleanText = (text) => {
-      if (!text || typeof text !== 'string') return '';
-      return text
-        .replace(/&[a-z]+;/g, '')
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    };
-
-    // Clean details object
-    const cleanDetails = {
-      ...data.details,
-      name: cleanText(data.details.name || ''),
-      category_name: cleanText(data.details.category_name || ''),
-      region: cleanText(data.details.region || ''),
-      city: cleanText(data.details.city || ''),
-      neighbourhood: cleanText(data.details.neighbourhood || ''),
-      address: cleanText(data.details.address || ''),
-      description: cleanText(data.details.description || ''),
-    };
-
-    // Clean realstate object if it exists
-    const cleanRealstate = data.realstate ? {
-      ...data.realstate,
-      name: cleanText(data.realstate.name || ''),
-    } : {};
-
     return {
       props: {
-        details: cleanDetails,
+        details: data.details,
         images: data.images || [],
         videos: data.videos || [],
         virtual_tours: data.virtual_tours || [],
         properties: data.properties || [],
-        realstate: cleanRealstate,
+        realstate: data.realstate || {},
         relateds: data.relateds || [],
       },
     };

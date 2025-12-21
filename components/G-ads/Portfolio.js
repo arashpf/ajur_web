@@ -1,4 +1,4 @@
-import react, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -28,8 +28,8 @@ function Portfolio() {
 
     const bestCustomers = data;
 
-
     if (!bestCustomers || bestCustomers.length == 0) return <h3 className={Style['empty-section']}>هنوز هیچ مشتری ای نداریم</h3>
+    
     return (
         <div className={Style["portfolio-section"]}>
             <Swiper
@@ -60,8 +60,20 @@ function Portfolio() {
             >
                 {data.map((department) => (
                     <SwiperSlide key={department.id}>
-                        <Link href={`/department/${department.id}?slug=${department.slug}`}>
-                            <a className={Style["portfolio-link"]}>
+                        <Link 
+                            href={`/department/${department.id}?slug=${department.slug}`}
+                            passHref
+                            legacyBehavior
+                        >
+                            {/* Wrap SmallCard in an <a> tag with proper styling */}
+                            <a 
+                                className={Style["portfolio-link"]} 
+                                style={{ 
+                                    display: 'block', 
+                                    textDecoration: 'none', 
+                                    color: 'inherit' 
+                                }}
+                            >
                                 <SmallCard
                                     key={department.id}
                                     realEstate={department}

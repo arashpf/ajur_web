@@ -261,17 +261,20 @@ export default function RabatKarimApartmentsPage() {
                   {apartments.map((apartment) => (
                     <Grid item xs={12} sm={6} md={4} key={apartment.id}>
                       <div className="apartment-card-hover" style={{ 
-                        transition: 'all 0.3s ease',
-                        height: '100%',
-                        marginBottom: '1rem'
-                      }}>
-                        <Link 
-                          href={`/worker/${apartment.id}?slug=${apartment.slug || ''}`}
-                          style={{ textDecoration: 'none', display: 'block', height: '100%' }}
-                        >
-                          <WorkerCard worker={apartment} />
-                        </Link>
-                      </div>
+  transition: 'all 0.3s ease',
+  height: '100%',
+  marginBottom: '1rem'
+}}>
+  <Link 
+    href={`/worker/${apartment.id}?slug=${apartment.slug || ''}`}
+    passHref
+    legacyBehavior
+  >
+    <a style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+      <WorkerCard worker={apartment} />
+    </a>
+  </Link>
+</div>
                     </Grid>
                   ))}
                 </Grid>
