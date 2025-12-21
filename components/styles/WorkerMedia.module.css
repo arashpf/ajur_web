@@ -8,21 +8,26 @@
   overflow: hidden;
 }
 
+.mainImageWrapper {
+  position: relative;
+  width: 100%;
+}
+
 .swiperContainer {
   width: 100%;
-  height: 260px;
+  height: 400px;
 }
 
 .mainImage {
   width: 100%;
-  height: 260px;
+  height: 400px;
   object-fit: cover;
   border-radius: 12px;
 }
 
 .iframe {
   width: 100%;
-  height: 260px;
+  height: 400px;
   border: none;
   border-radius: 12px;
 }
@@ -31,7 +36,7 @@
   width: 100%;
   height: auto;
   /* Let height adjust based on aspect ratio */
-  max-height: 260px;
+  max-height: 400px;
   /* Optional: Set a maximum height */
   object-fit: contain;
   /* Show entire video without cropping */
@@ -43,18 +48,144 @@
   /* Center the video */
 }
 
+/* Thumbnail Carousel Below Main Image */
+.thumbnailCarousel {
+  width: 100%;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.thumbnailSwiperContainer {
+  width: 100%;
+  padding: 0 5px;
+}
+
+.thumbnailSwiperContainer :global(.swiper) {
+  overflow: visible;
+}
+
+.thumbnailSwiperContainer :global(.swiper-wrapper) {
+  align-items: center;
+}
+
+.thumbnailSlide {
+  width: 70px !important;
+  height: auto;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+}
+
+.thumbnailItem {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.thumbnailItem:hover {
+  border-color: #0066cc;
+  transform: scale(1.05);
+}
+
+.thumbnailItem.active {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.3);
+}
+
+.thumbnailImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Media Type Selector */
+.mediaTypeSelector {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  justify-content: flex-end;
+  direction: rtl;
+  flex-wrap: wrap;
+}
+
+.mediaTypeCard {
+  position: relative;
+  width: calc(33.333% - 8px);
+  max-width: 150px;
+  min-height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.mediaTypeCard:hover {
+  border-color: #0066cc;
+  transform: scale(1.02);
+}
+
+.mediaTypeCard.active {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.3);
+}
+
+.mediaTypeImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.mediaTypeLabel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px;
+  gap: 4px;
+  text-align: center;
+  color: white;
+  font-family: iransans;
+}
+
+.mediaTypeCount {
+  font-size: 1.4em;
+  font-weight: 600;
+}
+
+.mediaTypeText {
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .mediaBoxRow {
   display: flex;
   gap: 12px;
   margin-top: 16px;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .mediaBox {
   flex: 1;
-  min-width: 100px;
-  max-width: 32%;
+  min-width: 0;
   background-color: #f9f9f9;
   border-radius: 10px;
   overflow: hidden;
@@ -130,6 +261,38 @@
   z-index: 10;
 }
 
+/* Pagination Indicators */
+.paginationIndicators {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 20;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.indicator:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.indicator.active {
+  width: 20px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .swiper-pagination-bullet {
   width: 24px;
   height: 24px;
@@ -144,4 +307,102 @@
 .swiper-pagination-bullet-active {
   color: #fff;
   background: #007aff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .thumbnailItem {
+    width: 60px;
+    height: 60px;
+  }
+
+  .swiperContainer {
+    height: 280px;
+  }
+
+  .mainImage,
+  .iframe,
+  .video {
+    height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .thumbnailItem {
+    width: 50px;
+    height: 50px;
+  }
+
+  .swiperContainer {
+    height: 200px;
+  }
+
+  .mainImage,
+  .iframe,
+  .video {
+    height: 200px;
+  }
+}
+
+/* Gallery grid for lightbox non-fullscreen view */
+.gridGallery {
+  margin-top: 40px;
+  margin-bottom: 40px;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.gridItem {
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  /* Default to two columns */
+  width: calc(50% - 12px);
+  height: 320px;
+}
+
+.gridItem:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,102,204,0.12);
+}
+
+.gridImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 1024px) {
+  .gridItem {
+    width: calc(50% - 12px);
+    height: 300px;
+  }
+}
+
+@media (min-width: 1400px) {
+  /* Allow three columns on very wide screens */
+  .gridItem {
+    width: calc(33.333% - 12px);
+  }
+}
+
+@media (max-width: 600px) {
+  .gridItem {
+    width: 100%;
+    height: 260px;
+  }
+  .gridImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
