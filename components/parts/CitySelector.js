@@ -71,8 +71,8 @@ const CitySelector = ({ handleCitySelect }) => {
     try {
       const success = await updateCity(city);
       if (success) {
-        Cookies.set('city', city.title);
-        router.push(`/${city.title}`, undefined, { shallow: true });
+        Cookies.set('city', city.slug);
+        router.push(`/${city.slug}`, undefined, { shallow: true });
         setShowModal(false);
         setSearchQuery("");
 

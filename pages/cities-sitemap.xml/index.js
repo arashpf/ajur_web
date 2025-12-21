@@ -6,7 +6,7 @@ export const getServerSideProps = async (ctx) => {
   let type_pre = '';
   cities = await cities.json();
   const newsSitemaps = cities.items.map((item) => ({
-    loc: `${process.env.NEXT_PUBLIC_DOMAIN_URL}`+type_pre+`${item.title.toString()}`,
+    loc: `${process.env.NEXT_PUBLIC_DOMAIN_URL}`+type_pre+`${item.slug.toString()}`,
     lastmod: item.updated_at,
     changefreq: 'weekly',
     priority: .9,

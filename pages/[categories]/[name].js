@@ -353,6 +353,7 @@ export async function getServerSideProps(context) {
     );
     
     if (!res.ok) {
+      alert('this is loading category page error');
       throw new Error(`API returned status ${res.status}`);
     }
     

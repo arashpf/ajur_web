@@ -357,7 +357,7 @@ function Home(props) {
         className={styles["single_cat_swipper"]}
       >
         <Link 
-          href={`/${encodeURIComponent(selectedCity)}/${encodeURIComponent(cat.name)}`}
+          href={`/${encodeURIComponent(selectedCity)}/${encodeURIComponent(cat.eng_name)}`}
           legacyBehavior
         >
           <a>
@@ -596,7 +596,7 @@ function Home(props) {
                           setLoading(true);
                           const city = props.trigeredcity || renderDefaultCity();
                           router.push(
-                            `/${encodeURIComponent(city)}/${encodeURIComponent(cat.name)}`
+                            `/${encodeURIComponent(city)}/${encodeURIComponent(cat.eng_name)}`
                           );
                         }}
                         style={{ animationDelay: `${idx * 70}ms` }}
