@@ -13,7 +13,7 @@ const Breadcrumb = ({ items }) => {
         {/* Home Link */}
         <li className={styles.breadcrumbItem}>
           <Link href="/">
-            <a className={styles.breadcrumbLink}>خانه</a>
+            <p className={styles.breadcrumbLink}>خانه</p>
           </Link>
         </li>
 
@@ -38,7 +38,7 @@ const Breadcrumb = ({ items }) => {
                   <span className={styles.breadcrumbText}>{item.label}</span>
                 ) : (
                   <Link href={item.href}>
-                    <a className={styles.breadcrumbLink}>{item.label}</a>
+                    <p className={styles.breadcrumbLink}>{item.label}</p>
                   </Link>
                 )}
               </li>
