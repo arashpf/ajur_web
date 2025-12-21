@@ -21,13 +21,21 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import Link from "next/link";
 
 // Components
-import WorkerMedia from "../../components/workers/WorkerMedia";
 import WorkerCard from "../../components/cards/WorkerCard";
-import WorkerDetails from "../../components/workers/WorkerDetails";
+  const WorkerMedia = dynamic(() => import("../../components/workers/WorkerMedia"), {
+  ssr: false,
+  loading: () => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: 24 }}>
+      <img src="/logo/ajour-gif.gif" alt="loading" style={{ height: 160, width: "auto", objectFit: "contain" }} />
+    </div>
+  ),
+});
+const WorkerDetails = dynamic(() => import("../../components/workers/WorkerDetails"), { ssr: false });
 import WorkerRealstateCard from "../../components/cards/realestate/WorkerRealstateCard";
 import WorkerShare from "../../components/workers/WorkerShare";
 import LazyLoader from "../../components/lazyLoader/Loading";
 import Breadcrumb from "../../components/common/Breadcrumb";
+// use site GIF loader
 
 // Dynamic imports
 const LocationNoSsr = dynamic(() => import("../../components/map/Location"), {
@@ -279,7 +287,15 @@ const WorkerSingle = (props) => {
     );
   };
 
-  return (
+    if (loading) {
+      return (
+        <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img src="/logo/ajour-gif.gif" alt="loading" style={{ height: 200, width: "auto", objectFit: "contain" }} />
+        </div>
+      );
+    }
+
+    return (
     <>
       {renderSeoHeader()}
 
