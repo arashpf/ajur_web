@@ -138,6 +138,47 @@ const WorkerFilter = ({
   const [dynamicRangeFilters, setDynamicRangeFilters] = useState([]);
   const [dynamicFeatures, setDynamicFeatures] = useState([]);
 
+  // Add effect to prevent background scrolling when filter is open
+  useEffect(() => {
+    if (isFilterOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+      
+      // Prevent scrolling on body
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = `-${scrollX}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px';
+      
+      // For iOS Safari
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.width = '100%';
+      document.documentElement.style.height = '100%';
+      
+      return () => {
+        // Restore scrolling when modal closes
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        // For iOS Safari
+        document.documentElement.style.position = '';
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.width = '';
+        document.documentElement.style.height = '';
+        
+        window.scrollTo(scrollX, scrollY);
+      };
+    }
+  }, [isFilterOpen]);
+
   // Get suggested values based on field name and type
   const getSuggestionsByFieldName = (fieldName) => {
     const lowerField = fieldName.toLowerCase();
@@ -303,9 +344,9 @@ const WorkerFilter = ({
       prev.map((f) =>
         f.id === fieldId
           ? {
-              ...f,
-              [type]: value.toString(),
-            }
+            ...f,
+            [type]: value.toString(),
+          }
           : f
       )
     );
@@ -562,9 +603,9 @@ const WorkerFilter = ({
       prev.map((f) =>
         f.id === fieldId
           ? {
-              ...f,
-              [type]: value,
-            }
+            ...f,
+            [type]: value,
+          }
           : f
       )
     );
@@ -1216,32 +1257,13 @@ const WorkerFilter = ({
 
   return (
     <>
-      {/* Apply margin to body/content when filter is open on desktop */}
-      {!isMobile && isFilterOpen && (
-        <style jsx global>{`
-          body {
-            margin-right: 500px;
-            transition: margin-right 0.3s ease-in-out;
-          }
-        `}</style>
-      )}
-
-      {!isMobile && !isFilterOpen && (
-        <style jsx global>{`
-          body {
-            margin-right: 0;
-            transition: margin-right 0.3s ease-in-out;
-          }
-        `}</style>
-      )}
-
       {/* Filter & Sort Buttons */}
       <Box
         sx={{
           position: "fixed",
           top: isMobile ? 125 : 80,
           right: 16,
-          zIndex: 1000,
+          zIndex: 10 ,
           display: "flex",
           flexDirection: "column",
           gap: 1,
@@ -1257,12 +1279,18 @@ const WorkerFilter = ({
             background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
             color: "white",
             boxShadow: "0 2px 8px rgba(128,128,128,0.3)",
+            px: 2,
             "&:hover": {
               background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
             },
           }}
         >
-          <Tune sx={{ fontSize: 24 }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              فیلترها
+            </Typography>
+            <Tune sx={{ fontSize: 24 }} />
+          </Box>
         </Button>
       </Box>
 
@@ -1578,8 +1606,7 @@ const WorkerFilter = ({
                     ? `محله ها: ${selectedNeighborhoods
                         .slice(0, 2)
                         .map((n) => n.name)
-                        .join("، ")}${
-                        selectedNeighborhoods.length > 2 ? "..." : ""
+                        .join("، ")}${selectedNeighborhoods.length > 2 ? "..." : ""
                       }`
                     : "انتخاب محله"}
                 </span>
@@ -1595,7 +1622,7 @@ const WorkerFilter = ({
           )}
         </Box>
 
-        {/* Footer */}
+        {/* Footer - FIXED VERSION */}
         {filterLevel === "base" && (
           <Box
             sx={{ p: 2, borderTop: "1px solid #e0e0e0", bgcolor: "#f5f5f5" }}
@@ -1651,7 +1678,7 @@ const WorkerFilter = ({
             maxHeight: "100px",
             overflow: "auto",
             bgcolor: "background.paper",
-            zIndex: 100,
+            zIndex: 10,
             display:
               selectedCategory ||
               selectedNeighborhoods.length > 0 ||

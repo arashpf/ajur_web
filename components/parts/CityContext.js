@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
+import Cookies from 'js-cookie';
 
 export const CityContext = createContext();
 
@@ -6,65 +7,70 @@ export const CityProvider = ({ children }) => {
   const [currentCity, setCurrentCity] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load city from storage on mount and when window gains focus
+  // Load city from cookies on mount
   useEffect(() => {
     const loadCity = async () => {
       try {
-        const savedCity = localStorage.getItem("selectedCity");
+        const savedCity = Cookies.get('city');
         if (savedCity) {
-          const parsedCity = JSON.parse(savedCity);
-          // Validate city structure
-          if (parsedCity?.id && parsedCity?.title) {
-            setCurrentCity(parsedCity);
-          } else {
-            // Clear invalid data
-            localStorage.removeItem("selectedCity");
+          try {
+            const parsedCity = JSON.parse(savedCity);
+            // Validate city structure
+            if (parsedCity?.id && parsedCity?.title) {
+              setCurrentCity(parsedCity);
+            } else {
+              // Clear invalid data
+              Cookies.remove('city');
+            }
+          } catch (error) {
+            // If JSON parsing fails, treat it as just a city title string
+            const cityTitle = savedCity;
+            if (cityTitle && typeof cityTitle === 'string') {
+              // Create a simple city object with the title
+              // You might want to fetch the full city data here if needed
+              setCurrentCity({ id: Date.now(), title: cityTitle });
+            }
           }
         }
       } catch (error) {
-        console.error("Failed to load city:", error);
+        console.error("Failed to load city from cookies:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadCity();
-
-    // Listen for window focus (similar to app coming to foreground)
-    const handleFocus = () => {
-      loadCity();
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
   }, []);
 
-  // Update city in both state and storage
+  // Update city in cookies
   const updateCity = async (city) => {
     try {
-      if (!city?.id || !city?.title) {
+      if (!city?.title) {
         throw new Error("Invalid city object");
       }
 
-      localStorage.setItem("selectedCity", JSON.stringify(city));
+      // Store city as JSON string in cookie
+      Cookies.set('city', JSON.stringify(city), {
+        expires: 365, // 1 year
+        path: '/',
+        sameSite: 'strict'
+      });
+      
       setCurrentCity(city);
-      return true; // Indicate success
+      return true;
     } catch (error) {
-      console.error("Failed to save city:", error);
+      console.error("Failed to save city to cookies:", error);
       throw error;
     }
   };
 
-  // Clear selected city
+  // Clear selected city from cookies
   const clearCity = async () => {
     try {
-      localStorage.removeItem("selectedCity");
+      Cookies.remove('city', { path: '/' });
       setCurrentCity(null);
     } catch (error) {
-      console.error("Failed to clear city:", error);
+      console.error("Failed to clear city from cookies:", error);
       throw error;
     }
   };

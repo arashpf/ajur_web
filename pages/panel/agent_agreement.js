@@ -84,38 +84,30 @@ const AgentAgreement = (props) => {
   };
 
   const renderFooter = () => {
-    if (1) {
-      return (
-        <>
-            {
-            !loading ?
-            <Button
+    return (
+      <div className={styles.stickyButtonContainer}>
+        {!loading ? (
+          <Button
             onClick={OnClickAcceptAgreement}
             size="large"
             variant="contained"
             fullWidth={true}
-            style={{ fontSize: 20, marginTop: 20, marginBottom: 20 }}
+            style={{ fontSize: 20 }}
           >
-            {" "}
-            قوانین را خواندم و قبول میکنم{" "}
+            قوانین را خواندم و قبول میکنم
           </Button>
-          : 
+        ) : (
           <Button
-           
             size="large"
             variant="contained"
             fullWidth={true}
-            style={{ fontSize: 20, marginTop: 20, marginBottom: 20 }}
+            style={{ fontSize: 20 }}
           >
-            {" "}
             ...
           </Button>
-
-            }
-          
-        </>
-      );
-    }
+        )}
+      </div>
+    );
   };
   return (
     <div>
@@ -264,7 +256,9 @@ const AgentAgreement = (props) => {
         </p>
         <h3>کارمزد آجر</h3>
         <p className={styles.wrapper_p}>
-          بیست درصد از کمسیون قانونی انجام معاملات ملکی از سمت مشاور
+           
+           آجر کارمزدی از مشاوران املاک برای ارایه خدمات  دریافت نمیکند 
+           مگر در قراردادی جداگانه و با رضایت دو طرف برای ارایه خدماتی خاص
         </p>
         {renderFooter()}
       </div>

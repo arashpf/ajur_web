@@ -4,6 +4,7 @@ import { CityContext } from "./CityContext";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import SearchIcon from "@mui/icons-material/Search";
 import { useRouter } from "next/router";
+import Cookies from 'js-cookie';
 
 // MUI components for the nicer toast/alert
 import Snackbar from "@mui/material/Snackbar";
@@ -70,7 +71,8 @@ const CitySelector = ({ handleCitySelect }) => {
     try {
       const success = await updateCity(city);
       if (success) {
-        router.push(`/${city.title}`, undefined, { shallow: true });
+        Cookies.set('city', city.slug);
+        router.push(`/${city.slug}`, undefined, { shallow: true });
         setShowModal(false);
         setSearchQuery("");
 
@@ -130,9 +132,9 @@ const CitySelector = ({ handleCitySelect }) => {
             className="absolute inset-0 bg-black bg-opacity-50"
             onClick={handleCloseModal}
           />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-5 h-4/5 flex flex-col">
+          <div className="absolute bottom-0 left-0 right-0 bg-white  p-5 h-full flex flex-col">
             {/* Header */}
-            <div className="flex flex-row-reverse items-center justify-between mb-5">
+            <div className="flex flex-row-reverse items-center justify-between mb-3">
               <h2 className="text-xl text-gray-700 font-sans mr-2">
                 انتخاب شهر
               </h2>

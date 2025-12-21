@@ -45,6 +45,31 @@
   justify-content: flex-start;
 }
 
+.card-inside-neighbor{
+  position: absolute;
+  /* place heart over the lower-right of the image area */
+  top: 125px; /* adjusted to align with smaller image */
+  left: 5px;
+
+  /* width: 360px; */
+  /* height: 8%; */
+  /* top: 1px; */
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  /* height: 30px;
+  width: 30px; */
+
+  padding: 6px;
+
+  background-color: rgba(255, 255, 255, 0.7);
+
+  /* margin: 0 5px; */
+  /* padding: 0 10px; */
+  border-radius: 6px;
+  z-index: 1;
+}
+
 .card-inside-heart {
   position: absolute;
   /* place heart over the lower-right of the image area */
