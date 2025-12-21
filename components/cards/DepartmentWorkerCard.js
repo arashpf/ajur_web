@@ -74,14 +74,8 @@ export default function ImgMediaCard(props) {
   const imageorspinner = () => {
     if (loading) {
       return (
-        <div className={Styles["spinnerImageView"]}>
-          <Image
-            className={Styles["spinnerImageView"]}
-            height={180}
-            width={256}
-            src="/logo/ajour-gif.gif"
-            alt="ajour logo"
-          />
+        <div className="spinnerImageView" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 180 }}>
+          <img src="/logo/ajour-gif.gif" alt="ajour logo" style={{ height: 180, width: 'auto', objectFit: 'contain' }} />
         </div>
       );
     } else {
