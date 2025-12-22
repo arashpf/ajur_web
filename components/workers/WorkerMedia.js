@@ -24,15 +24,25 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
     setLightboxIndex(index);
     setLightboxOpen(true);
     // prevent background scroll
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    try {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ ajur_lightbox: true }, '');
+      }
+    } catch (err) {
+      console.warn('history.pushState failed', err);
     }
   };
 
   const closeLightbox = () => {
     setLightboxOpen(false);
-    if (typeof document !== 'undefined') {
-      document.body.style.overflow = "";
+    document.body.style.overflow = "";
+    try {
+      if (typeof window !== 'undefined' && window.history.state && window.history.state.ajur_lightbox) {
+        window.history.back();
+      }
+    } catch (err) {
+      console.warn('history.back failed', err);
     }
   };
 
@@ -66,6 +76,38 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxOpen, showPrev, showNext, isFullscreen, isClient]);
+
+  // Handle browser back button to close fullscreen first, then the grid modal
+  useEffect(() => {
+    const onPop = (e) => {
+      const state = (e && e.state) || window.history.state;
+
+      if (isFullscreen) {
+        // If the new state still contains ajur_lightbox (grid), only exit fullscreen
+        if (state && state.ajur_lightbox) {
+          setIsFullscreen(false);
+          return;
+        }
+        // Otherwise close everything
+        setIsFullscreen(false);
+        setLightboxOpen(false);
+        document.body.style.overflow = "";
+        return;
+      }
+
+      if (lightboxOpen) {
+        // If the new state still has ajur_lightbox, keep modal open
+        if (state && state.ajur_lightbox) {
+          return;
+        }
+        setLightboxOpen(false);
+        document.body.style.overflow = "";
+      }
+    };
+
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [isFullscreen, lightboxOpen]);
 
   const renderSlider = (mediaList, type) => {
     // Don't render Swiper on server-side
@@ -211,28 +253,14 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
             className={Styles.mediaBox}
             style={{ cursor: "pointer" }}
             onClick={() => {
-              // Switch to the images tab and show the first image instead of opening the grid modal
-              setActiveTab("images");
-              setMainImageIndex(0);
-              if (mainImageSwiperInstance && typeof mainImageSwiperInstance.slideTo === "function") {
-                try {
-                  mainImageSwiperInstance.slideTo(0);
-                } catch (err) {
-                  console.warn("Swiper slideTo failed:", err);
-                }
-              }
+              // Open the images grid modal instead of switching inline
+              openLightbox(0);
+              setIsFullscreen(false);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
-                setActiveTab("images");
-                setMainImageIndex(0);
-                if (mainImageSwiperInstance && typeof mainImageSwiperInstance.slideTo === "function") {
-                  try {
-                    mainImageSwiperInstance.slideTo(0);
-                  } catch (err) {
-                    console.warn("Swiper slideTo failed:", err);
-                  }
-                }
+                openLightbox(0);
+                setIsFullscreen(false);
               }
             }}
             role="button"
@@ -326,6 +354,13 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsFullscreen(false);
+                  try {
+                    if (typeof window !== 'undefined' && window.history.state && window.history.state.ajur_lightbox_full) {
+                      window.history.back();
+                    }
+                  } catch (err) {
+                    console.warn('history.back failed', err);
+                  }
                 }}
                 style={{
                   position: "fixed",
@@ -504,14 +539,28 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
                     tabIndex={0}
                     className={Styles.gridItem}
                     onClick={(e) => {
-                      e.stopPropagation();
-                      setLightboxIndex(idx);
-                      setIsFullscreen(true);
-                    }}
+                        e.stopPropagation();
+                        setLightboxIndex(idx);
+                        setIsFullscreen(true);
+                        try {
+                          if (typeof window !== 'undefined') {
+                            window.history.pushState({ ajur_lightbox_full: true }, '');
+                          }
+                        } catch (err) {
+                          console.warn('history.pushState failed', err);
+                        }
+                      }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         setLightboxIndex(idx);
                         setIsFullscreen(true);
+                        try {
+                          if (typeof window !== 'undefined') {
+                            window.history.pushState({ ajur_lightbox_full: true }, '');
+                          }
+                        } catch (err) {
+                          console.warn('history.pushState failed', err);
+                        }
                       }
                     }}
                   >

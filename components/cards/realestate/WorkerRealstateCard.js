@@ -15,8 +15,10 @@ import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Styles from '../../styles/WorkerRealstate.module.css';
+import Link from 'next/link';
 import Stars from  '../../others/Stars';
 import RealEstateShare from  './RealEstateShare'; 
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
@@ -63,11 +65,26 @@ export default function WorkerRealstateCard(props) {
           gap: "12px",
           direction: "rtl",
         }}>
-          <Avatar 
-            alt={realstate.name + ' ' + realstate.family} 
-            src={realstate.profile_url}
-            sx={{ width: 50, height: 50 }}
-          />
+          <div style={{ position: 'relative', width: 50, height: 50 }}>
+            <Avatar
+              alt={realstate.name + ' ' + realstate.family}
+              src={realstate.profile_url}
+              sx={{ width: 50, height: 50 }}
+            />
+            {realstate && realstate.is_verified && (
+              <CheckCircleIcon style={{
+                color: '#1E88E5',
+                position: 'absolute',
+                bottom: -4,
+                left: -4,
+                background: '#fff',
+                borderRadius: '50%',
+                fontSize: 18,
+                boxSizing: 'content-box',
+                padding: 2
+              }} />
+            )}
+          </div>
           <div>
             <div style={{
               fontSize: "16px",
@@ -76,12 +93,10 @@ export default function WorkerRealstateCard(props) {
             }}>
               {realstate.name} {realstate.family}
             </div>
-            <div style={{
-              fontSize: "13px",
-              color: "#0066cc",
-              marginTop: "4px",
-            }}>
-              مشاهده صفحه اختصاصی
+            <div style={{ marginTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, direction: 'ltr' }}>
+                <Stars amount={ Math.round(realstate.stars || 0) } />
+              </div>
             </div>
           </div>
         </div>
@@ -121,23 +136,32 @@ export default function WorkerRealstateCard(props) {
         >
           {realstate?.phone}
         </a>
-        <button
-          style={{
-            flex: 1,
-            padding: "12px 16px",
-            background: "#f5f5f5",
-            border: "1px solid #ddd",
-            borderRadius: "8px",
-            fontWeight: "600",
-            color: "#999",
-            fontSize: "16px",
-            cursor: "not-allowed",
-            opacity: 0.6,
-          }}
-          disabled
-        >
-          چت (به زودی)
-        </button>
+        <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
+          <a
+            style={{
+              flex: 1,
+              padding: "12px 16px",
+              background: "#0066cc",
+              border: "1px solid #0066cc",
+              borderRadius: "8px",
+              fontWeight: "600",
+              color: "#fff",
+              fontSize: "16px",
+              textAlign: "center",
+              textDecoration: "none",
+              cursor: "pointer",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#005bb5';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#0066cc';
+            }}
+          >
+            مشاهده صفحه ی مشاور
+          </a>
+        </Link>
       </div>
     </div>
   );

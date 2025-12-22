@@ -505,9 +505,8 @@ function Home(props) {
           <Image
             src="/logo/ajour-gif.gif"
             alt="ajur logo"
-            width={500}
-            height={500}
-            unoptimized
+            width={1152}
+            height={648}
           />
         </div>
       );
