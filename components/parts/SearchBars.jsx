@@ -45,6 +45,7 @@ const categoriesData = [
   {
     id: 3,
     name: "خرید صنعتی",
+    eng_name: "buy-industrial",
     description: null,
     status: "1",
     has_parent: "0",
@@ -59,6 +60,7 @@ const categoriesData = [
   {
     id: 6,
     name: "اجاره صنعتی",
+    eng_name: "rent-industrial",
     description: "اجاره انواع واحد های صنعتی",
     status: "1",
     has_parent: "0",
@@ -73,6 +75,7 @@ const categoriesData = [
   {
     id: 16,
     name: "خرید آپارتمان",
+    eng_name: "buy-apartment",
     description: null,
     status: "1",
     has_parent: "1",
@@ -87,6 +90,7 @@ const categoriesData = [
   {
     id: 17,
     name: "خرید خانه ویلایی",
+    eng_name: "buy-villa",
     description: "فروش انواع خانه های ویلایی",
     status: "1",
     has_parent: "1",
@@ -101,6 +105,7 @@ const categoriesData = [
   {
     id: 18,
     name: "خرید زمین مسکونی",
+    eng_name: "buy-residential-land",
     description: null,
     status: "1",
     has_parent: "1",
@@ -115,6 +120,7 @@ const categoriesData = [
   {
     id: 19,
     name: "خرید زمین تجاری و اداری",
+    eng_name: "buy-commercial-office-land",
     description: "دسته بندی زمین های تجاری و اداری",
     status: "1",
     has_parent: "1",
@@ -128,7 +134,8 @@ const categoriesData = [
   },
   {
     id: 20,
-    name: "خرید زمین صنعتی ",
+    name: "خرید زمین صنعتی",
+    eng_name: "buy-industrial-land",
     description: null,
     status: "1",
     has_parent: "1",
@@ -143,6 +150,7 @@ const categoriesData = [
   {
     id: 21,
     name: "خرید باغ و باغچه",
+    eng_name: "buy-garden",
     description: "فروش انواع باغ و باغچه",
     status: "1",
     has_parent: "1",
@@ -156,7 +164,8 @@ const categoriesData = [
   },
   {
     id: 22,
-    name: "خرید زمین زراعی\n",
+    name: "خرید زمین زراعی",
+    eng_name: "buy-agricultural-land",
     description: null,
     status: "1",
     has_parent: "1",
@@ -170,7 +179,8 @@ const categoriesData = [
   },
   {
     id: 23,
-    name: "خرید مغازه\n",
+    name: "خرید مغازه",
+    eng_name: "buy-shop",
     description: null,
     status: "1",
     has_parent: "1",
@@ -185,6 +195,7 @@ const categoriesData = [
   {
     id: 24,
     name: "خرید دفتر کار و اداری",
+    eng_name: "buy-office",
     description: "انواع دفتر کار ، سالن و اداری",
     status: "1",
     has_parent: "1",
@@ -199,6 +210,7 @@ const categoriesData = [
   {
     id: 25,
     name: "اجاره آپارتمان",
+    eng_name: "rent-apartment",
     description: "اجاره انواع آپارتمان",
     status: "1",
     has_parent: "1",
@@ -213,6 +225,7 @@ const categoriesData = [
   {
     id: 26,
     name: "اجاره خانه ویلایی",
+    eng_name: "rent-villa",
     description: "اجاره انواع خانه های ویلایی",
     status: "1",
     has_parent: "1",
@@ -227,6 +240,7 @@ const categoriesData = [
   {
     id: 27,
     name: "اجاره مغازه",
+    eng_name: "rent-shop",
     description: "اجاره انواع مغازه",
     status: "1",
     has_parent: "1",
@@ -241,6 +255,7 @@ const categoriesData = [
   {
     id: 28,
     name: "اجاره دفتر کار و اداری",
+    eng_name: "rent-office",
     description: "اجاره انواع دفتر کار، مطب و واحد اداری",
     status: "1",
     has_parent: "1",
@@ -255,6 +270,7 @@ const categoriesData = [
   {
     id: 65,
     name: "زمین هکتاری",
+    eng_name: "hectare-land",
     description: "زمین هکتاری",
     status: "1",
     has_parent: "1",
@@ -271,7 +287,7 @@ const categoriesData = [
 const SearchBars = ({ realstates }) => {
   const router = useRouter();
   const { currentCity, isLoading } = useContext(CityContext);
-  
+
   // State management
   const [activeTab, setActiveTab] = useState("buySell");
   const [searchQuery, setSearchQuery] = useState("");
@@ -288,9 +304,6 @@ const SearchBars = ({ realstates }) => {
     isConnected: true,
     isInternetReachable: true,
   });
-  const [selectedCityName, setSelectedCityName] = useState();
-  const [selectedCityId, setSelectedCityId] = useState();
-  const [showCityModal, setShowCityModal] = useState(false);
   const [search_category, set_search_category] = useState([]);
   const [search_neighborhoods, set_search_neighborhoods] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
@@ -312,11 +325,11 @@ const SearchBars = ({ realstates }) => {
   const [cities, setCities] = useState([]);
 
   const getDefaultCities = () => [
-    { id: 1, title: "تهران" },
-    { id: 2, title: "رباط کریم" },
-    { id: 3, title: "کرج" },
-    { id: 4, title: "اصفهان" },
-    { id: 5, title: "مشهد" },
+    { id: 1, title: "تهران", slug: "tehran" },
+    { id: 2, title: "رباط کریم", slug: "robat-karim" },
+    { id: 3, title: "کرج", slug: "karaj" },
+    { id: 4, title: "اصفهان", slug: "esfahan" },
+    { id: 5, title: "مشهد", slug: "mashhad" },
   ];
 
   // Helper function to normalize text for comparison
@@ -329,6 +342,39 @@ const SearchBars = ({ realstates }) => {
       .replace(/\s+/g, ' ')
       .replace(/[،]/g, '')
       .normalize('NFC');
+  };
+
+  // Helper function to convert Persian to English slug (for neighborhoods)
+  const convertToEnglishSlug = (persianText) => {
+    if (!persianText) return '';
+    
+    const mapping = {
+      'آپارتمان': 'apartment',
+      'ویلایی': 'villa',
+      'مغازه': 'shop',
+      'زمین': 'land',
+      'صنعتی': 'industrial',
+      'تجاری': 'commercial',
+      'اداری': 'office',
+      'خرید': 'buy',
+      'اجاره': 'rent',
+      'مسکونی': 'residential',
+      'باغ': 'garden',
+      'باغچه': 'small-garden',
+      'زراعی': 'agricultural',
+      'هکتاری': 'hectare',
+      'دفتر': 'office',
+      'کار': 'work',
+    };
+    
+    // Convert each word
+    return persianText
+      .split(' ')
+      .map(word => mapping[word] || word.toLowerCase())
+      .join('-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
   // Fixed function to find matching categories
@@ -404,7 +450,7 @@ const SearchBars = ({ realstates }) => {
   // Effects
   useEffect(() => {
     if (currentCity && !isLoading) {
-      // fetchData(currentCity.id);
+      console.log('Current city loaded:', currentCity);
     }
   }, [currentCity, isLoading]);
 
@@ -557,8 +603,13 @@ const SearchBars = ({ realstates }) => {
           timeout: 5000,
         }
       );
-      setCities(response.data?.items || getDefaultCities());
-      console.log("now cities:", response.data?.items);
+      // Ensure cities have both Persian title and English slug
+      const citiesWithSlugs = (response.data?.items || getDefaultCities()).map(city => ({
+        ...city,
+        slug: city.slug || city.title.toLowerCase().replace(/\s+/g, '-')
+      }));
+      setCities(citiesWithSlugs);
+      console.log("Cities loaded:", citiesWithSlugs);
     } catch (error) {
       console.error("Error fetching cities:", error);
       setCities(getDefaultCities());
@@ -692,15 +743,23 @@ const SearchBars = ({ realstates }) => {
     try {
       setLoadingAgents(true);
       setSearchStatus("در حال جستجوی مشاورین...");
+      
+      // Use city ID for API call
       const response = await axios.get(
         "https://api.ajur.app/api/agents-search",
         {
-          params: { title: searchTerm, limit: 20, city: currentCity.id },
+          params: { 
+            title: searchTerm, 
+            limit: 20, 
+            city: currentCity.id 
+          },
           timeout: SEARCH_TIMEOUT,
         }
       );
+      
       setAgents(response.data.agents || []);
-      setSearchStatus(`${response.data.agents.length} مشاور یافت شد`);
+      // Display Persian city name to user
+      setSearchStatus(`${response.data.agents.length} مشاور در ${currentCity.title} یافت شد`);
     } catch (error) {
       console.error("Agent search failed:", error);
       setSearchStatus("خطا در جستجوی مشاورین");
@@ -709,8 +768,8 @@ const SearchBars = ({ realstates }) => {
     }
   };
 
-  const navigateToCategory = (categoryName, neighborhoodName = null) => {
-    if (!categoryName || !currentCity) {
+  const navigateToCategory = (persianCategoryName, neighborhoodName = null, englishCategoryName = null) => {
+    if (!persianCategoryName || !currentCity) {
       console.error("Missing category name or city");
       handleSnackbar("خطا در انتقال به صفحه دسته‌بندی");
       return;
@@ -718,18 +777,36 @@ const SearchBars = ({ realstates }) => {
 
     handleCloseModal();
     
-    let path = `/${currentCity.title}/${encodeURIComponent(categoryName)}`;
+    // Use English name for URL
+    const categorySlug = englishCategoryName;
+    
+    if (!categorySlug) {
+      console.error("No English category name provided");
+      handleSnackbar("خطا در ایجاد آدرس");
+      return;
+    }
+    
+    let path = `/${currentCity.slug}/${encodeURIComponent(categorySlug)}`;
+    
+    // Add neighborhood if provided
+    if (neighborhoodName) {
+      const neighborhoodSlug = convertToEnglishSlug(neighborhoodName);
+      path += `/${encodeURIComponent(neighborhoodSlug)}`;
+    }
     
     const searchContext = {
       originalQuery: searchQuery,
-      selectedCategory: categoryName,
+      selectedCategory: persianCategoryName,
+      selectedCategoryEnglish: categorySlug,
+      city: currentCity.title,
+      citySlug: currentCity.slug,
       neighborhood: neighborhoodName,
       timestamp: Date.now()
     };
     
     localStorage.setItem("lastSearchContext", JSON.stringify(searchContext));
     
-    console.log("Navigating to:", path);
+    console.log("Navigating to:", path, "Persian:", persianCategoryName, "English:", categorySlug);
     
     setIsRedirecting(true);
     
@@ -749,7 +826,7 @@ const SearchBars = ({ realstates }) => {
       return;
     }
 
-    console.log(`Searching for "${query}" in ${activeTab} tab`);
+    console.log(`Searching for "${query}" in ${currentCity.title} (${currentCity.slug})`);
 
     // Store last query to avoid duplicate searches
     if (lastSearchQueryRef.current === query) {
@@ -781,7 +858,8 @@ const SearchBars = ({ realstates }) => {
             console.log("Found matching categories:", matchedCategories);
             
             if (matchedCategories.length === 0) {
-              setSearchStatus(`هیچ دسته‌بندی‌ای برای "${query}" یافت نشد`);
+              // Display Persian city name to user
+              setSearchStatus(`هیچ دسته‌بندی‌ای برای "${query}" در ${currentCity.title} یافت نشد`);
               setProperties([]);
               break;
             }
@@ -797,6 +875,7 @@ const SearchBars = ({ realstates }) => {
                       query: category.name,
                       original_query: query,
                       cityid: currentCity.id,
+                      city_slug: currentCity.slug,
                       category_id: category.id,
                       fuzzy_match: true,
                     },
@@ -825,7 +904,8 @@ const SearchBars = ({ realstates }) => {
                   
                   return {
                     id: `category-${category.id}-${Date.now()}`,
-                    category: category.name,
+                    category: category.name, // Persian name for display
+                    category_eng: category.eng_name, // English name for URL (from server)
                     category_array: category,
                     categories_array: matchedCategories,
                     neighborhoods: neighborhoods,
@@ -853,6 +933,7 @@ const SearchBars = ({ realstates }) => {
                   return {
                     id: `error-${category.id}-${Date.now()}`,
                     category: category.name,
+                    category_eng: category.eng_name,
                     category_array: category,
                     categories_array: matchedCategories,
                     neighborhoods: [],
@@ -877,6 +958,7 @@ const SearchBars = ({ realstates }) => {
             if (displayItems.length === 1) {
               const item = displayItems[0];
               if (item.hasProperties) {
+                // Display Persian city name to user
                 setSearchStatus(
                   `${item.category} در ${currentCity.title} (${item.totalProperties} ملک)`
                 );
@@ -889,11 +971,11 @@ const SearchBars = ({ realstates }) => {
               if (categoriesWithProperties.length > 0) {
                 const categoryNames = categoriesWithProperties.map(item => item.category).join("، ");
                 setSearchStatus(
-                  `${categoriesWithProperties.length} دسته‌بندی با ${totalAllProperties} ملک: ${categoryNames}`
+                  `${categoriesWithProperties.length} دسته‌بندی با ${totalAllProperties} ملک در ${currentCity.title}: ${categoryNames}`
                 );
               } else {
                 setSearchStatus(
-                  `${displayItems.length} دسته‌بندی یافت شد (هیچ ملکی یافت نشد)`
+                  `${displayItems.length} دسته‌بندی در ${currentCity.title} یافت شد (هیچ ملکی یافت نشد)`
                 );
               }
             }
@@ -907,6 +989,7 @@ const SearchBars = ({ realstates }) => {
               const displayItems = matchedCategories.map((category, index) => ({
                 id: `fallback-${category.id}-${Date.now()}`,
                 category: category.name,
+                category_eng: category.eng_name,
                 category_array: category,
                 categories_array: matchedCategories,
                 neighborhoods: [],
@@ -920,7 +1003,7 @@ const SearchBars = ({ realstates }) => {
               }));
               
               setProperties(displayItems);
-              setSearchStatus(`${matchedCategories.length} دسته‌بندی یافت شد (هیچ ملکی یافت نشد)`);
+              setSearchStatus(`${matchedCategories.length} دسته‌بندی در ${currentCity.title} یافت شد (هیچ ملکی یافت نشد)`);
             } else {
               setSearchStatus("خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید");
               setProperties([]);
@@ -997,7 +1080,7 @@ const SearchBars = ({ realstates }) => {
         <div className="flex flex-row-reverse items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex flex-col items-end">
             <button 
-              onClick={() => navigateToCategory(item.category)}
+              onClick={() => navigateToCategory(item.category, null, item.category_eng)}
               className="text-right hover:text-blue-800 focus:outline-none"
             >
               <div className="text-blue-800 font-bold text-sm">
@@ -1009,14 +1092,12 @@ const SearchBars = ({ realstates }) => {
                 )}
               </div>
             </button>
-            
-            
           </div>
           
           {item.hasProperties && (
             <button
               className="flex flex-row-reverse items-center text-blue-600 hover:text-blue-800 focus:outline-none"
-              onClick={() => navigateToCategory(item.category)}
+              onClick={() => navigateToCategory(item.category, null, item.category_eng)}
             >
               <span className="text-sm ml-1">همه موارد</span>
               <span>‹</span>
@@ -1041,7 +1122,7 @@ const SearchBars = ({ realstates }) => {
                       : 'bg-gray-100 text-gray-500 border-gray-200'
                   }`}
                   onClick={() =>
-                    navigateToCategory(item.category, neighborhood.name)
+                    navigateToCategory(item.category, neighborhood.name, item.category_eng)
                   }
                   disabled={propertyCount === 0}
                 >
@@ -1172,7 +1253,7 @@ const SearchBars = ({ realstates }) => {
             )}
             {agents.length === 0 && !loadingAgents && (
               <div className="text-center text-gray-500 py-5 col-span-full">
-                مشاوری یافت نشد
+                مشاوری در {currentCity?.title || 'این شهر'} یافت نشد
               </div>
             )}
           </div>
@@ -1214,6 +1295,7 @@ const SearchBars = ({ realstates }) => {
                 >
                   <span className="text-gray-600 text-base overflow-hidden whitespace-nowrap overflow-ellipsis w-full">
                     {getCurrentSuggestion()}
+                    {currentCity?.title && ` در ${currentCity.title}`}
                   </span>
                 </div>
 
@@ -1226,6 +1308,7 @@ const SearchBars = ({ realstates }) => {
                 >
                   <span className="text-gray-600 text-base overflow-hidden whitespace-nowrap overflow-ellipsis w-full">
                     {getNextSuggestion()}
+                    {currentCity?.title && ` در ${currentCity.title}`}
                   </span>
                 </div>
               </div>
@@ -1316,7 +1399,7 @@ const SearchBars = ({ realstates }) => {
                   textAlign: 'right',
                   direction: 'rtl'
                 }}
-                placeholder={getCurrentSuggestion()}
+                placeholder={getCurrentSuggestion() + (currentCity?.title ? ` در ${currentCity.title}` : '')}
                 value={inputValue}
                 onChange={(e) => handleTextChange(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSearch(true)}
