@@ -705,7 +705,7 @@ function Home(props) {
             </Button>
             <Button
               onClick={() => {
-                Cookies.set("hide_vpn_warning", "1", { expires: 365 });
+                Cookies.set("hide_vpn_warning", "1", { expires: 364 });
                 setShowVpnDialog(false);
               }}
               color="primary"
