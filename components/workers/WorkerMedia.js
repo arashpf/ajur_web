@@ -13,6 +13,12 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [thumbnailSwiperInstance, setThumbnailSwiperInstance] = useState(null);
   const [mainImageSwiperInstance, setMainImageSwiperInstance] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+
+  // Initialize client-side state
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const openLightbox = (index) => {
     setLightboxIndex(index);
@@ -41,15 +47,20 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
   };
 
   const showPrev = useCallback(() => {
-    setLightboxIndex((i) => (i - 1 + images.length) % images.length);
+    if (images.length > 0) {
+      setLightboxIndex((i) => (i - 1 + images.length) % images.length);
+    }
   }, [images.length]);
 
   const showNext = useCallback(() => {
-    setLightboxIndex((i) => (i + 1) % images.length);
+    if (images.length > 0) {
+      setLightboxIndex((i) => (i + 1) % images.length);
+    }
   }, [images.length]);
 
   useEffect(() => {
-    if (!lightboxOpen) return;
+    if (!lightboxOpen || !isClient) return;
+    
     const onKey = (e) => {
       if (e.key === "Escape") {
         if (isFullscreen) {
@@ -61,9 +72,10 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
       if (e.key === "ArrowLeft") showPrev();
       if (e.key === "ArrowRight") showNext();
     };
+    
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, showPrev, showNext, isFullscreen]);
+  }, [lightboxOpen, showPrev, showNext, isFullscreen, isClient]);
 
   // Handle browser back button to close fullscreen first, then the grid modal
   useEffect(() => {
@@ -98,68 +110,109 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
   }, [isFullscreen, lightboxOpen]);
 
   const renderSlider = (mediaList, type) => {
-  return (
-    <Swiper
-      spaceBetween={10}
-      slidesPerView={1}
-      pagination={{ 
+    // Don't render Swiper on server-side
+    if (!isClient) {
+      return <div className={Styles.swiperContainer}>Loading...</div>;
+    }
+
+    // Import Swiper modules dynamically for client-side only
+    const swiperConfig = {
+      spaceBetween: 10,
+      slidesPerView: 1,
+      pagination: { 
         clickable: true,
         renderBullet: (index, className) => {
           return `<span class="${className}">${index + 1}</span>`;
         }
-      }}
-      onSwiper={(swiper) => {
+      },
+      onSwiper: (swiper) => {
         if (type === "images") {
           setMainImageSwiperInstance(swiper);
         }
-      }}
-      onSlideChange={(swiper) => {
+      },
+      onSlideChange: (swiper) => {
         if (type === "images") {
           setMainImageIndex(swiper.activeIndex);
           // Scroll thumbnail into view when main image changes
           if (thumbnailSwiperInstance) {
-            thumbnailSwiperInstance.slideTo(swiper.activeIndex);
+            try {
+              thumbnailSwiperInstance.slideTo(swiper.activeIndex);
+            } catch (err) {
+              console.warn("Thumbnail swiper error:", err);
+            }
           }
         }
-      }}
-      className={Styles.swiperContainer}
-    >
-      {mediaList.map((item, index) => (
-        <SwiperSlide key={index}>
-          {type === "images" && (
-            <img
-              src={item.url}
-              alt={`Image ${index}`}
-              className={Styles.mainImage}
-              onClick={() => openLightbox(index)}
-              style={{ cursor: "pointer" }}
-            />
-          )}
-          {type === "virtual_tours" && (
-            <iframe
-              src={item.url}
-              title={`Virtual Tour ${index}`}
-              className={Styles.iframe}
-              allowFullScreen
-            />
-          )}
-          {type === "videos" && (
-            <video controls className={Styles.video}>
-              <source src={item.absolute_path} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          )}
-        </SwiperSlide>
-      ))}
-    </Swiper>
-  );
-};
+      },
+      className: Styles.swiperContainer
+    };
 
-const onClickImageThumbs = () => {
-  if(1){
-    setActiveTab("images");
+    // Add autoplay only for videos and only if on client side
+    if (type === "videos" && isClient) {
+      swiperConfig.autoplay = {
+        delay: 3000,
+        disableOnInteraction: false,
+      };
+    }
+
+    return (
+      <Swiper {...swiperConfig}>
+        {mediaList.map((item, index) => (
+          <SwiperSlide key={index}>
+            {type === "images" && (
+              <img
+                src={item.url}
+                alt={`Image ${index}`}
+                className={Styles.mainImage}
+                onClick={() => openLightbox(index)}
+                style={{ cursor: "pointer" }}
+              />
+            )}
+            {type === "virtual_tours" && (
+              <iframe
+                src={item.url}
+                title={`Virtual Tour ${index}`}
+                className={Styles.iframe}
+                allowFullScreen
+                loading="lazy"
+              />
+            )}
+            {type === "videos" && isClient && (
+              <video 
+                controls 
+                className={Styles.video}
+                playsInline
+                // Don't set autoplay here, let user control it
+              >
+                <source src={item.absolute_path} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </SwiperSlide>
+        ))}
+      </Swiper>
+    );
+  };
+
+  // Don't render interactive elements on server
+  if (!isClient) {
+    return (
+      <div className={Styles.wrapper}>
+        <div className={Styles.mediaContainer}>
+          <div className={Styles.mainImageWrapper}>
+            <div className={Styles.swiperContainer}>
+              {images.length > 0 && (
+                <img
+                  src={images[0].url}
+                  alt="Preview"
+                  className={Styles.mainImage}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-}
 
   return (
     <div className={Styles.wrapper}>
@@ -176,7 +229,12 @@ const onClickImageThumbs = () => {
                     className={`${Styles.indicator} ${
                       mainImageIndex === index ? Styles.active : ""
                     }`}
-                    onClick={() => setMainImageIndex(index)}
+                    onClick={() => {
+                      setMainImageIndex(index);
+                      if (mainImageSwiperInstance && typeof mainImageSwiperInstance.slideTo === 'function') {
+                        mainImageSwiperInstance.slideTo(index);
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -225,6 +283,7 @@ const onClickImageThumbs = () => {
             <Link
               href={`/virtual-tour/${virtual_tours[0].worker_id}/`}
               as={`/virtual-tour/${virtual_tours[0].worker_id}/`}
+              passHref
             >
               <div className={Styles.thumbnailContainer}>
                 <img src={virtual_tours[0]?.thumbnail_url} alt="Preview" className={Styles.thumbnail} />
@@ -470,8 +529,6 @@ const onClickImageThumbs = () => {
               >
                 ×
               </button>
-
-
 
               {/* Grid View of all images - responsive large pictures */}
               <div className={Styles.gridGallery} onClick={(e) => e.stopPropagation()}>

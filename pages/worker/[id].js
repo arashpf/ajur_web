@@ -280,15 +280,12 @@ const WorkerSingle = (props) => {
         delay={800}
         renderItem={(worker) => (
           <Grid item md={4} xs={12} key={worker.id}>
-            <Link 
-              href={`/worker/${worker.id}?slug=${worker.slug}`}
-              passHref
-              legacyBehavior
-            >
-              <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                <WorkerCard worker={worker} />
-              </a>
-            </Link>
+          <Link 
+  href={`/worker/${worker.id}?slug=${worker.slug}`}
+  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+>
+  <WorkerCard worker={worker} />
+</Link>
           </Grid>
         )}
         loadingComponent={
@@ -325,18 +322,15 @@ const WorkerSingle = (props) => {
 
       <div className={`${Styles["scroll-div"]} ${Styles["worker-single"]} worker-single-page`} style={{ margin: "0 20px" }}>
         {/* Breadcrumb Navigation */}
+ 
+  
+
         <Breadcrumb
-          items={[
-            {
-              label: details.category_name,
-              href: `/${details.city}/${details.category_name}?city=${details.city}&subcat=${details.category_name}`,
-            },
-            {
-              label: details.name,
-              href: "",
-            },
-          ]}
-        />
+  persianCategory={details.category_name}      // "خرید خانه ویلایی"
+  englishCategory={details.category_eng_name}  // "buy-villa"
+  englishCity={details.city_slug}              // "robat-karim"
+  currentPage={details.name}                   // "240متر خانه ویلایی فول"
+/>
 
         <Box sx={{ flexGrow: 1 }}>
           {/* Main Heading for SEO */}
@@ -400,9 +394,9 @@ const WorkerSingle = (props) => {
                   passHref
                   legacyBehavior
                 >
-                  <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                  {/* <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}> */}
                     <WorkerRealstateCard realstate={cleanRealstate} />
-                  </a>
+                  {/* </a> */}
                 </Link>
               </Box>
             </Grid>
@@ -456,9 +450,9 @@ const WorkerSingle = (props) => {
                   passHref
                   legacyBehavior
                 >
-                  <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                  {/* <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}> */}
                     <WorkerRealstateCard realstate={cleanRealstate} />
-                  </a>
+                  {/* </a> */}
                 </Link>
               </Box>
             </Grid>
@@ -487,13 +481,13 @@ const WorkerSingle = (props) => {
               justifyContent: "center",
               gap: "8px",
               padding: "14px 16px",
-              background: "#0066cc",
+              background: "#b92a31",
               color: "#fff",
               border: "none",
               borderRadius: "8px",
               textDecoration: "none",
               fontWeight: "700",
-              fontSize: "16px",
+              fontSize: "26px",
               cursor: "pointer",
               transition: "all 0.2s",
               width: "100%",
@@ -518,12 +512,12 @@ const WorkerSingle = (props) => {
         >
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "8px", backgroundColor: "#f5f5f5", borderBottom: "1px solid #ddd" }}>
             <IconButton
-              onClick={() => {
-                const lat = details.lat || details.latitude;
-                const long = details.long || details.longitude;
+            onClick={() => {
+              if (typeof window !== 'undefined') {
                 const mapsUrl = `https://maps.google.com/?q=${lat},${long}`;
                 window.open(mapsUrl, "_blank");
-              }}
+              }
+            }}
               title="مسیریابی"
             >
               <DirectionsIcon />

@@ -71,6 +71,7 @@ const CitySelector = ({ handleCitySelect }) => {
     try {
       const success = await updateCity(city);
       if (success) {
+        Cookies.set('persian_city', city.title);
         Cookies.set('city', city.slug);
         router.push(`/${city.slug}`, undefined, { shallow: true });
         setShowModal(false);

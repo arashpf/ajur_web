@@ -325,7 +325,7 @@ function WorkerDetails(props) {
             textAlign: "center",
             fontWeight: "600",
             color: "#222",
-            fontSize: "16px",
+            fontSize: "26px",
             cursor: "pointer",
             transition: "all 0.2s",
             display: "flex",
