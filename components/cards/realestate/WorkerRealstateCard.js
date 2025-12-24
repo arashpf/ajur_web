@@ -136,31 +136,32 @@ export default function WorkerRealstateCard(props) {
         >
           {realstate?.phone}
         </a>
-        <Link href={`/realestates/${realstate.id}?slug=${realstate.slug}`}>
-          <a
-            style={{
-              flex: 1,
-              padding: "12px 16px",
-              background: "#0066cc",
-              border: "1px solid #0066cc",
-              borderRadius: "8px",
-              fontWeight: "600",
-              color: "#fff",
-              fontSize: "16px",
-              textAlign: "center",
-              textDecoration: "none",
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#005bb5';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#0066cc';
-            }}
-          >
-            مشاهده صفحه ی مشاور
-          </a>
+        
+        {/* Fixed Link component - remove the <a> tag */}
+        <Link 
+          href={`/realestates/${realstate.id}?slug=${realstate.slug}`}
+          style={{
+            flex: 1,
+            padding: "12px 16px",
+            background: "#0066cc",
+            border: "1px solid #0066cc",
+            borderRadius: "8px",
+            fontWeight: "600",
+            color: "#fff",
+            fontSize: "16px",
+            textAlign: "center",
+            textDecoration: "none",
+            cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = '#005bb5';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = '#0066cc';
+          }}
+        >
+           صفحه مشاور
         </Link>
       </div>
     </div>

@@ -101,6 +101,8 @@ export const CityProvider = ({ children }) => {
     };
 
     loadCity();
+
+    
   }, []);
 
   // Update city in cookies

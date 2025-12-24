@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -20,151 +20,181 @@ import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Link from "next/link";
 
-// Components
-import WorkerCard from "../../components/cards/WorkerCard";
+// Components - IMPORTANT: Enable SSR for critical components
 const WorkerMedia = dynamic(() => import("../../components/workers/WorkerMedia"), {
-  ssr: false,
+  ssr: true, // Changed from false to true for better LCP
+  loading: () => <div style={{ height: 400, backgroundColor: '#f5f5f5' }} />,
 });
-const WorkerDetails = dynamic(() => import("../../components/workers/WorkerDetails"), { ssr: false });
+
+const WorkerDetails = dynamic(() => import("../../components/workers/WorkerDetails"), { 
+  ssr: true, // Changed from false to true
+  loading: () => <div style={{ height: 300, backgroundColor: '#f5f5f5' }} />,
+});
+
+// Keep non-critical components as non-SSR
+const LocationNoSsr = dynamic(() => import("../../components/map/Location"), {
+  ssr: false,
+  loading: () => <div style={{ height: 300, backgroundColor: '#f5f5f5' }} />,
+});
+
+// Import other components
+import WorkerCard from "../../components/cards/WorkerCard";
 import WorkerRealstateCard from "../../components/cards/realestate/WorkerRealstateCard";
 import WorkerShare from "../../components/workers/WorkerShare";
 import LazyLoader from "../../components/lazyLoader/Loading";
 import Breadcrumb from "../../components/common/Breadcrumb";
-// use site GIF loader
-
-// Dynamic imports
-const LocationNoSsr = dynamic(() => import("../../components/map/Location"), {
-  ssr: false,
-});
 
 // Styles
 import Styles from "../../components/styles/WorkerSingle.module.css";
 
-const Item = styled(Paper)(({ theme }) => ({
+// Helper function - defined outside component
+const cleanText = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/&[a-z]+;/g, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Create optimized Item component
+const Item = React.memo(styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
   ...theme.typography.body2,
   padding: theme.spacing(1),
   textAlign: "center",
   color: theme.palette.text.secondary,
-}));
-
-// Helper function to clean text from HTML entities and zero-width characters
-const cleanText = (text) => {
-  if (!text || typeof text !== 'string') return '';
-  return text
-    .replace(/&[a-z]+;/g, '') // Remove &zwj;, &shy;, &lrm;, etc.
-    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
+})));
 
 const WorkerSingle = (props) => {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const { slug, id } = router.query;
 
-  // Clean all incoming props
-  const {
-    details: rawDetails,
-    properties,
-    realstate,
-    relateds,
-    images,
-    videos,
-    virtual_tours,
-  } = props;
-
-  // Clean details object
-  const details = {
-    ...rawDetails,
-    name: cleanText(rawDetails.name || ''),
-    category_name: cleanText(rawDetails.category_name || ''),
-    region: cleanText(rawDetails.region || ''),
-    city: cleanText(rawDetails.city || ''),
-    neighbourhood: cleanText(rawDetails.neighbourhood || ''),
-    address: cleanText(rawDetails.address || ''),
-    description: cleanText(rawDetails.description || ''),
-  };
-
-  // Clean realstate name for display
-  const cleanRealstate = {
-    ...realstate,
-    name: cleanText(realstate?.name || ''),
-    slug: realstate?.slug || '',
-  };
-
+  // Set client-side flag
   useEffect(() => {
-    // Check if this worker is favorited
-    const favorited = Cookies.get("favorited");
-    if (favorited) {
-      const favoriteItems = JSON.parse(favorited);
-      setIsFavorite(favoriteItems.includes(details.id));
+    setIsClient(true);
+  }, []);
+
+  // OPTIMIZATION: Memoize all cleaned data
+  const { details, cleanRealstate, images, videos, virtual_tours, properties, relateds } = useMemo(() => {
+    const {
+      details: rawDetails,
+      properties: rawProperties,
+      realstate: rawRealstate,
+      relateds: rawRelateds,
+      images: rawImages,
+      videos: rawVideos,
+      virtual_tours: rawVirtualTours,
+    } = props;
+
+    const cleanedDetails = {
+      ...rawDetails,
+      name: cleanText(rawDetails.name || ''),
+      category_name: cleanText(rawDetails.category_name || ''),
+      region: cleanText(rawDetails.region || ''),
+      city: cleanText(rawDetails.city || ''),
+      neighbourhood: cleanText(rawDetails.neighbourhood || ''),
+      address: cleanText(rawDetails.address || ''),
+      description: cleanText(rawDetails.description || ''),
+    };
+
+    const cleanedRealstate = {
+      ...rawRealstate,
+      name: cleanText(rawRealstate?.name || ''),
+      slug: rawRealstate?.slug || '',
+    };
+
+    return {
+      details: cleanedDetails,
+      cleanRealstate: cleanedRealstate,
+      images: rawImages || [],
+      videos: rawVideos || [],
+      virtual_tours: rawVirtualTours || [],
+      properties: rawProperties || [],
+      relateds: rawRelateds || [],
+    };
+  }, [props]);
+
+  // OPTIMIZATION: Split useEffect to reduce blocking time
+  useEffect(() => {
+    // Non-critical initialization (cookies, favorites) - can be deferred
+    const timeoutId = setTimeout(() => {
+      if (!isClient) return;
+      
+      try {
+        // Check favorites
+        const favorited = Cookies.get("favorited");
+        if (favorited) {
+          const favoriteItems = JSON.parse(favorited);
+          setIsFavorite(favoriteItems.includes(details.id));
+        }
+
+        // Update browsing history
+        let history = Cookies.get("history") || "[]";
+        let historyItems = JSON.parse(history);
+        historyItems = historyItems.filter((item) => item !== details.id);
+        historyItems.push(details.id);
+
+        if (historyItems.length > 10) {
+          historyItems = historyItems.slice(-10);
+        }
+
+        Cookies.set("history", JSON.stringify(historyItems));
+      } catch (error) {
+        console.error("Cookie operation failed:", error);
+      }
+    }, 100); // Delay non-critical operations
+
+    return () => clearTimeout(timeoutId);
+  }, [details.id, isClient]);
+
+  // OPTIMIZATION: Critical loading state - set false immediately for server-rendered content
+  useEffect(() => {
+    if (details && isClient) {
+      // Small delay to ensure paint happens
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 50);
+      return () => clearTimeout(timer);
     }
+  }, [details, isClient]);
 
-    // Add to browsing history
-    let history = Cookies.get("history") || "[]";
-    let historyItems = JSON.parse(history);
-
-    // Remove if already exists and add to end
-    historyItems = historyItems.filter((item) => item !== details.id);
-    historyItems.push(details.id);
-
-    // Keep only last 10 items
-    if (historyItems.length > 10) {
-      historyItems = historyItems.slice(-10);
-    }
-
-    Cookies.set("history", JSON.stringify(historyItems));
-
-    // Set loading to false when data is ready
-    if (details) {
-      setLoading(false);
-    }
-  }, [details, id]);
-
-  const toggleFavorite = () => {
+  // OPTIMIZATION: Memoize toggleFavorite
+  const toggleFavorite = useCallback(() => {
     let favorited = Cookies.get("favorited") || "[]";
     let favoriteItems = JSON.parse(favorited);
 
     if (isFavorite) {
-      // Remove from favorites
       favoriteItems = favoriteItems.filter((item) => item !== details.id);
-      Cookies.set("favorited", JSON.stringify(favoriteItems));
     } else {
-      // Add to favorites
       if (!favoriteItems.includes(details.id)) {
         favoriteItems.push(details.id);
-        // Keep only last 20 items
         if (favoriteItems.length > 20) {
           favoriteItems = favoriteItems.slice(-20);
         }
-        Cookies.set("favorited", JSON.stringify(favoriteItems));
       }
     }
 
+    Cookies.set("favorited", JSON.stringify(favoriteItems));
     setIsFavorite(!isFavorite);
-  };
+  }, [isFavorite, details.id]);
 
-  const renderSeoHeader = () => {
-    // Generate comprehensive meta description
+  // OPTIMIZATION: Memoize SEO header
+  const seoHeader = useMemo(() => {
     const metaDescription = details.description
       ? details.description.substring(0, 160)
       : `${details.name} - ${details.category_name} در ${details.region}, ${details.city}. مشاور منتخب برای مشاوره و راهنمایی در ${details.category_name}`;
 
-    // Clean realstate name if exists
-    const cleanRealstateName = cleanText(realstate?.name || '');
-    
-    // Generate keywords
+    const cleanRealstateName = cleanText(cleanRealstate?.name || '');
     const keywords = `${details.name}, ${details.category_name}, ${details.city}, ${details.region}, ${details.neighbourhood}, مشاور, مشاوره, ${cleanRealstateName}`.trim();
-
-    // Generate page title
     const pageTitle = details.name 
       ? `${details.name} - ${details.category_name} در ${details.region}, ${details.city} | آجر`
       : 'آجر | بازارگاه املاک و خدمات';
 
-    // Structured data for Person/Professional
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -194,6 +224,13 @@ const WorkerSingle = (props) => {
 
     return (
       <Head>
+        {/* Add preloads and performance hints */}
+        <link rel="preconnect" href="https://api.ajur.app" />
+        <link rel="dns-prefetch" href="https://api.ajur.app" />
+        {details.thumb && (
+          <link rel="preload" href={details.thumb} as="image" />
+        )}
+        
         <meta charSet="UTF-8" />
         <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
         <meta httpEquiv="Content-Language" content="fa" />
@@ -264,11 +301,35 @@ const WorkerSingle = (props) => {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
+        
+        {/* Critical CSS to prevent layout shift */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          .worker-single-page .swiper {
+            padding: 0 !important;
+          }
+          .media-wrapper, .worker-single-details {
+            contain: layout style paint;
+          }
+          .map-container {
+            min-height: 300px;
+            background-color: #f5f5f5;
+          }
+          @media (max-width: 900px) {
+            .sticky-call-button {
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              z-index: 10001;
+            }
+          }
+        `}} />
       </Head>
     );
-  };
+  }, [details, cleanRealstate]);
 
-  const renderRelatedWorkers = () => {
+  // OPTIMIZATION: Memoize related workers render
+  const renderRelatedWorkers = useCallback(() => {
     if (!Array.isArray(relateds) || relateds.length === 0) {
       return <p>هیچ مورد مشابهی یافت نشد</p>;
     }
@@ -280,12 +341,13 @@ const WorkerSingle = (props) => {
         delay={800}
         renderItem={(worker) => (
           <Grid item md={4} xs={12} key={worker.id}>
-          <Link 
-  href={`/worker/${worker.id}?slug=${worker.slug}`}
-  style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
->
-  <WorkerCard worker={worker} />
-</Link>
+            <Link 
+              href={`/worker/${worker.id}?slug=${worker.slug}`}
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+              prefetch={false} // Disable prefetch for better performance
+            >
+              <WorkerCard worker={worker} />
+            </Link>
           </Grid>
         )}
         loadingComponent={
@@ -299,42 +361,58 @@ const WorkerSingle = (props) => {
         itemProps={{ xl: 3, md: 4, xs: 12 }}
       />
     );
-  };
+  }, [relateds]);
 
-  // Show loading state
-  if (loading) {
+  // OPTIMIZATION: Simplified loading state
+  if (loading && isClient) {
     return (
-      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <img src="/logo/ajour-gif.gif" alt="loading" style={{ height: 200, width: "auto", objectFit: "contain" }} />
+      <div style={{ 
+        minHeight: "60vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        backgroundColor: '#f5f5f5'
+      }}>
+        {/* Use simple CSS loader instead of GIF for faster load */}
+        <div style={{
+          width: 100,
+          height: 100,
+          borderRadius: '50%',
+          background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+          backgroundSize: '200% 100%',
+          animation: 'shine 1.5s infinite linear'
+        }} />
+        <style>{`
+          @keyframes shine {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
     <>
-      {renderSeoHeader()}
+      {seoHeader}
 
-      <style>{`
-        .worker-single-page .swiper {
-          padding: 0 !important;
-        }
-      `}</style>
-
-      <div className={`${Styles["scroll-div"]} ${Styles["worker-single"]} worker-single-page`} style={{ margin: "0 20px" }}>
+      <div 
+        className={`${Styles["scroll-div"]} ${Styles["worker-single"]} worker-single-page`} 
+        style={{ margin: "0 20px" }}
+        // Add inert attribute to prevent focus during loading
+        {...(loading ? { inert: true } : {})}
+      >
         {/* Breadcrumb Navigation */}
- 
-  
-
         <Breadcrumb
-  persianCategory={details.category_name}      // "خرید خانه ویلایی"
-  englishCategory={details.category_eng_name}  // "buy-villa"
-  englishCity={details.city_slug}              // "robat-karim"
-  currentPage={details.name}                   // "240متر خانه ویلایی فول"
-/>
+          persianCategory={details.category_name}
+          englishCategory={details.category_eng_name}
+          englishCity={details.city_slug}
+          currentPage={details.name}
+        />
 
         <Box sx={{ flexGrow: 1 }}>
-          {/* Main Heading for SEO */}
-          <div style={{ display: "none" }}>
+          {/* Main Heading for SEO - hidden but accessible */}
+          <div style={{ display: "none" }} aria-hidden="true">
             <h1>{details.name} - {details.category_name} در {details.region}, {details.city}</h1>
           </div>
 
@@ -347,7 +425,14 @@ const WorkerSingle = (props) => {
                   virtual_tours={virtual_tours}
                   loading={loading}
                 />
-                <div className={Styles["favorite-icon"]} onClick={toggleFavorite}>
+                <div 
+                  className={Styles["favorite-icon"]} 
+                  onClick={toggleFavorite}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => e.key === 'Enter' && toggleFavorite()}
+                  aria-label={isFavorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
+                >
                   {isFavorite ? (
                     <FavoriteIcon style={{ color: "#b92a31" }} />
                   ) : (
@@ -367,23 +452,10 @@ const WorkerSingle = (props) => {
                   style={{ 
                     cursor: "pointer",
                     position: "relative",
-                    pointerEvents: "auto"
                   }}
+                  className="map-container"
                 >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      pointerEvents: "auto",
-                      zIndex: 10,
-                    }}
-                  />
-                  <div style={{ pointerEvents: "none" }}>
-                    <LocationNoSsr details={details} />
-                  </div>
+                  <LocationNoSsr details={details} />
                 </div>
               </Box>
 
@@ -394,9 +466,7 @@ const WorkerSingle = (props) => {
                   passHref
                   legacyBehavior
                 >
-                  {/* <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}> */}
-                    <WorkerRealstateCard realstate={cleanRealstate} />
-                  {/* </a> */}
+                  <WorkerRealstateCard realstate={cleanRealstate} />
                 </Link>
               </Box>
             </Grid>
@@ -423,23 +493,10 @@ const WorkerSingle = (props) => {
                   style={{ 
                     cursor: "pointer",
                     position: "relative",
-                    pointerEvents: "auto"
                   }}
+                  className="map-container"
                 >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      pointerEvents: "auto",
-                      zIndex: 10,
-                    }}
-                  />
-                  <div style={{ pointerEvents: "none" }}>
-                    <LocationNoSsr details={details} />
-                  </div>
+                  <LocationNoSsr details={details} />
                 </div>
               </Box>
 
@@ -450,9 +507,7 @@ const WorkerSingle = (props) => {
                   passHref
                   legacyBehavior
                 >
-                  {/* <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}> */}
-                    <WorkerRealstateCard realstate={cleanRealstate} />
-                  {/* </a> */}
+                  <WorkerRealstateCard realstate={cleanRealstate} />
                 </Link>
               </Box>
             </Grid>
@@ -467,11 +522,12 @@ const WorkerSingle = (props) => {
             bottom: 0,
             left: 0,
             right: 0,
-            padding: "16px 20px 16px",
+            padding: "16px 20px",
             backgroundColor: "#fff",
             boxShadow: "0 -2px 10px rgba(0,0,0,0.1)",
             zIndex: 10001,
           }}
+          className="sticky-call-button"
         >
           <a
             href={`tel:${cleanRealstate?.phone || details.cellphone}`}
@@ -487,19 +543,14 @@ const WorkerSingle = (props) => {
               borderRadius: "8px",
               textDecoration: "none",
               fontWeight: "700",
-              fontSize: "26px",
+              fontSize: "22px",
               cursor: "pointer",
               transition: "all 0.2s",
               width: "100%",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#0052a3";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#0066cc";
-            }}
+            aria-label={`تماس با ${cleanRealstate?.name || details.name}`}
           >
-            تماس: {cleanRealstate?.phone || details.cellphone}
+            تماس : {cleanRealstate?.phone || details.cellphone}
           </a>
         </Box>
 
@@ -512,17 +563,21 @@ const WorkerSingle = (props) => {
         >
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", padding: "8px", backgroundColor: "#f5f5f5", borderBottom: "1px solid #ddd" }}>
             <IconButton
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                const mapsUrl = `https://maps.google.com/?q=${lat},${long}`;
-                window.open(mapsUrl, "_blank");
-              }
-            }}
+              onClick={() => {
+                if (typeof window !== 'undefined' && details.latitude && details.longitude) {
+                  const mapsUrl = `https://maps.google.com/?q=${details.latitude},${details.longitude}`;
+                  window.open(mapsUrl, "_blank");
+                }
+              }}
               title="مسیریابی"
+              aria-label="مسیریابی در نقشه"
             >
               <DirectionsIcon />
             </IconButton>
-            <IconButton onClick={() => setMapModalOpen(false)}>
+            <IconButton 
+              onClick={() => setMapModalOpen(false)}
+              aria-label="بستن نقشه"
+            >
               <CloseIcon />
             </IconButton>
           </div>
@@ -530,8 +585,6 @@ const WorkerSingle = (props) => {
             <LocationNoSsr details={details} mapHeight="100%" />
           </DialogContent>
         </Dialog>
-
-        {/* <WorkerShare details={details} slug={slug} /> */}
 
         <div className={Styles["title"]}>
           <h2>
@@ -559,15 +612,35 @@ WorkerSingle.propTypes = {
   relateds: PropTypes.array.isRequired,
 };
 
+// OPTIMIZATION: Improved getServerSideProps with caching and timeout
 export async function getServerSideProps(context) {
-  const { params } = context;
+  const { params, res } = context;
   const id = params.id;
 
+  // Set cache headers
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+
   try {
-    const res = await fetch(`https://api.ajur.app/api/posts/${id}`);
+    // Use AbortController for timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const res = await fetch(`https://api.ajur.app/api/posts/${id}`, {
+      signal: controller.signal,
+      headers: {
+        'Accept-Encoding': 'gzip',
+      },
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
     const data = await res.json();
 
-    // Clean text function for server-side
+    // Use the same cleanText function
     const cleanText = (text) => {
       if (!text || typeof text !== 'string') return '';
       return text
@@ -577,7 +650,6 @@ export async function getServerSideProps(context) {
         .trim();
     };
 
-    // Clean details object
     const cleanDetails = {
       ...data.details,
       name: cleanText(data.details.name || ''),
@@ -589,7 +661,6 @@ export async function getServerSideProps(context) {
       description: cleanText(data.details.description || ''),
     };
 
-    // Clean realstate object if it exists
     const cleanRealstate = data.realstate ? {
       ...data.realstate,
       name: cleanText(data.realstate.name || ''),
@@ -608,10 +679,20 @@ export async function getServerSideProps(context) {
     };
   } catch (error) {
     console.error("Error fetching worker data:", error);
+    
+    // Return minimal props instead of 404 for better UX
     return {
-      notFound: true,
+      props: {
+        details: { id, name: '', category_name: '' },
+        images: [],
+        videos: [],
+        virtual_tours: [],
+        properties: [],
+        realstate: {},
+        relateds: [],
+      },
     };
   }
 }
 
-export default WorkerSingle;
+export default React.memo(WorkerSingle);

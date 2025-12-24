@@ -964,7 +964,7 @@ const SearchBars = ({ realstates }) => {
                 );
               } else {
                 setSearchStatus(
-                  `${item.category} در ${currentCity.title} (هیچ ملکی یافت نشد)`
+                  `${item.category} در ${currentCity.title} ( )`
                 );
               }
             } else {
@@ -1151,7 +1151,7 @@ const SearchBars = ({ realstates }) => {
         {/* No properties message - only show if API returned no neighborhoods */}
         {item.neighborhoods.length === 0 && (
           <div className="text-center py-3 text-gray-500 text-sm">
-            {item.isEmpty ? "هیچ ملکی یافت نشد" : "در حال بررسی موجودی..."}
+            {item.isEmpty ? " " : "در حال بررسی موجودی"}
           </div>
         )}
       </div>

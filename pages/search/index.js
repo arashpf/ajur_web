@@ -55,8 +55,8 @@ import 'swiper/css/navigation';
 
      if(!selected_city){
       //  router.push("/city-selection");
-      Cookies.set('selected_city','رباط کریم');
-      selected_city = 'رباط کریم';
+      Cookies.set('selected_city','tehran');
+      selected_city = 'tehran';
       Cookies.set('selected_city_lat', '35.47229675', { expires: 365 });
     Cookies.set('selected_city_lng', '51.08457936', { expires: 365 });
      }

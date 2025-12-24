@@ -542,8 +542,8 @@ export default function FileRequestForm() {
                     <Box sx={{ mb: 4 }}>
                         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                             بودجه (اختیاری): از {formatToman(budgetRange[0])} تا{" "}
-                            {budgetRange[1] >= 5000000000
-                                ? "۵ میلیارد یا بیشتر"
+                            {budgetRange[1] >= 10000000000
+                                ? "۱۰ میلیارد یا بیشتر"
                                 : formatToman(budgetRange[1])}
                         </Typography>
                         <Slider
@@ -551,7 +551,7 @@ export default function FileRequestForm() {
                             onChange={(e, newValue) => setBudgetRange(newValue)}
                             valueLabelDisplay="off"
                             min={0}
-                            max={5000000000}
+                            max={10000000000}
                             step={20000000}
                             sx={{ color: '#bc323a', width: '95%', mx: 'auto', display: 'block' }}
                         />

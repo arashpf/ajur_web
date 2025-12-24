@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 import {
@@ -94,12 +94,98 @@ const formatNumberWithWords = (num) => {
   return convertToPersianDigits(number.toString());
 };
 
+// Custom hook for back button handling
+const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpen) => {
+  const historyAdded = useRef(false);
+  const cleanupTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    // Clear any existing cleanup timeout
+    if (cleanupTimeoutRef.current) {
+      clearTimeout(cleanupTimeoutRef.current);
+      cleanupTimeoutRef.current = null;
+    }
+
+    if (!isFilterOpen) {
+      // Clean up when modal closes
+      if (historyAdded.current) {
+        // Use timeout to ensure cleanup happens after modal animation
+        cleanupTimeoutRef.current = setTimeout(() => {
+          if (window.history.state?.filterModalOpen) {
+            window.history.back();
+          }
+          historyAdded.current = false;
+        }, 100);
+      }
+      return;
+    }
+
+    // Add a history entry when modal opens
+    if (!historyAdded.current) {
+      window.history.pushState({ filterModalOpen: true, filterLevel }, '');
+      historyAdded.current = true;
+    }
+
+    const handlePopState = (event) => {
+      if (!isFilterOpen) return;
+
+      // Prevent default back navigation
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+
+      if (filterLevel !== "base") {
+        // Go back to base level
+        setFilterLevel("base");
+        // Update the current history entry with new state
+        window.history.replaceState({ 
+          filterModalOpen: true, 
+          filterLevel: "base" 
+        }, '');
+      } else {
+        // Close the modal
+        setIsFilterOpen(false);
+        // Remove our history entry after a short delay
+        cleanupTimeoutRef.current = setTimeout(() => {
+          if (historyAdded.current && window.history.state?.filterModalOpen) {
+            window.history.back();
+            historyAdded.current = false;
+          }
+        }, 50);
+      }
+    };
+
+    // Add with capture phase to ensure we catch it first
+    window.addEventListener('popstate', handlePopState, true);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState, true);
+      
+      // Clean up timeout
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+        cleanupTimeoutRef.current = null;
+      }
+    };
+  }, [isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpen]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+      }
+    };
+  }, []);
+};
+
 const WorkerFilter = ({
   workers = [],
   onFilteredWorkersChange,
   onLoadingChange = null,
   initialCategory = null,
   onCategoryChange = null,
+  city = null,
 }) => {
   const router = useRouter();
 
@@ -116,7 +202,7 @@ const WorkerFilter = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // State
-  const [isFilterOpen, setIsFilterOpen] = useState(!isMobile);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
@@ -125,10 +211,10 @@ const WorkerFilter = ({
   const [sortAnchorEl, setSortAnchorEl] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
   const [loading, setLoading] = useState(true);
-  const [focusedField, setFocusedField] = useState(null); // Track which field is focused
-  const [filterTimeout, setFilterTimeout] = useState(null); // Timeout for debouncing
-  const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(true); // State for collapsible filters - open by default
-  const [featuresExpanded, setFeaturesExpanded] = useState(false); // State for features dropdown
+  const [focusedField, setFocusedField] = useState(null);
+  const [filterTimeout, setFilterTimeout] = useState(null);
+  const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(false);
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
 
   // Data
   const [categories, setCategories] = useState([]);
@@ -138,6 +224,15 @@ const WorkerFilter = ({
   const [dynamicRangeFilters, setDynamicRangeFilters] = useState([]);
   const [dynamicFeatures, setDynamicFeatures] = useState([]);
 
+  // Use the back button hook
+  useBackButton(isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpen);
+
+  useEffect(() => {
+    if (city) {
+      console.log('🏙️ WorkerFilter received city:---------------', city);
+    }
+  }, [city]);
+  
   // Add effect to prevent background scrolling when filter is open
   useEffect(() => {
     if (isFilterOpen) {
@@ -372,11 +467,36 @@ const WorkerFilter = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("https://api.ajur.app/api/base");
+        // Build the API URL with city parameter
+        let apiUrl = "https://api.ajur.app/api/base";
+        
+        if (city) {
+          // Add city as query parameter
+          apiUrl += `?city=${encodeURIComponent(city)}`;
+          console.log('🌐 Fetching base API with city:', city);
+          console.log('🔗 API URL:', apiUrl);
+        } else {
+          console.log('🌐 Fetching base API without city parameter');
+        }
+  
+        const response = await axios.get(apiUrl);
+        
+        // Log what we received
+        console.log('📥 Base API response:', {
+          neighborhoodsCount: response.data.the_neighborhoods?.length,
+          categoriesCount: response.data.cats?.length,
+          cityInResponse: response.data.the_city
+        });
+        
         setCategories(response.data.cats || []);
         setNeighborhoods(response.data.the_neighborhoods || []);
       } catch (error) {
-        console.error("Error loading filters:", error);
+        console.error("❌ Error loading filters:", error);
+        console.error("Error details:", {
+          cityRequested: city,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        });
         setCategories([]);
         setNeighborhoods([]);
       } finally {
@@ -384,7 +504,7 @@ const WorkerFilter = ({
       }
     };
     fetchData();
-  }, []);
+  }, [city]);
 
   // Debounced filter application
   const applyFiltersWithDebounce = () => {
@@ -577,7 +697,6 @@ const WorkerFilter = ({
       setSelectedCategory(category);
     }
     setFilterLevel("base");
-    // Filtering will happen automatically via useEffect
   };
 
   const handleNeighborhoodToggle = (neighborhood) => {
@@ -586,7 +705,6 @@ const WorkerFilter = ({
         ? prev.filter((n) => n.id !== neighborhood.id)
         : [...prev, neighborhood]
     );
-    // Filtering will happen automatically via useEffect
   };
 
   const handleFeatureToggle = (feature) => {
@@ -595,7 +713,6 @@ const WorkerFilter = ({
         ? prev.filter((f) => f.value !== feature.value)
         : [...prev, feature]
     );
-    // Filtering will happen automatically via useEffect
   };
 
   const handleRangeFilterChange = (fieldId, type, value) => {
@@ -609,20 +726,16 @@ const WorkerFilter = ({
           : f
       )
     );
-    // Filtering will happen automatically via useEffect
   };
 
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);
     setSortAnchorEl(null);
-    // Filtering will happen automatically via useEffect
   };
 
   const handleResetAll = () => {
-    // Don't clear selected category - only clear other filters
     setSelectedNeighborhoods([]);
     setSelectedFeatures([]);
-    // Reset all range filters
     setRangeFilters(
       dynamicRangeFilters.map((field) => ({
         ...field,
@@ -631,7 +744,6 @@ const WorkerFilter = ({
       }))
     );
     setSortBy("newest");
-    // Filtering will happen automatically via useEffect
   };
 
   const getSortDisplayText = () => {
@@ -641,6 +753,20 @@ const WorkerFilter = ({
       most_viewed: "پر بازدید ترین",
     };
     return sortTexts[sortBy] || "مرتب‌سازی";
+  };
+
+  // Handle back button click in modal
+  const handleModalBackButton = () => {
+    if (filterLevel !== "base") {
+      setFilterLevel("base");
+    } else {
+      setIsFilterOpen(false);
+    }
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setIsFilterOpen(false);
   };
 
   // Render methods
@@ -709,15 +835,12 @@ const WorkerFilter = ({
                 let label = `${filter.name}: `;
 
                 if (filter.low !== "" && filter.high !== "") {
-                  // Both low and high set
                   label += `${formatNumberWithWords(
                     filter.low
                   )} تا ${formatNumberWithWords(filter.high)} ${filter.unit}`;
                 } else if (filter.low !== "") {
-                  // Only low set
                   label += `از ${formatNumberWithWords(filter.low)}`;
                 } else if (filter.high !== "") {
-                  // Only high set
                   label += `تا ${formatNumberWithWords(filter.high)}`;
                 }
 
@@ -793,7 +916,7 @@ const WorkerFilter = ({
           <AccordionSummary
             expandIcon={
               <ExpandMore
-                sx={{ color: featuresExpanded ? "#d32f2f" : "#666" }}
+                sx={{ color: featuresExpanded ? "#b92a31" : "#666" }}
               />
             }
             sx={{
@@ -816,7 +939,7 @@ const WorkerFilter = ({
           >
             <Typography
               variant="subtitle2"
-              sx={{ color: "#d32f2f", fontWeight: 600, textAlign: "right" }}
+              sx={{ color: "#b92a31", fontWeight: 600, textAlign: "right" }}
             >
               امکانات
             </Typography>
@@ -837,16 +960,16 @@ const WorkerFilter = ({
                         justifyContent: "space-between",
                         p: 2,
                         border: "2px solid",
-                        borderColor: isSelected ? "#d32f2f" : "#e0e0e0",
+                        borderColor: isSelected ? "#b92a31" : "#e0e0e0",
                         borderRadius: 3,
                         background: isSelected
-                          ? "linear-gradient(135deg, rgba(211, 47, 47, 0.1) 0%, rgba(192, 192, 192, 0.1) 100%)"
+                          ? "linear-gradient(135deg, rgba(185, 42, 49, 0.1) 0%, rgba(192, 192, 192, 0.1) 100%)"
                           : "linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 240, 240, 0.8) 100%)",
                         cursor: "pointer",
                         transition: "all 0.3s ease",
                         "&:hover": {
-                          borderColor: "#d32f2f",
-                          boxShadow: "0 2px 8px rgba(211, 47, 47, 0.15)",
+                          borderColor: "#b92a31",
+                          boxShadow: "0 2px 8px rgba(185, 42, 49, 0.15)",
                         },
                       }}
                       onClick={() => handleFeatureToggle(feature)}
@@ -856,10 +979,10 @@ const WorkerFilter = ({
                           width: 24,
                           height: 24,
                           border: "2px solid",
-                          borderColor: isSelected ? "#d32f2f" : "#999",
+                          borderColor: isSelected ? "#b92a31" : "#999",
                           borderRadius: "6px",
                           background: isSelected
-                            ? "linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)"
+                            ? "linear-gradient(135deg, #b92a31 0%, #a01c22 100%)"
                             : "transparent",
                           display: "flex",
                           alignItems: "center",
@@ -875,7 +998,7 @@ const WorkerFilter = ({
                       <Typography
                         variant="body2"
                         fontWeight={isSelected ? 600 : 500}
-                        sx={{ color: isSelected ? "#d32f2f" : "#333", ml: 1.5 }}
+                        sx={{ color: isSelected ? "#b92a31" : "#333", ml: 1.5 }}
                       >
                         {feature.value}
                       </Typography>
@@ -913,7 +1036,7 @@ const WorkerFilter = ({
         <AccordionSummary
           expandIcon={
             <ExpandMore
-              sx={{ color: moreFiltersExpanded ? "#d32f2f" : "#666" }}
+              sx={{ color: moreFiltersExpanded ? "#b92a31" : "#666" }}
             />
           }
           sx={{
@@ -936,7 +1059,7 @@ const WorkerFilter = ({
         >
           <Typography
             variant="subtitle2"
-            sx={{ color: "#d32f2f", fontWeight: 600, textAlign: "right" }}
+            sx={{ color: "#b92a31", fontWeight: 600, textAlign: "right" }}
           >
             فیلترهای بیشتر
           </Typography>
@@ -944,7 +1067,6 @@ const WorkerFilter = ({
         <AccordionDetails sx={{ pt: 2 }}>
           <Grid container spacing={2}>
             {dynamicRangeFilters.map((filter) => {
-              // Find the corresponding rangeFilter with actual values
               const rangeFilter = rangeFilters.find(
                 (rf) => rf.id === filter.id
               );
@@ -983,9 +1105,7 @@ const WorkerFilter = ({
                         }
                         onFocus={() => setFocusedField(`${filter.id}-high`)}
                         onBlur={(e) => {
-                          // Use setTimeout to allow click event to process first
                           setTimeout(() => {
-                            // Check if the related target (what was clicked) is inside our suggestions
                             const relatedTarget = e.relatedTarget;
                             const isClickingSuggestion =
                               relatedTarget &&
@@ -1016,12 +1136,12 @@ const WorkerFilter = ({
                             backgroundColor: "rgba(255, 255, 255, 0.8)",
                             border: "1.5px solid #e0e0e0",
                             "&:hover": {
-                              borderColor: "#d32f2f",
+                              borderColor: "#b92a31",
                               backgroundColor: "rgba(255, 255, 255, 1)",
                             },
                             "&.Mui-focused": {
-                              borderColor: "#d32f2f",
-                              boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                              borderColor: "#b92a31",
+                              boxShadow: "0 0 0 2px rgba(185, 42, 49, 0.1)",
                             },
                           },
                         }}
@@ -1040,8 +1160,8 @@ const WorkerFilter = ({
                               maxHeight: 150,
                               overflow: "auto",
                               borderRadius: 2,
-                              border: "1.5px solid #d32f2f",
-                              boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
+                              border: "1.5px solid #b92a31",
+                              boxShadow: "0 4px 12px rgba(185, 42, 49, 0.15)",
                             }}
                             elevation={0}
                           >
@@ -1049,7 +1169,7 @@ const WorkerFilter = ({
                               (suggestion, index) => (
                                 <Box
                                   key={index}
-                                  data-suggestion="true" // Add data attribute for identification
+                                  data-suggestion="true"
                                   sx={{
                                     p: 1.2,
                                     cursor: "pointer",
@@ -1057,8 +1177,8 @@ const WorkerFilter = ({
                                     background:
                                       "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
                                     "&:hover": {
-                                      bgcolor: "rgba(211, 47, 47, 0.08)",
-                                      borderBottomColor: "#d32f2f",
+                                      bgcolor: "rgba(185, 42, 49, 0.08)",
+                                      borderBottomColor: "#b92a31",
                                     },
                                     "&:last-child": {
                                       borderBottom: "none",
@@ -1107,9 +1227,7 @@ const WorkerFilter = ({
                         }
                         onFocus={() => setFocusedField(`${filter.id}-low`)}
                         onBlur={(e) => {
-                          // Use setTimeout to allow click event to process first
                           setTimeout(() => {
-                            // Check if the related target (what was clicked) is inside our suggestions
                             const relatedTarget = e.relatedTarget;
                             const isClickingSuggestion =
                               relatedTarget &&
@@ -1140,12 +1258,12 @@ const WorkerFilter = ({
                             backgroundColor: "rgba(255, 255, 255, 0.8)",
                             border: "1.5px solid #e0e0e0",
                             "&:hover": {
-                              borderColor: "#d32f2f",
+                              borderColor: "#b92a31",
                               backgroundColor: "rgba(255, 255, 255, 1)",
                             },
                             "&.Mui-focused": {
-                              borderColor: "#d32f2f",
-                              boxShadow: "0 0 0 2px rgba(211, 47, 47, 0.1)",
+                              borderColor: "#b92a31",
+                              boxShadow: "0 0 0 2px rgba(185, 42, 49, 0.1)",
                             },
                           },
                         }}
@@ -1164,8 +1282,8 @@ const WorkerFilter = ({
                               maxHeight: 150,
                               overflow: "auto",
                               borderRadius: 2,
-                              border: "1.5px solid #d32f2f",
-                              boxShadow: "0 4px 12px rgba(211, 47, 47, 0.15)",
+                              border: "1.5px solid #b92a31",
+                              boxShadow: "0 4px 12px rgba(185, 42, 49, 0.15)",
                             }}
                             elevation={0}
                           >
@@ -1173,7 +1291,7 @@ const WorkerFilter = ({
                               (suggestion, index) => (
                                 <Box
                                   key={index}
-                                  data-suggestion="true" // Add data attribute for identification
+                                  data-suggestion="true"
                                   sx={{
                                     p: 1.2,
                                     cursor: "pointer",
@@ -1181,8 +1299,8 @@ const WorkerFilter = ({
                                     background:
                                       "linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(245,245,245,1) 100%)",
                                     "&:hover": {
-                                      bgcolor: "rgba(211, 47, 47, 0.08)",
-                                      borderBottomColor: "#d32f2f",
+                                      bgcolor: "rgba(185, 42, 49, 0.08)",
+                                      borderBottomColor: "#b92a31",
                                     },
                                     "&:last-child": {
                                       borderBottom: "none",
@@ -1221,9 +1339,9 @@ const WorkerFilter = ({
                         mt: 1.5,
                         p: 1.5,
                         background:
-                          "linear-gradient(135deg, rgba(211, 47, 47, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%)",
+                          "linear-gradient(135deg, rgba(185, 42, 49, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%)",
                         borderRadius: 2,
-                        border: "1px solid rgba(211, 47, 47, 0.1)",
+                        border: "1px solid rgba(185, 42, 49, 0.1)",
                       }}
                     >
                       <Typography
@@ -1259,37 +1377,60 @@ const WorkerFilter = ({
     <>
       {/* Filter & Sort Buttons */}
       <Box
-        sx={{
-          position: "fixed",
-          top: isMobile ? 125 : 80,
-          right: 16,
-          zIndex: 10 ,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-        }}
+       sx={{
+        position: "fixed",
+        top: isMobile ? 75 : 80,
+        // Conditionally set position: right for mobile, left for desktop
+        left: isMobile ? "auto" : 16,
+        right: isMobile ? 16 : "auto",
+        zIndex: 15,
+        display: "flex",
+        flexDirection: "column",
+        gap: 1,
+       
+      }}
       >
         <Button
           onClick={() => setIsFilterOpen(true)}
           variant="contained"
           sx={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
+            width: "auto",
+            minWidth: 100,
+            height: isMobile ? 30 : 48,
+            borderRadius: "24px",
+            background: "linear-gradient(135deg, #a92b31 0%, #d45b61 100%)",
             color: "white",
-            boxShadow: "0 2px 8px rgba(128,128,128,0.3)",
-            px: 2,
+            boxShadow: "0 4px 15px rgba(169, 43, 49, 0.3)",
+            px: 3,
+            py: 1.5,
+            fontFamily: "'Vazir', 'Segoe UI', sans-serif",
+            fontWeight: 600,
+            fontSize: "14px",
+            letterSpacing: "0.5px",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            textTransform: "none",
             "&:hover": {
-              background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
+              background: "linear-gradient(135deg, #8c2328 0%, #c2494f 100%)",
+              boxShadow: "0 6px 20px rgba(169, 43, 49, 0.4)",
+              transform: "translateY(-2px)",
+            },
+            "&:active": {
+              transform: "translateY(0)",
+              boxShadow: "0 2px 10px rgba(169, 43, 49, 0.3)",
             },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            <Tune sx={{ fontSize: 20 }} />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 600,
+                fontSize: "14px"
+              }}
+            >
               فیلترها
             </Typography>
-            <Tune sx={{ fontSize: 24 }} />
           </Box>
         </Button>
       </Box>
@@ -1341,27 +1482,21 @@ const WorkerFilter = ({
         {/* Header */}
         <Box
           sx={{
-            background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
+            background: "linear-gradient(135deg, #b92a31 0%, #e74c3c 100%)",
             color: "white",
-            p: 2,
+            p: 1.5,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            borderBottom: "1px solid #a9a9a9",
+            borderBottom: "1px solid #a01c22",
           }}
         >
           <Button
-            onClick={() => {
-              if (filterLevel !== "base") {
-                setFilterLevel("base");
-              } else {
-                setIsFilterOpen(false);
-              }
-            }}
+            onClick={handleModalBackButton}
             color="inherit"
             sx={{
               "&:hover": {
-                background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
+                background: "linear-gradient(135deg, #a01c22 0%, #c0392b 100%)",
               },
             }}
           >
@@ -1376,7 +1511,7 @@ const WorkerFilter = ({
             size="small"
             sx={{
               "&:hover": {
-                background: "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
+                background: "linear-gradient(135deg, #a01c22 0%, #c0392b 100%)",
               },
             }}
           >
@@ -1388,7 +1523,13 @@ const WorkerFilter = ({
         {!isMobile && renderSelectedFilters()}
 
         {/* Content */}
-        <Box sx={{ flex: 1, overflow: "auto", mb: 3 }}>
+        <Box sx={{ 
+  flex: 1, 
+  overflow: "auto", 
+  mb: 3,
+  // Add bottom padding when button is fixed at bottom on mobile
+  pb: isMobile && filterLevel === "base" && isFilterOpen ? "100px" : "0"
+}}>
           {filterLevel === "category" ? (
             <Box sx={{ p: 2 }}>
               {loading ? (
@@ -1426,21 +1567,21 @@ const WorkerFilter = ({
                           border: "1px solid",
                           borderColor:
                             selectedCategory?.id === category.id
-                              ? "primary.main"
+                              ? "#b92a31"
                               : "grey.300",
                           borderRadius: 1,
                           bgcolor:
                             selectedCategory?.id === category.id
-                              ? "primary.light"
+                              ? "rgba(185, 42, 49, 0.1)"
                               : "white",
                           "&:hover": {
                             bgcolor:
                               selectedCategory?.id === category.id
-                                ? "primary.light"
+                                ? "rgba(185, 42, 49, 0.15)"
                                 : "grey.50",
                             borderColor:
                               selectedCategory?.id === category.id
-                                ? "primary.main"
+                                ? "#b92a31"
                                 : "grey.400",
                           },
                           transition: "all 0.2s ease-in-out",
@@ -1450,7 +1591,7 @@ const WorkerFilter = ({
                         onClick={() => handleCategorySelect(category)}
                       >
                         {selectedCategory?.id === category.id ? (
-                          <RadioButtonChecked color="primary" sx={{ ml: 1 }} />
+                          <RadioButtonChecked sx={{ ml: 1, color: "#b92a31" }} />
                         ) : (
                           <RadioButtonUnchecked
                             sx={{ ml: 1, color: "grey.500" }}
@@ -1512,7 +1653,23 @@ const WorkerFilter = ({
                           )
                         }
                         onClick={() => handleNeighborhoodToggle(neighborhood)}
-                        sx={{ justifyContent: "flex-start" }}
+                        sx={{ 
+                          justifyContent: "flex-start",
+                          '&.Mui-contained': {
+                            backgroundColor: '#b92a31',
+                            '&:hover': {
+                              backgroundColor: '#a01c22',
+                            }
+                          },
+                          '&.Mui-outlined': {
+                            borderColor: '#b92a31',
+                            color: '#b92a31',
+                            '&:hover': {
+                              borderColor: '#a01c22',
+                              backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                            }
+                          }
+                        }}
                       >
                         {neighborhood.name}
                       </Button>
@@ -1552,6 +1709,14 @@ const WorkerFilter = ({
                   variant="outlined"
                   size="small"
                   startIcon={<Sort />}
+                  sx={{
+                    borderColor: '#b92a31',
+                    color: '#b92a31',
+                    '&:hover': {
+                      borderColor: '#a01c22',
+                      backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                    }
+                  }}
                 >
                   {getSortDisplayText()}
                 </Button>
@@ -1573,6 +1738,14 @@ const WorkerFilter = ({
                   onClick={() => setFilterLevel("category")}
                   variant="outlined"
                   size="small"
+                  sx={{
+                    borderColor: '#b92a31',
+                    color: '#b92a31',
+                    '&:hover': {
+                      borderColor: '#a01c22',
+                      backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                    }
+                  }}
                 >
                   {selectedCategory ? "تغییر" : "انتخاب"}
                 </Button>
@@ -1598,6 +1771,14 @@ const WorkerFilter = ({
                   onClick={() => setFilterLevel("region")}
                   variant="outlined"
                   size="small"
+                  sx={{
+                    borderColor: '#b92a31',
+                    color: '#b92a31',
+                    '&:hover': {
+                      borderColor: '#a01c22',
+                      backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                    }
+                  }}
                 >
                   {selectedNeighborhoods.length > 0 ? "تغییر" : "انتخاب"}
                 </Button>
@@ -1613,39 +1794,54 @@ const WorkerFilter = ({
               </Box>
               <Divider />
 
-              {/* Range Filters Section - Now in collapsible accordion */}
-              {renderRangeFilters()}
+             
 
-              {/* Features Section - Now below range filters */}
+              {/* Features Section */}
               {renderFeatures()}
+
+               {/* Range Filters Section */}
+               {renderRangeFilters()}
             </Box>
           )}
         </Box>
 
-        {/* Footer - FIXED VERSION */}
-        {filterLevel === "base" && (
-          <Box
-            sx={{ p: 2, borderTop: "1px solid #e0e0e0", bgcolor: "#f5f5f5" }}
-          >
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => setIsFilterOpen(false)}
-              sx={{
-                background: "linear-gradient(135deg, #808080 0%, #c0c0c0 100%)",
-                color: "white",
-                fontWeight: 600,
-                py: 1.5,
-                "&:hover": {
-                  background:
-                    "linear-gradient(135deg, #a9a9a9 0%, #d3d3d3 100%)",
-                },
-              }}
-            >
-              نمایش {applyFilters().length} آگهی
-            </Button>
-          </Box>
-        )}
+        {/* Footer */}
+        {filterLevel === "base" && isFilterOpen && (
+  <Box
+    sx={{
+      p: 2,
+      borderTop: "1px solid #e0e0e0",
+      bgcolor: "#f5f5f5",
+      // Fixed positioning for mobile
+      position: isMobile ? "fixed" : "static",
+      bottom: isMobile ? 0 : "auto",
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      boxShadow: isMobile ? "0 -4px 20px rgba(0, 0, 0, 0.1)" : "none",
+    }}
+  >
+    <Button
+      variant="contained"
+      fullWidth
+      onClick={handleModalClose}
+      sx={{
+        background: "linear-gradient(135deg, #b92a31 0%, #e74c3c 100%)",
+        color: "white",
+        fontWeight: 600,
+        py: 1,
+        borderRadius: isMobile ? "12px" : "8px",
+        fontSize: isMobile ? "16px" : "14px",
+        mb: isMobile ? "max(16px, env(safe-area-inset-bottom))" : 0,
+        "&:hover": {
+          background: "linear-gradient(135deg, #a01c22 0%, #c0392b 100%)",
+        },
+      }}
+    >
+      نمایش {applyFilters().length} آگهی
+    </Button>
+  </Box>
+)}
       </Box>
 
       {/* Overlay for mobile */}
@@ -1660,7 +1856,7 @@ const WorkerFilter = ({
             bgcolor: "rgba(0, 0, 0, 0.5)",
             zIndex: 1199,
           }}
-          onClick={() => setIsFilterOpen(false)}
+          onClick={handleModalClose}
         />
       )}
 
@@ -1698,6 +1894,13 @@ const WorkerFilter = ({
                 }}
                 size="small"
                 variant="outlined"
+                sx={{
+                  borderColor: '#b92a31',
+                  color: '#b92a31',
+                  '&:hover': {
+                    backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                  }
+                }}
               />
             )}
 
@@ -1712,6 +1915,13 @@ const WorkerFilter = ({
                 }
                 size="small"
                 variant="outlined"
+                sx={{
+                  borderColor: '#b92a31',
+                  color: '#b92a31',
+                  '&:hover': {
+                    backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                  }
+                }}
               />
             ))}
 
@@ -1726,6 +1936,13 @@ const WorkerFilter = ({
                 }
                 size="small"
                 variant="outlined"
+                sx={{
+                  borderColor: '#b92a31',
+                  color: '#b92a31',
+                  '&:hover': {
+                    backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                  }
+                }}
               />
             ))}
 
@@ -1755,6 +1972,13 @@ const WorkerFilter = ({
                       }}
                       size="small"
                       variant="outlined"
+                      sx={{
+                        borderColor: '#b92a31',
+                        color: '#b92a31',
+                        '&:hover': {
+                          backgroundColor: 'rgba(185, 42, 49, 0.04)',
+                        }
+                      }}
                     />
                   );
                 }
