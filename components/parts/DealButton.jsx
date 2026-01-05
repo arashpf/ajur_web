@@ -13,7 +13,12 @@ export default function DealButton({ title, src, onClick, style = {}, subtitle }
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.content}>
         <div className={styles.media}>
-          <img src={src || "/placeholder.svg"} alt={title} className={styles.image} />
+          <img 
+            src={src || "/placeholder.svg"} 
+            alt={title} 
+            className={styles.image}
+            loading="lazy"
+          />
         </div>
 
         <div className={styles.text}>

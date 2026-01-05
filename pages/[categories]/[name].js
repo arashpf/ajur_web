@@ -1,22 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, useMemo, useCallback } from "react";
 import PropTypes from "prop-types";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Styles from "../../styles/CategoriesWorkersIndex.module.css";
-import axios from "axios";
-import CatCard2 from "../../components/cards/CatCard2";
-import FileRequest from "../../components/request/FileRequest";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import WorkerCard from "../../components/cards/WorkerCard";
 import Link from "next/link";
-import { Navigation, Pagination } from "swiper";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
-import LazyLoader from "../../components/lazyLoader/Loading";
 import WorkerFilter from "../../components/WorkerFilter";
+import { CityContext } from '../../components/parts/CityContext';
+
+import {
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 
 // Import MUI components for breadcrumb
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -24,194 +21,279 @@ import Typography from '@mui/material/Typography';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import CategoryIcon from '@mui/icons-material/Category';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
+
+// Import utility function for city names
+import { getPersianCityName } from '../../components/util/cityNames';
 
 const SingleCategory = (props) => {
   const router = useRouter();
+  const { currentCity } = useContext(CityContext);
   const { slug, id, categories, subcat, neighbor } = router.query;
-
-
-   // Log the props in browser console
-   useEffect(() => {
-    console.log('🌍 Browser Console - Page Props:');
-    console.log('📍 City from props:', props.city);
-    console.log('🏷️ Category name:', props.name);
-    console.log('📊 Details:', props.details);
-    console.log('👷 Workers count:', props.workers?.length);
-    console.log('🔗 Current URL params:', router.query);
-  }, [props, router.query]);
-
-
-
-  const [selectedCat, setSelectedCat] = useState(null);
+  const theme = useTheme();
+const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  // Directly use props where possible to avoid unnecessary state
+  const workers = useMemo(() => props.workers || [], [props.workers]);
+  const details = useMemo(() => props.details || {}, [props.details]);
+  const main_cats = useMemo(() => props.main_cats || [], [props.main_cats]);
+  const neighborhoods = useMemo(() => props.neighborhoods || [], [props.neighborhoods]);
+  const name = props.name || '';
+  const city = props.city || 'tehran';
+  const persian_city = props.persian_city || getPersianCityName(props.city || 'tehran');
+  const persian_category_name = props.persian_category_name || name || ''; // ADD THIS LINE
+  
+  // State for UI
   const [loading, set_loading] = useState(true);
   const [filterLoading, setFilterLoading] = useState(false);
-  const [name, set_name] = useState('');
-  const [city, set_city] = useState('tehran');
-  const [neighborhoods, set_neighborhoods] = useState([]);
-  const [filteredWorkers, setFilteredWorkers] = useState([]);
-  const [workers, set_workers] = useState([]);
-  const [details, set_details] = useState({});
-  const [all_workers, set_all_workers] = useState([]);
-  const [cats, set_cats] = useState([]);
-  const [main_cats, set_main_cats] = useState([]);
   const [y_scroll, set_y_scroll] = useState(0);
-
-  const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+  const [workersState, set_workers] = useState(workers);
+  const [pagination, setPagination] = useState(props.pagination || { current_page: 1, per_page: 10, total_count: 0, total_pages: 1 });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(props.error || false);
+  const [errorMessage, setErrorMessage] = useState(props.errorMessage || '');
   const [initialNeighborhood, setInitialNeighborhood] = useState(null);
 
+  // Derived values
+  const hasMore = useMemo(() => {
+    return pagination.current_page < pagination.total_pages;
+  }, [pagination]);
+
+  // Update workers when props change
   useEffect(() => {
-    window.addEventListener("scroll", changeHeader);
-    return () => {
-      window.removeEventListener("scroll", changeHeader);
-    };
-  }, []);
+    set_workers(workers);
+  }, [workers]);
 
-  const changeHeader = () => {
-    set_y_scroll(window.scrollY);
-  };
-
-  // Add this function to handle category changes
-  const handleCategoryChange = (newCategory) => {
-    if (newCategory) {
-      // Preserve all existing query parameters
-      const query = {
-        ...router.query, // Keep all existing query params
-        name: newCategory.eng_name,
-        id: newCategory.id,
-      };
-
-      // Redirect to the new category page with all parameters
-      router.push({
-        pathname: `/${city}/${newCategory.eng_name}`,
-        query: query,
-      });
-    } else {
-      // If category is cleared, redirect to main categories page
-      router.push(`/${city}`);
-    }
-  };
-
-  /* fetch single worker data and Images */
+  // Initialize component
   useEffect(() => {
-    // Set default values to prevent undefined errors
-    set_workers(props.workers || []);
-    set_all_workers(props.workers || []);
-    setFilteredWorkers(props.workers || []);
-    set_details(props.details || {});
-    set_cats(props.subcategories || []);
-    set_main_cats(props.main_cats || []);
-    set_neighborhoods(props.neighborhoods || []);
-    set_name(props.name || '');
-    set_city(props.city || 'tehran');
-
-    // Set loading to false once props are loaded
     if (props.workers !== undefined) {
       set_loading(false);
     }
 
-    // Set the selected category from details
-    if (props.details && props.details.id) {
-      setSelectedCat({
-        id: props.details.id,
-        name: props.details.name,
-      });
-    }
-
     // Handle neighborhood from URL query
-    if (props.neighbor && props.neighborhoods) {
-      // Find the neighborhood object by name
-      const neighborhoodObj = props.neighborhoods.find(
+    if (props.neighbor && neighborhoods.length > 0) {
+      const neighborhoodObj = neighborhoods.find(
         (n) => n.name === props.neighbor
       );
       if (neighborhoodObj) {
         setInitialNeighborhood(neighborhoodObj);
       }
     }
-  }, [props]);
+  }, [props.workers, props.neighbor, neighborhoods]);
 
-  function AlterLoading() {
-    set_loading(!loading);
-  }
-
-  function gotoOtherMainCatPage(cater) {
-    router
-      .replace({
-        pathname: "/" + city + "/" + cater.name,
-        query: { name: cater.name, city: city },
-      })
-      .then(() => router.reload());
-  }
-
-  const renderMainSliderCategories = () => {
-    if (!main_cats || !Array.isArray(main_cats)) return null;
+  useEffect(() => {
+    const handleScroll = () => {
+      set_y_scroll(window.scrollY);
+    };
     
-    return main_cats.map((cater) =>
-      cater.id != details.parent_id ? (
-        <div
-          key={cater.id}
-          style={{ cursor: "pointer" }}
-          onClick={() => gotoOtherMainCatPage(cater)}
-        >
-          <a>
-            <p
-              style={{
-                background: "#f1f1f1",
-                textAlign: "center",
-                color: "gray",
-                padding: 20,
-                borderRadius: "5px",
-              }}
-            >
-              {cater.name}
-            </p>
-          </a>
-        </div>
-      ) : (
-        <React.Fragment key={cater.id}></React.Fragment>
-      )
-    );
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const handleCategoryChange = (newCategory) => {
+    if (newCategory) {
+      router.push({
+        pathname: `/${city}/${newCategory.eng_name}`,
+      });
+    } else {
+      router.push(`/${city}`);
+    }
+  };
+
+  // Load more workers on scroll - optimized with useCallback
+  const loadMoreWorkers = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    const nextPage = pagination.current_page + 1;
+
+    try {
+      // Build query with all current filters from URL
+      const query = { ...router.query, page: nextPage.toString() };
+      
+      // Call serverFilteredWorkers API for next page
+      let apiUrl = `https://api.ajur.app/api/server-filtered-workers?catname=${name}&city=${city}&page=${nextPage}&per_page=${pagination.per_page}`;
+      
+      // Add all filter parameters
+      if (query.categoryId) apiUrl += `&category_id=${query.categoryId}`;
+      if (query.features) apiUrl += `&features=${query.features}`;
+      if (query.neighborhoods) apiUrl += `&neighborhoods=${query.neighborhoods}`;
+      
+      if (query.sortBy && query.sortBy !== 'newest') {
+        const sortMap = {
+          'newest': 'created_at_desc',
+          'oldest': 'created_at_asc',
+          'most_viewed': 'total_view_desc'
+        };
+        const [field, order] = sortMap[query.sortBy]?.split('_') || ['created_at', 'desc'];
+        apiUrl += `&sort_by=${field}&sort_order=${order}`;
+      }
+      
+      // Add range filters
+      Object.keys(query).forEach(key => {
+        if (key.includes('_min') || key.includes('_max')) {
+          apiUrl += `&${key}=${query[key]}`;
+        }
+      });
+
+      console.log('📡 Loading more from API:', apiUrl);
+      
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error(`API failed: ${res.status}`);
+      
+      const data = await res.json();
+      
+      // Append new workers, avoiding duplicates
+      set_workers(prev => {
+        const existingIds = new Set(prev.map(w => w.id));
+        const newWorkers = (data.workers || []).filter(w => !existingIds.has(w.id));
+        return [...prev, ...newWorkers];
+      });
+      
+      // Update pagination
+      setPagination(data.pagination || {
+        current_page: nextPage,
+        per_page: pagination.per_page,
+        total_count: data.pagination?.total_count || pagination.total_count,
+        total_pages: data.pagination?.total_pages || pagination.total_pages
+      });
+      
+    } catch (error) {
+      console.error('Error loading more workers:', error);
+      setError(true);
+      setErrorMessage('خطا در بارگذاری اطلاعات بیشتر');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, pagination, name, city, router.query]);
+
+  // Handle scroll for infinite loading
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loading || loadingMore || !hasMore) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      
+      // Load more when user is 300px from bottom
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        loadMoreWorkers();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, loadingMore, hasMore, loadMoreWorkers]);
+
+  // Error retry function
+  const retryLoading = () => {
+    set_loading(true);
+    setError(false);
+    router.reload();
   };
 
   const renderWorkers = () => {
+    if (error) {
+      return (
+        <Grid item xs={12} style={{ textAlign: "center", padding: "40px 20px" }}>
+          <Alert 
+            severity="error"
+            style={{ marginBottom: 20 }}
+            action={
+              <Button color="inherit" size="small" onClick={retryLoading}>
+                تلاش مجدد
+              </Button>
+            }
+          >
+            {errorMessage || 'خطا در بارگذاری اطلاعات'}
+          </Alert>
+          <Button
+            variant="contained"
+            onClick={retryLoading}
+            style={{
+              backgroundColor: "#b92a31",
+              color: "white",
+              padding: "10px 30px",
+            }}
+          >
+            تلاش مجدد
+          </Button>
+        </Grid>
+      );
+    }
+
     if (filterLoading) {
       return (
         <Grid item xs={12} style={{ textAlign: "center", padding: "40px 0" }}>
-          {/* <img
+          <img
             src="/logo/ajour-gif.gif"
             alt="در حال فیلتر کردن"
             style={{ height: "60px", width: "auto" }}
-          /> */}
+          />
           <p style={{ marginTop: "10px", color: "#666" }}>در حال فیلتر کردن نتایج...</p>
         </Grid>
       );
     }
 
-    if (filteredWorkers && filteredWorkers.length > 0) {
+    if (workersState && workersState.length > 0) {
       return (
-        <LazyLoader
-          items={filteredWorkers}
-          itemsPerPage={8}
-          delay={800}
-          renderItem={(worker) => (
-            <Grid item md={4} xs={12} key={worker.id}>
-              <a
-                href={`/worker/${worker.id}?slug=${worker.slug}`}
-                key={worker.id}
-              >
-                <WorkerCard worker={worker} />
-              </a>
+        <>
+          {workersState.map((worker) => (
+             <Grid 
+             item 
+             xs={12} 
+             sm={6} // Changed from md={4} to better responsive layout
+             md={4} 
+             key={worker.id}
+             sx={{ 
+               display: 'flex',
+               justifyContent: 'center'
+             }}
+           >
+            
+             <a
+               href={`/worker/${worker.id}?slug=${worker.slug}`}
+               key={worker.id}
+               style={{ 
+                 width: '100%',
+                 textDecoration: 'none'
+               }}
+             >
+               <WorkerCard worker={worker} />
+             </a>
+           </Grid>
+
+          ))}
+          
+          {/* Load More Button/Indicator */}
+          {hasMore && (
+            <Grid item xs={12} style={{ textAlign: "center", padding: "30px 0" }}>
+              {loadingMore ? (
+                <CircularProgress size={30} style={{ color: "#b92a31" }} />
+              ) : (
+                <Button
+                  variant="outlined"
+                  onClick={loadMoreWorkers}
+                  style={{
+                    color: "#b92a31",
+                    borderColor: "#b92a31",
+                    padding: "10px 30px",
+                  }}
+                >
+                  نمایش بیشتر
+                </Button>
+              )}
             </Grid>
           )}
-          loadingComponent={
-            <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
-          }
-          endComponent={
-            <p style={{ textAlign: "center" }}>همه آیتم‌ها بارگذاری شدند ✅</p>
-          }
-          grid={true}
-          gridProps={{ spacing: 2 }}
-          itemProps={{ xl: 3, md: 4, xs: 12 }}
-        />
+          
+          {!hasMore && workersState.length > 0 && (
+            <Grid item xs={12} style={{ textAlign: "center", padding: "20px 0", color: "#666" }}>
+              همه نتایج بارگذاری شدند
+            </Grid>
+          )}
+        </>
       );
     } else {
       return (
@@ -235,14 +317,16 @@ const SingleCategory = (props) => {
 
   // Add breadcrumb component
   const renderBreadcrumb = () => {
-    const displayName = details?.name || name || '';
+    const displayName = persian_category_name || name || ''; // USE THIS
+    const cityName = persian_city || city;
     
     return (
       <div style={{ 
-        padding: "15px 20px", 
+        padding: "15px 20px",  
+        paddingTop: isMobile ? '70px' : '1px',
         backgroundColor: "white",
         marginBottom: "20px",
-        marginTop: "30px",
+        marginTop: "20px",
         borderRadius: "8px",
         boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
       }}>
@@ -252,7 +336,6 @@ const SingleCategory = (props) => {
           style={{ 
             direction: "rtl",
             fontFamily: "Vazir, Arial, sans-serif",
-            
           }}
         >
           <Link href="/" passHref>
@@ -279,7 +362,7 @@ const SingleCategory = (props) => {
               fontSize: "14px"
             }}>
               <LocationOnIcon style={{ fontSize: "16px", marginLeft: "5px" }} />
-              {city}
+              {cityName}
             </div>
           </Link>
           
@@ -311,13 +394,18 @@ const SingleCategory = (props) => {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <WorkerFilter
-                workers={all_workers}
-                onFilteredWorkersChange={setFilteredWorkers}
+                workers={workersState}
+                onFilteredWorkersChange={set_workers}
                 onLoadingChange={setFilterLoading}
-                initialCategory={selectedCat}
+                initialCategory={{
+                  id: details?.id,
+                  name: persian_category_name,
+                  value: details?.name
+                }}
                 onCategoryChange={handleCategoryChange}
                 initialNeighborhood={initialNeighborhood}
                 city={city}
+                appliedFilters={props.appliedFilters || {}}
               />
             </Grid>
           </Grid>
@@ -336,12 +424,19 @@ const SingleCategory = (props) => {
               {renderBreadcrumb()}
               
               {renderHeader()}
-              <Box sx={{ flexGrow: 1, py: 3, px: 3 }}>
-                <Grid container spacing={2}>
-                  {renderWorkers()}
-                </Grid>
-                <FileRequest />
-              </Box>
+              <Box sx={{ flexGrow: 1, py: 3, px: { xs: 2, sm: 3 } }}> {/* Add padding on sides */}
+  <Grid 
+    container 
+    spacing={{ xs: 2, sm: 3 }} // Consistent spacing
+    justifyContent={{ xs: "center", sm: "flex-start" }}
+    sx={{
+      margin: '0 auto',
+      maxWidth: '100%'
+    }}
+  >
+    {renderWorkers()}
+  </Grid>
+</Box>
             </div>
           </div>
         </div>
@@ -359,28 +454,22 @@ const SingleCategory = (props) => {
     }
   };
 
-  // Get SEO data from props (already available from server-side)
-  const seoData = {
-    title: props.details?.name && props.city 
-      ? `${props.details.name} در ${props.city} | لیست ${props.details.name} - آجر`
-      : 'آجر | مشاور املاک هوشمند',
-    
-    description: props.details?.name && props.city 
-      ? `لیست کامل ${props.details.name} در ${props.city} - مشاهده اطلاعات تماس، آدرس و نمونه کارهای ${props.details.name} با قیمت‌های روز در آجر`
-      : 'مشاور املاک هوشمند آجر - پیدا کردن بهترین متخصصان و خدمات در سراسر ایران',
-    
-    keywords: props.details?.name && props.city 
-      ? `${props.details.name}, ${props.city}, ${props.details.name} در ${props.city}, استخدام ${props.details.name}, قیمت ${props.details.name}`
-      : 'مشاور املاک, آجر, خرید ملک, فروش ملک, اجاره ملک',
-    
-    image: props.details?.avatar 
-      ? `https://ajur.app/cats_image/${props.details.avatar}.jpg`
-      : 'https://ajur.app/logo/og-default.jpg',
-    
-    url: props.details?.name && props.city 
-      ? `https://ajur.app/${props.city}/${encodeURIComponent(props.details.name)}`
-      : 'https://ajur.app',
-  };
+  // Get SEO data from props
+  const seoTitle = persian_category_name && persian_city 
+    ? `${persian_category_name} در ${persian_city} | لیست ${persian_category_name} - آجر`
+    : 'آجر | مشاور املاک هوشمند';
+  
+  const seoDescription = persian_category_name && persian_city 
+    ? `لیست کامل ${persian_category_name} در ${persian_city} - مشاهده   ${persian_category_name} با قیمت‌های روز در آجر`
+    : 'مشاور املاک هوشمند آجر ';
+  
+  const seoImage = details?.avatar 
+    ? `https://api.ajur.app/cats_image/${details.avatar}.jpg`
+    : 'https://api.ajur.app/logo/og-default.jpg';
+  
+  const seoUrl = name && city 
+    ? `https://ajur.app/${city}/${name}`   
+    : 'https://ajur.app';
 
   return (
     <div className="realstate-contents-wrapper">
@@ -388,11 +477,13 @@ const SingleCategory = (props) => {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         
-        {/* Use server-side props directly - no fallbacks for critical SEO tags */}
-        <title>{seoData.title}</title>
+        <title>{seoUrl}</title>
+        {/* <title>{seoTitle}</title> */}
         
-        <meta name="description" content={seoData.description} />
-        <meta name="keywords" content={seoData.keywords} />
+        <meta name="description" content={seoDescription} />
+        <meta name="keywords" content={persian_category_name && persian_city 
+          ? `${persian_category_name}, ${persian_city}, ${persian_category_name} در ${persian_city}, قیمت ${persian_category_name}`
+          : 'مشاور املاک آجر , خرید ملک, فروش ملک, اجاره ملک'} />
         
         <meta name="robots" content="index, follow" />
         <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
@@ -402,52 +493,22 @@ const SingleCategory = (props) => {
         <meta property="og:locale" content="fa_IR" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="مشاور املاک هوشمند آجر" />
-        <meta property="og:title" content={seoData.title} />
-        <meta property="og:description" content={seoData.description} />
-        <meta property="og:url" content={seoData.url} />
-        <meta property="og:image" content={seoData.image} />
-        <meta property="og:image:alt" content={props.details?.name ? `تصویر ${props.details.name}` : 'آجر - مشاور املاک هوشمند'} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={seoUrl} />
+        <meta property="og:image" content={seoImage} />
+        <meta property="og:image:alt" content={persian_category_name ? `تصویر ${persian_category_name}` : 'آجر - مشاور املاک هوشمند'} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoData.title} />
-        <meta name="twitter:description" content={seoData.description} />
-        <meta name="twitter:image" content={seoData.image} />
-        
-        {/* Structured Data (JSON-LD) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ItemList",
-              "name": props.details?.name && props.city ? `لیست ${props.details.name} در ${props.city}` : 'لیست خدمات - آجر',
-              "description": props.details?.name && props.city ? `صفحه لیست ${props.details.name} در شهر ${props.city}` : 'صفحه خدمات مشاور املاک آجر',
-              "url": seoData.url,
-              "numberOfItems": (props.workers || []).length,
-              "itemListOrder": "https://schema.org/ItemListUnordered",
-              "itemListElement": (props.workers || []).slice(0, 10).map((worker, index) => ({
-                "@type": "ListItem",
-                "position": index + 1,
-                "item": {
-                  "@type": "Service",
-                  "name": worker.name || "متخصص",
-                  "description": worker.description || `متخصص ${props.details?.name || ''}`,
-                  "url": `https://ajur.app/worker/${worker.id}?slug=${worker.slug}`,
-                  "provider": {
-                    "@type": "Person",
-                    "name": worker.name || "متخصص"
-                  }
-                }
-              }))
-            })
-          }}
-        />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={seoImage} />
         
         {/* Canonical URL */}
-        <link rel="canonical" href={seoData.url} />
+        <link rel="canonical" href={seoUrl} />
         
         {/* Favicon and Icons */}
         <link rel="icon" href="/favicon.ico" />
@@ -466,18 +527,18 @@ const SingleCategory = (props) => {
         <meta name="author" content="آجر" />
         <meta property="article:author" content="آجر" />
         
-        {props.details?.name && (
+        {persian_category_name && (
           <>
-            <meta property="article:section" content={props.details.name} />
-            <meta property="article:tag" content={`${props.details.name}, ${props.city || ''}`} />
+            <meta property="article:section" content={persian_category_name} />
+            <meta property="article:tag" content={`${persian_category_name}, ${persian_city || city || ''}`} />
           </>
         )}
         
         {/* Geo tags for local SEO */}
-        {props.city && (
+        {city && (
           <>
-            <meta name="geo.region" content={props.city === 'tehran' ? 'IR-TEH' : 'IR'} />
-            <meta name="geo.placename" content={props.city} />
+            <meta name="geo.region" content={city === 'tehran' ? 'IR-TEH' : 'IR'} />
+            <meta name="geo.placename" content={persian_city || city} />
           </>
         )}
         
@@ -492,73 +553,157 @@ const SingleCategory = (props) => {
 };
 
 export async function getServerSideProps(context) {
-  const { params } = context;
+  const { params, query } = context;
 
-  const name = params.name;
+  const name = params.name; 
   const categories_city = params.categories;
   const city = categories_city ? categories_city : "tehran";
-  const subcat = context.query.subcat ? context.query.subcat : null;
-  const neighbor = context.query.neighbor ? context.query.neighbor : null;
+  
+  // Extract filter parameters with pagination
+  const subcat = query.subcat ? query.subcat : null;
+  const categoryId = query.categoryId || null;
+  const features = query.features || null;
+  const neighborhoods = query.neighborhoods || null;
+  const sortBy = query.sortBy || "newest";
+  const page = query.page ? parseInt(query.page) : 1;
+  const per_page = 10;
+  
+  // Extract range filters from query
+  const rangeFilters = {};
+  Object.keys(query).forEach(key => {
+    if (key.includes('_min') || key.includes('_max')) {
+      rangeFilters[key] = query[key];
+    }
+  });
+
+  console.log('🔍 Server-side filtering for API:', {
+    name,
+    city,
+    categoryId,
+    features,
+    neighborhoods,
+    rangeFilters,
+    sortBy,
+    page,
+    per_page
+  });
 
   try {
-    const res = await fetch(
-      `https://api.ajur.app/api/main-category-workers?subcat=${subcat}&catname=${name}&city=${city}`
-    );
+    // Build API URL for serverFilteredWorkers endpoint
+    let apiUrl = `https://api.ajur.app/api/server-filtered-workers?catname=${name}&city=${city}&page=${page}&per_page=${per_page}`;
     
-    if (!res.ok) {
-      // If API fails, show a proper error page or redirect
-      return {
-        notFound: true, // This will show a 404 page
+    // Add filters to API call
+    if (categoryId) apiUrl += `&category_id=${categoryId}`;
+    if (features) apiUrl += `&features=${features}`;
+    if (neighborhoods) apiUrl += `&neighborhoods=${neighborhoods}`;
+    
+    // Convert frontend sortBy to backend sort parameters
+    if (sortBy && sortBy !== 'newest') {
+      const sortMap = {
+        'newest': 'created_at_desc',
+        'oldest': 'created_at_asc',
+        'most_viewed': 'total_view_desc'
       };
+      const [field, order] = sortMap[sortBy]?.split('_') || ['created_at', 'desc'];
+      apiUrl += `&sort_by=${field}&sort_order=${order}`;
     }
     
-    const data = await res.json();
-
-    // Ensure required data exists
-    if (!data.details || !data.details.name) {
-      return {
-        notFound: true,
-      };
+    // Add range filters
+    Object.keys(rangeFilters).forEach(key => {
+      apiUrl += `&${key}=${rangeFilters[key]}`;
+    });
+    
+    console.log('🌐 Calling serverFilteredWorkers API:', apiUrl);
+    
+    // 🚀 PARALLEL API CALLS for better performance
+    const [mainRes, baseRes] = await Promise.allSettled([
+      fetch(apiUrl),
+      fetch(`https://api.ajur.app/api/base?city=${city}`)
+    ]);
+    
+    // Handle main API response
+    if (mainRes.status === 'rejected' || !mainRes.value.ok) {
+      throw new Error(`Main API failed: ${mainRes.status}`);
     }
-
-    // Build SEO data server-side
-    const seoTitle = `${data.details.name} در ${city} | لیست ${data.details.name} - آجر`;
-    const seoDescription = `لیست کامل ${data.details.name} در ${city} - مشاهده اطلاعات تماس، آدرس و نمونه کارهای ${data.details.name} با قیمت‌های روز در آجر`;
-    const seoKeywords = `${data.details.name}, ${city}, ${data.details.name} در ${city}, استخدام ${data.details.name}, قیمت ${data.details.name}`;
-    const seoImage = data.details.avatar 
-      ? `https://ajur.app/cats_image/${data.details.avatar}.jpg`
-      : 'https://ajur.app/logo/ajour-meta-image.jpg';
-    const seoUrl = `https://ajur.app/${city}/${encodeURIComponent(data.details.name)}`;
-
+    
+    const data = await mainRes.value.json();
+    
+    // Get Persian names from API response
+    const persian_category_name = data.filters_applied?.persian_category_name || name || 'تهران';
+    const persianCityName = data.filters_applied?.persian_city || getPersianCityName(city);
+    
+    // Extract category details from main response
+    const categoryDetails = data.filters_applied?.category_name ? {
+      name: data.filters_applied.category_name,
+      id: data.filters_applied.category_id
+    } : {};
+    
+    // Handle base API response
+    let neighborhoodsData = [];
+    let main_cats = [];
+    
+    if (baseRes.status === 'fulfilled' && baseRes.value.ok) {
+      const baseData = await baseRes.value.json();
+      neighborhoodsData = baseData.the_neighborhoods || [];
+      main_cats = baseData.cats || [];
+    }
+    
     return {
       props: {
-        details: data.details,
+        details: categoryDetails,
         workers: data.workers || [],
-        all_workers: data.workers || [],
-        specials: data.specials || [],
-        uppers: data.uppers || [],
-        subcategories: data.subcategories || [],
-        main_cats: data.main_cats || [],
+        main_cats: main_cats,
         name: name,
         city: city,
-        neighborhoods: data.the_neighborhoods || [],
-        neighbor: neighbor,
+        persian_city: persianCityName,
+        persian_category_name: persian_category_name, // FIXED: consistent naming
+        neighborhoods: neighborhoodsData,
         subcat: subcat,
-        // Add SEO data as separate props for clarity
-        seoData: {
-          title: seoTitle,
-          description: seoDescription,
-          keywords: seoKeywords,
-          image: seoImage,
-          url: seoUrl,
-        }
+        // Pass applied filters back to client
+        appliedFilters: {
+          categoryId: categoryId,
+          features: features,
+          neighborhoods: neighborhoods,
+          rangeFilters: rangeFilters,
+          sortBy: sortBy
+        },
+        pagination: data.pagination || {
+          current_page: page,
+          per_page: per_page,
+          total_count: 0,
+          total_pages: 1
+        },
+        error: false,
+        errorMessage: ''
       },
     };
   } catch (error) {
-    console.error(`Error fetching category data for ${name}:`, error);
+    console.error(`Error fetching workers data for ${name}:`, error);
+    
+    // Get fallback Persian city name
+    const persianCityName = getPersianCityName(city);
     
     return {
-      notFound: true,
+      props: {
+        error: true,
+        errorMessage: 'خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.',
+        details: {},
+        workers: [],
+        main_cats: [],
+        name: name,
+        city: city,
+        persian_city: persianCityName,
+        persian_category_name: name || '', // ADD THIS TO ERROR CASE TOO
+        neighborhoods: [],
+        subcat: subcat,
+        appliedFilters: {},
+        pagination: {
+          current_page: 1,
+          per_page: 10,
+          total_count: 0,
+          total_pages: 1
+        }
+      }
     };
   }
 }
@@ -566,33 +711,40 @@ export async function getServerSideProps(context) {
 SingleCategory.propTypes = {
   details: PropTypes.object,
   workers: PropTypes.array,
-  all_workers: PropTypes.array,
-  specials: PropTypes.array,
-  uppers: PropTypes.array,
-  subcategories: PropTypes.array,
   main_cats: PropTypes.array,
   name: PropTypes.string,
   city: PropTypes.string,
+  persian_city: PropTypes.string,
+  persian_category_name: PropTypes.string, // ADD THIS
   neighborhoods: PropTypes.array,
   neighbor: PropTypes.string,
   subcat: PropTypes.string,
-  seoData: PropTypes.object,
+  appliedFilters: PropTypes.object,
+  pagination: PropTypes.object,
+  error: PropTypes.bool,
+  errorMessage: PropTypes.string,
 };
 
 SingleCategory.defaultProps = {
   details: {},
   workers: [],
-  all_workers: [],
-  specials: [],
-  uppers: [],
-  subcategories: [],
   main_cats: [],
   name: '',
   city: 'tehran',
+  persian_city: 'تهران',
+  persian_category_name: '', // ADD THIS
   neighborhoods: [],
   neighbor: null,
   subcat: null,
-  seoData: {},
+  appliedFilters: {},
+  pagination: {
+    current_page: 1,
+    per_page: 10,
+    total_count: 0,
+    total_pages: 1
+  },
+  error: false,
+  errorMessage: '',
 };
 
 export default SingleCategory;

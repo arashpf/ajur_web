@@ -73,14 +73,15 @@ const historyIndex = (props) => {
           itemsPerPage={6} // adjust as needed
           delay={800}
           renderItem={(worker) => (
-            <Link
+            <Grid item md={4} xs={12} key={worker.id}>
+          <a
               href={`/worker/${worker.id}?slug=${worker.slug}`}
-              key={worker.id}
-            >
-              <Grid item md={4} xs={12} key={worker.id}>
-                <WorkerCard worker={worker} />
-              </Grid>
-            </Link>
+               key={worker.id}
+          >
+            {/* <WorkerCard worker={worker} /> */}
+            <WorkerCard worker={worker} />
+          </a>
+        </Grid>
           )}
           loadingComponent={
             <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>

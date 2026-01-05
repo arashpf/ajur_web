@@ -21,6 +21,7 @@ import {
   useTheme,
   TextField,
   Paper,
+  Alert,
 } from "@mui/material";
 import {
   ExpandMore,
@@ -33,6 +34,7 @@ import {
   Tune,
   ArrowBack,
   Sort,
+  Refresh,
 } from "@mui/icons-material";
 
 // Utility functions
@@ -100,16 +102,13 @@ const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpe
   const cleanupTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Clear any existing cleanup timeout
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current);
       cleanupTimeoutRef.current = null;
     }
 
     if (!isFilterOpen) {
-      // Clean up when modal closes
       if (historyAdded.current) {
-        // Use timeout to ensure cleanup happens after modal animation
         cleanupTimeoutRef.current = setTimeout(() => {
           if (window.history.state?.filterModalOpen) {
             window.history.back();
@@ -120,7 +119,6 @@ const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpe
       return;
     }
 
-    // Add a history entry when modal opens
     if (!historyAdded.current) {
       window.history.pushState({ filterModalOpen: true, filterLevel }, '');
       historyAdded.current = true;
@@ -129,23 +127,18 @@ const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpe
     const handlePopState = (event) => {
       if (!isFilterOpen) return;
 
-      // Prevent default back navigation
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation?.();
 
       if (filterLevel !== "base") {
-        // Go back to base level
         setFilterLevel("base");
-        // Update the current history entry with new state
         window.history.replaceState({ 
           filterModalOpen: true, 
           filterLevel: "base" 
         }, '');
       } else {
-        // Close the modal
         setIsFilterOpen(false);
-        // Remove our history entry after a short delay
         cleanupTimeoutRef.current = setTimeout(() => {
           if (historyAdded.current && window.history.state?.filterModalOpen) {
             window.history.back();
@@ -155,13 +148,11 @@ const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpe
       }
     };
 
-    // Add with capture phase to ensure we catch it first
     window.addEventListener('popstate', handlePopState, true);
 
     return () => {
       window.removeEventListener('popstate', handlePopState, true);
       
-      // Clean up timeout
       if (cleanupTimeoutRef.current) {
         clearTimeout(cleanupTimeoutRef.current);
         cleanupTimeoutRef.current = null;
@@ -169,7 +160,6 @@ const useBackButton = (isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpe
     };
   }, [isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpen]);
 
-  // Cleanup on component unmount
   useEffect(() => {
     return () => {
       if (cleanupTimeoutRef.current) {
@@ -186,15 +176,11 @@ const WorkerFilter = ({
   initialCategory = null,
   onCategoryChange = null,
   city = null,
+  appliedFilters = {},
 }) => {
   const router = useRouter();
 
-  // Do not render this filter inside the admin/ panel area
-  if (
-    router &&
-    typeof router.pathname === "string" &&
-    router.pathname.startsWith("/panel")
-  ) {
+  if (router && typeof router.pathname === "string" && router.pathname.startsWith("/panel")) {
     return null;
   }
 
@@ -203,7 +189,7 @@ const WorkerFilter = ({
 
   // State
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
   const [selectedFeatures, setSelectedFeatures] = useState([]);
   const [rangeFilters, setRangeFilters] = useState([]);
@@ -212,9 +198,10 @@ const WorkerFilter = ({
   const [sortBy, setSortBy] = useState("newest");
   const [loading, setLoading] = useState(true);
   const [focusedField, setFocusedField] = useState(null);
-  const [filterTimeout, setFilterTimeout] = useState(null);
   const [moreFiltersExpanded, setMoreFiltersExpanded] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
+  const [filterError, setFilterError] = useState(null);
+  const [filterLoading, setFilterLoading] = useState(false);
 
   // Data
   const [categories, setCategories] = useState([]);
@@ -224,23 +211,39 @@ const WorkerFilter = ({
   const [dynamicRangeFilters, setDynamicRangeFilters] = useState([]);
   const [dynamicFeatures, setDynamicFeatures] = useState([]);
 
+  // Ref for initial category comparison
+  const initialCategoryRef = useRef(null);
+
   // Use the back button hook
   useBackButton(isFilterOpen, filterLevel, setFilterLevel, setIsFilterOpen);
 
+  // Initialize initialCategoryRef when component mounts
+  useEffect(() => {
+    if (initialCategory && !initialCategoryRef.current) {
+      initialCategoryRef.current = initialCategory;
+      console.log('📝 Setting initial category ref:', initialCategory);
+    }
+  }, [initialCategory]);
+
+  // Set selectedCategory when initialCategory changes
+  useEffect(() => {
+    if (initialCategory) {
+      console.log('📝 Setting selected category from initialCategory:', initialCategory);
+      setSelectedCategory(initialCategory);
+    }
+  }, [initialCategory]);
+
   useEffect(() => {
     if (city) {
-      console.log('🏙️ WorkerFilter received city:---------------', city);
+      console.log('🏙️ WorkerFilter received city:', city);
     }
   }, [city]);
   
-  // Add effect to prevent background scrolling when filter is open
   useEffect(() => {
     if (isFilterOpen) {
-      // Save current scroll position
       const scrollY = window.scrollY;
       const scrollX = window.scrollX;
       
-      // Prevent scrolling on body
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
       document.body.style.left = `-${scrollX}px`;
@@ -248,14 +251,12 @@ const WorkerFilter = ({
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = '0px';
       
-      // For iOS Safari
       document.documentElement.style.position = 'fixed';
       document.documentElement.style.overflow = 'hidden';
       document.documentElement.style.width = '100%';
       document.documentElement.style.height = '100%';
       
       return () => {
-        // Restore scrolling when modal closes
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
@@ -263,7 +264,6 @@ const WorkerFilter = ({
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
         
-        // For iOS Safari
         document.documentElement.style.position = '';
         document.documentElement.style.overflow = '';
         document.documentElement.style.width = '';
@@ -274,11 +274,9 @@ const WorkerFilter = ({
     }
   }, [isFilterOpen]);
 
-  // Get suggested values based on field name and type
   const getSuggestionsByFieldName = (fieldName) => {
     const lowerField = fieldName.toLowerCase();
 
-    // Price suggestions for price-related fields
     if (lowerField.includes("قیمت")) {
       return [
         { value: 500000000, label: "۵۰۰ میلیون" },
@@ -292,7 +290,6 @@ const WorkerFilter = ({
       ];
     }
 
-    // Area suggestions for area-related fields
     if (lowerField.includes("متراژ")) {
       return [
         { value: 50, label: "۵۰ متر" },
@@ -309,7 +306,6 @@ const WorkerFilter = ({
     return [];
   };
 
-  // Extract filters from actual category data
   const extractCategoryFilters = (categoryId) => {
     if (!categoryId || !workers || workers.length === 0) {
       setDynamicRangeFilters([]);
@@ -317,7 +313,6 @@ const WorkerFilter = ({
       return;
     }
 
-    // Get all workers for this category
     const categoryWorkers = workers.filter(
       (w) => parseInt(w.category_id) === categoryId
     );
@@ -328,7 +323,6 @@ const WorkerFilter = ({
       return;
     }
 
-    // Extract all unique properties from json_properties
     const allProperties = new Map();
     const booleanProperties = new Map();
 
@@ -336,7 +330,6 @@ const WorkerFilter = ({
       try {
         const props = JSON.parse(worker.json_properties || "[]");
         props.forEach((prop) => {
-          // kind: 1 = numeric, 2 = boolean, 3 = select
           if (prop.kind === 1 && !allProperties.has(prop.name)) {
             allProperties.set(prop.name, {
               name: prop.name,
@@ -345,7 +338,7 @@ const WorkerFilter = ({
               kind: 1,
               order: prop.order,
               min: 0,
-              max: 10000, // Default, will be calculated
+              max: 10000,
             });
           }
           if (prop.kind === 2 && !booleanProperties.has(prop.name)) {
@@ -361,7 +354,6 @@ const WorkerFilter = ({
       }
     });
 
-    // Calculate proper min/max for numeric fields
     const rangeFilters = Array.from(allProperties.values())
       .sort((a, b) => (a.order || 0) - (b.order || 0))
       .map((field, idx) => ({
@@ -375,65 +367,19 @@ const WorkerFilter = ({
     setDynamicFeatures(features);
   };
 
-  // Extract filters when category or workers change
   useEffect(() => {
     if (selectedCategory) {
+      console.log('🔄 Extracting filters for category:', selectedCategory);
       extractCategoryFilters(selectedCategory.id);
     }
   }, [selectedCategory, workers]);
 
-  // Convert number to Persian words
-  const numberToPersianWords = (num) => {
-    if (num === "" || num === null || num === undefined) return "";
-
-    const number = parseFloat(num);
-    if (isNaN(number)) return "";
-
-    // For small numbers (under 1000), just return the number
-    if (number < 1000) {
-      return convertToPersianDigits(number.toString());
-    }
-
-    // For thousands
-    if (number < 1000000) {
-      const thousands = Math.floor(number / 1000);
-      const remainder = number % 1000;
-      let result = `${convertToPersianDigits(thousands.toString())} هزار`;
-      if (remainder > 0) {
-        result += ` و ${convertToPersianDigits(remainder.toString())}`;
-      }
-      return result;
-    }
-
-    // For millions
-    if (number < 1000000000) {
-      const millions = Math.floor(number / 1000000);
-      const remainder = number % 1000000;
-      let result = `${convertToPersianDigits(millions.toString())} میلیون`;
-      if (remainder > 0) {
-        result += ` و ${numberToPersianWords(remainder)}`;
-      }
-      return result;
-    }
-
-    // For billions
-    const billions = Math.floor(number / 1000000000);
-    const remainder = number % 1000000000;
-    let result = `${convertToPersianDigits(billions.toString())} میلیارد`;
-    if (remainder > 0) {
-      result += ` و ${numberToPersianWords(remainder)}`;
-    }
-    return result;
-  };
-
-  // Get suggestions based on filter field name
   const getSuggestions = (fieldId) => {
     const filter = dynamicRangeFilters.find((f) => f.id === fieldId);
     if (!filter) return [];
     return getSuggestionsByFieldName(filter.name);
   };
 
-  // Handle suggestion click
   const handleSuggestionClick = (fieldId, type, value) => {
     setRangeFilters((prev) =>
       prev.map((f) =>
@@ -445,111 +391,328 @@ const WorkerFilter = ({
           : f
       )
     );
-    setFocusedField(null); // Close suggestions
+    setFocusedField(null);
   };
 
-  // Initialize range filters from dynamic filters
   useEffect(() => {
     const initialRangeFilters = dynamicRangeFilters.map((field) => ({
       ...field,
-      low: "", // Empty means no lower limit
-      high: "", // Empty means no upper limit
+      low: "",
+      high: "",
     }));
     setRangeFilters(initialRangeFilters);
   }, [dynamicRangeFilters]);
 
-  // Sync selectedCategory with initialCategory prop when it changes
   useEffect(() => {
-    setSelectedCategory(initialCategory);
-  }, [initialCategory]);
-
-  // Fetch categories and neighborhoods
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Build the API URL with city parameter
-        let apiUrl = "https://api.ajur.app/api/base";
-        
-        if (city) {
-          // Add city as query parameter
-          apiUrl += `?city=${encodeURIComponent(city)}`;
-          console.log('🌐 Fetching base API with city:', city);
-          console.log('🔗 API URL:', apiUrl);
-        } else {
-          console.log('🌐 Fetching base API without city parameter');
+    if (appliedFilters && Object.keys(appliedFilters).length > 0) {
+      console.log('🔄 Initializing filters from server:', appliedFilters);
+      
+      if (appliedFilters.categoryId && categories.length > 0) {
+        const category = categories.find(c => c.id == appliedFilters.categoryId);
+        if (category) {
+          console.log('✅ Found category from appliedFilters:', category);
+          setSelectedCategory(category);
         }
-  
-        const response = await axios.get(apiUrl);
-        
-        // Log what we received
-        console.log('📥 Base API response:', {
-          neighborhoodsCount: response.data.the_neighborhoods?.length,
-          categoriesCount: response.data.cats?.length,
-          cityInResponse: response.data.the_city
-        });
-        
-        setCategories(response.data.cats || []);
-        setNeighborhoods(response.data.the_neighborhoods || []);
-      } catch (error) {
-        console.error("❌ Error loading filters:", error);
-        console.error("Error details:", {
-          cityRequested: city,
-          errorMessage: error.message,
-          errorResponse: error.response?.data
-        });
-        setCategories([]);
-        setNeighborhoods([]);
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      if (appliedFilters.features) {
+        let featureArray = [];
+        
+        try {
+          const parsed = JSON.parse(appliedFilters.features);
+          if (Array.isArray(parsed)) {
+            featureArray = parsed.map(feature => ({
+              id: Math.random(),
+              name: feature,
+              value: feature
+            }));
+          }
+        } catch (e) {
+          if (typeof appliedFilters.features === 'string') {
+            featureArray = appliedFilters.features.split(',').map(feature => ({
+              id: Math.random(),
+              name: feature.trim(),
+              value: feature.trim()
+            }));
+          }
+        }
+        
+        setSelectedFeatures(featureArray);
+      }
+      
+      if (appliedFilters.neighborhoods && neighborhoods.length > 0) {
+        let neighborhoodArray = [];
+        
+        if (typeof appliedFilters.neighborhoods === 'string') {
+          const neighborhoodIds = appliedFilters.neighborhoods.split(',');
+          neighborhoodArray = neighborhoodIds.map(id => {
+            const neighborhood = neighborhoods.find(n => n.id == id);
+            return neighborhood;
+          }).filter(Boolean);
+        }
+        
+        setSelectedNeighborhoods(neighborhoodArray);
+      }
+      
+      if (appliedFilters.sortBy) {
+        setSortBy(appliedFilters.sortBy);
+      }
+      
+      if (appliedFilters.rangeFilters && dynamicRangeFilters.length > 0) {
+        const updatedRangeFilters = [...rangeFilters];
+        
+        Object.keys(appliedFilters.rangeFilters).forEach(paramName => {
+          if (paramName.includes('_min') || paramName.includes('_max')) {
+            const isMin = paramName.includes('_min');
+            const propertyName = isMin ? 
+              paramName.replace('_min', '') : 
+              paramName.replace('_max', '');
+            
+            const value = appliedFilters.rangeFilters[paramName];
+            
+            const filterIndex = updatedRangeFilters.findIndex(f => 
+              f.value === propertyName || f.name === propertyName
+            );
+            
+            if (filterIndex !== -1) {
+              updatedRangeFilters[filterIndex] = {
+                ...updatedRangeFilters[filterIndex],
+                [isMin ? 'low' : 'high']: value
+              };
+            }
+          }
+        });
+        
+        setRangeFilters(updatedRangeFilters);
+      }
+    }
+  }, [appliedFilters, categories, neighborhoods, dynamicRangeFilters]);
+
+  const fetchData = async () => {
+    try {
+      let apiUrl = "https://api.ajur.app/api/base";
+      
+      if (city) {
+        apiUrl += `?city=${encodeURIComponent(city)}`;
+        console.log('🌐 Fetching base API with city:', city);
+      }
+
+      const response = await axios.get(apiUrl);
+      
+      setCategories(response.data.cats || []);
+      setNeighborhoods(response.data.the_neighborhoods || []);
+    } catch (error) {
+      console.error("❌ Error loading filters:", error);
+      setCategories([]);
+      setNeighborhoods([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [city]);
 
-  // Debounced filter application
-  const applyFiltersWithDebounce = () => {
-    // Notify that loading has started
+  // Find the default category from URL or props
+  // Find the default category from URL or props
+useEffect(() => {
+  if (categories.length > 0 && !selectedCategory) {
+    console.log('🔍 Looking for category:', {
+      routerQuery: router.query,
+      categoriesCount: categories.length,
+      initialCategory: initialCategory
+    });
+    
+    // Try to find category by name from URL query parameter 'catname'
+    const { catname, name } = router.query;
+    const categoryName = catname || name;
+    
+    if (categoryName) {
+      console.log('🔍 Searching for category with name:', categoryName);
+      
+      // Try to find category by exact name match
+      let foundCategory = categories.find(cat => 
+        cat.name === categoryName || 
+        cat.slug === categoryName ||
+        cat.value === categoryName
+      );
+      
+      // If not found by exact name, try partial match
+      if (!foundCategory) {
+        foundCategory = categories.find(cat => 
+          cat.name.includes(categoryName) || 
+          categoryName.includes(cat.name)
+        );
+      }
+      
+      if (foundCategory) {
+        console.log('✅ Found category from URL:', foundCategory);
+        setSelectedCategory(foundCategory);
+        return;
+      }
+    }
+    
+    // If we have initialCategory from props, use that
+    if (initialCategory && initialCategory.id) {
+      console.log('📝 Using initialCategory from props:', initialCategory);
+      
+      // Try to find category by id first
+      let foundCategory = categories.find(cat => cat.id == initialCategory.id);
+      
+      // If not found by id, try by name
+      if (!foundCategory && initialCategory.name) {
+        foundCategory = categories.find(cat => 
+          cat.name === initialCategory.name || 
+          cat.value === initialCategory.name
+        );
+      }
+      
+      if (foundCategory) {
+        setSelectedCategory(foundCategory);
+      } else if (initialCategory.name) {
+        // If category not found in categories list but we have a name, use it
+        setSelectedCategory(initialCategory);
+      }
+    }
+  }
+}, [categories, router.query, initialCategory, selectedCategory]);
+
+  const handleNeighborhoodRemove = (neighborhoodId) => {
+    // Remove from selected neighborhoods
+    const newNeighborhoods = selectedNeighborhoods.filter(n => n.id !== neighborhoodId);
+    setSelectedNeighborhoods(newNeighborhoods);
+    
+    // Update URL immediately
+    const query = { ...router.query };
+    
+    if (newNeighborhoods.length > 0) {
+      // Update neighborhoods parameter
+      const neighborhoodIds = newNeighborhoods.map(n => n.id);
+      query.neighborhoods = neighborhoodIds.join(',');
+    } else {
+      // Remove neighborhoods parameter if empty
+      delete query.neighborhoods;
+    }
+    
+    // Reset to page 1 when filters change
+    query.page = "1";
+    
+    console.log('🗑️ Removing neighborhood from URL:', query);
+    
+    // Update URL
+    router.push({
+      pathname: router.pathname,
+      query: query
+    }, undefined, { shallow: true });
+  };
+
+  const applyServerSideFilters = () => {
+    console.log('🚀 Applying server-side filters immediately');
+    console.log('Selected Category:', selectedCategory);
+    console.log('Initial Category Ref:', initialCategoryRef.current);
+    
+    setFilterError(null);
+    setFilterLoading(true); 
+    
     if (onLoadingChange) {
       onLoadingChange(true);
     }
 
-    // Clear existing timeout
-    if (filterTimeout) {
-      clearTimeout(filterTimeout);
+    // Build query parameters for serverFilteredWorkers API
+    const query = { ...router.query };
+    
+    // Always reset to page 1 when filters change
+    query.page = "1";
+    
+    // Add category ID if selected and different from initial
+    // if (selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id) {
+    //   query.categoryId = selectedCategory.id;
+    //   query.category_id = selectedCategory.id; // Backend expects category_id
+    //   console.log('📤 Adding category filter:', selectedCategory.id);
+    // } else {
+    //   delete query.categoryId;
+    //   delete query.category_id;
+    //   console.log('🗑️ Removing category filter');
+    // }
+    
+    // Send features as comma-separated string
+    if (selectedFeatures.length > 0) {
+      const featureNames = selectedFeatures.map(f => f.value);
+      query.features = featureNames.join(',');
+      console.log('📤 Sending features:', query.features);
+    } else {
+      delete query.features;
     }
+    
+    // Send neighborhood IDs as comma-separated string
+    if (selectedNeighborhoods.length > 0) {
+      const neighborhoodIds = selectedNeighborhoods.map(n => n.id);
+      query.neighborhoods = neighborhoodIds.join(',');
+      console.log('📤 Sending neighborhood IDs:', query.neighborhoods);
+    } else {
+      delete query.neighborhoods;
+    }
+    
+    // Add sort by if not default
+    if (sortBy !== "newest") {
+      query.sortBy = sortBy;
+    } else {
+      delete query.sortBy;
+    }
+    
+    // Remove existing range filter parameters
+    Object.keys(query).forEach(key => {
+      if (key.includes('_min') || key.includes('_max')) {
+        delete query[key];
+      }
+    });
 
-    // Set new timeout
-    const timeout = setTimeout(() => {
-      const filtered = applyFilters();
-      const sorted = sortWorkers(filtered);
-      onFilteredWorkersChange(sorted);
+    // Add new range filter parameters - your backend expects _min/_max
+    rangeFilters.forEach(filter => {
+      if (filter.low !== "") {
+        const paramName = `${filter.value}_min`;
+        query[paramName] = filter.low;
+      }
+      if (filter.high !== "") {
+        const paramName = `${filter.value}_max`;
+        query[paramName] = filter.high;
+      }
+    });
 
-      // Notify that loading is complete
+    console.log('📤 Sending query to server:', query);
+    
+    // Update URL - this will trigger getServerSideProps with new filters
+    router.push({
+      pathname: router.pathname,
+      query: query
+    })
+    .then(() => {
+      setFilterLoading(false);
       if (onLoadingChange) {
         onLoadingChange(false);
       }
-    }, 300); // 300ms delay
-
-    setFilterTimeout(timeout);
+      setIsFilterOpen(false);
+    })
+    .catch(error => {
+      console.error('Error applying filters:', error);
+      setFilterError('خطا در اعمال فیلترها. لطفا دوباره تلاش کنید.');
+      setFilterLoading(false);
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
+    });
   };
 
-  // Apply filters when dependencies change with debounce
   useEffect(() => {
-    applyFiltersWithDebounce();
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (filterTimeout) {
-        clearTimeout(filterTimeout);
-      }
-    };
+    if (!categories.length) return;
   }, [
-    workers,
     selectedCategory,
     selectedNeighborhoods,
     selectedFeatures,
     rangeFilters,
     sortBy,
+    categories,
   ]);
 
   const handleCategoryChange = () => {
@@ -557,145 +720,12 @@ const WorkerFilter = ({
     setFilterLevel("category");
   };
 
-  const applyFilters = () => {
-    return workers.filter((worker) => {
-      // Category filter
-      if (
-        selectedCategory &&
-        parseInt(worker.category_id) !== selectedCategory.id
-      ) {
-        return false;
-      }
-
-      // Neighborhood filter
-      if (selectedNeighborhoods.length > 0) {
-        const workerNeighborhoodId = parseInt(worker.neighborhood_id);
-        if (
-          !selectedNeighborhoods.some((nb) => nb.id === workerNeighborhoodId)
-        ) {
-          return false;
-        }
-      }
-
-      // Features filter
-      if (selectedFeatures.length > 0) {
-        try {
-          const workerProperties = JSON.parse(worker.json_properties || "[]");
-          const hasAllFeatures = selectedFeatures.every((feature) =>
-            workerProperties.some(
-              (prop) => prop.name === feature.value && prop.kind === 2
-            )
-          );
-          if (!hasAllFeatures) {
-            return false;
-          }
-        } catch (e) {
-          return false;
-        }
-      }
-
-      // Range filters
-      if (!passesRangeFilters(worker)) {
-        return false;
-      }
-
-      return true;
-    });
-  };
-
-  const passesRangeFilters = (worker) => {
-    try {
-      const workerProperties = JSON.parse(worker.json_properties || "[]");
-
-      // If no range filters are set (all are empty), return true
-      const hasActiveRangeFilters = rangeFilters.some(
-        (filter) => filter.low !== "" || filter.high !== ""
-      );
-
-      if (!hasActiveRangeFilters) {
-        return true;
-      }
-
-      return rangeFilters.every((filter) => {
-        // If both low and high are empty, this filter is inactive
-        if (filter.low === "" && filter.high === "") {
-          return true;
-        }
-
-        // Try to find the property by name - look in both special and regular properties
-        const workerProp = workerProperties.find(
-          (prop) =>
-            prop.name === filter.value || prop.name.includes(filter.value)
-        );
-
-        // If property doesn't exist and we have active filters, exclude
-        if (!workerProp) {
-          return false;
-        }
-
-        // Parse the worker value - handle different formats
-        let workerValue;
-        try {
-          workerValue = parseFloat(workerProp.value);
-          if (isNaN(workerValue)) {
-            // Try to extract numbers from string if it contains text
-            const numMatch = workerProp.value.match(/\d+/);
-            workerValue = numMatch ? parseFloat(numMatch[0]) : NaN;
-          }
-        } catch (e) {
-          return false;
-        }
-
-        if (isNaN(workerValue)) {
-          return false;
-        }
-
-        // Check lower bound (if set)
-        const lowerBoundOK =
-          filter.low === "" || workerValue >= parseFloat(filter.low);
-
-        // Check upper bound (if set)
-        const upperBoundOK =
-          filter.high === "" || workerValue <= parseFloat(filter.high);
-
-        return lowerBoundOK && upperBoundOK;
-      });
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const sortWorkers = (workersToSort) => {
-    if (!workersToSort.length) return workersToSort;
-
-    const workersCopy = [...workersToSort];
-
-    switch (sortBy) {
-      case "newest":
-        return workersCopy.sort(
-          (a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0)
-        );
-      case "oldest":
-        return workersCopy.sort(
-          (a, b) => new Date(a.updated_at || 0) - new Date(b.updated_at || 0)
-        );
-      case "most_viewed":
-        return workersCopy.sort(
-          (a, b) =>
-            (parseInt(b.total_view) || 0) - (parseInt(a.total_view) || 0)
-        );
-      default:
-        return workersCopy;
-    }
-  };
-
-  // Event handlers with immediate UI feedback but debounced filtering
   const handleCategorySelect = (category) => {
+    console.log('✅ Category selected:', category);
     if (onCategoryChange) {
       onCategoryChange(category);
-    } else {
-      setSelectedCategory(category);
     }
+    setSelectedCategory(category);
     setFilterLevel("base");
   };
 
@@ -734,6 +764,16 @@ const WorkerFilter = ({
   };
 
   const handleResetAll = () => {
+    console.log('🔄 Resetting all filters');
+    console.log('Initial category ref:', initialCategoryRef.current);
+    
+    // Reset to the original category from props
+    if (initialCategoryRef.current) {
+      setSelectedCategory(initialCategoryRef.current);
+    } else {
+      setSelectedCategory(null);
+    }
+    
     setSelectedNeighborhoods([]);
     setSelectedFeatures([]);
     setRangeFilters(
@@ -744,7 +784,32 @@ const WorkerFilter = ({
       }))
     );
     setSortBy("newest");
+    
+    const query = { 
+      ...router.query,
+      page: "1"
+    };
+    
+    // Keep only the essential parameters
+    const essentialParams = ['catname', 'name', 'city'];
+    Object.keys(query).forEach(key => {
+      if (!essentialParams.includes(key)) {
+        delete query[key];
+      }
+    });
+    
+    console.log('🔄 Resetting URL query:', query);
+    
+    router.push({
+      pathname: router.pathname,
+      query: query
+    }, undefined, { shallow: true });
+    
+    setIsFilterOpen(false);
   };
+
+
+
 
   const getSortDisplayText = () => {
     const sortTexts = {
@@ -755,7 +820,10 @@ const WorkerFilter = ({
     return sortTexts[sortBy] || "مرتب‌سازی";
   };
 
-  // Handle back button click in modal
+  const handleModalClose = () => {
+    setIsFilterOpen(false);
+  }
+
   const handleModalBackButton = () => {
     if (filterLevel !== "base") {
       setFilterLevel("base");
@@ -764,15 +832,40 @@ const WorkerFilter = ({
     }
   };
 
-  // Handle modal close
-  const handleModalClose = () => {
-    setIsFilterOpen(false);
-  };
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      if (onLoadingChange) {
+        onLoadingChange(true);
+      }
+    };
+    
+    const handleRouteChangeComplete = () => {
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
+    };
+    
+    const handleRouteChangeError = () => {
+      if (onLoadingChange) {
+        onLoadingChange(false);
+      }
+    };
+    
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+    router.events.on('routeChangeError', handleRouteChangeError);
+    
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+      router.events.off('routeChangeError', handleRouteChangeError);
+    };
+  }, [router.events, onLoadingChange]);
 
-  // Render methods
   const renderSelectedFilters = () => {
+    // Compare with initialCategoryRef instead of initialCategory
     const hasActiveFilters =
-      selectedCategory ||
+      (selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id) ||
       selectedNeighborhoods.length > 0 ||
       selectedFeatures.length > 0 ||
       rangeFilters.some((filter) => filter.low !== "" || filter.high !== "") ||
@@ -788,10 +881,16 @@ const WorkerFilter = ({
           borderColor: "grey.300",
         }}
       >
+        {filterError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {filterError}
+          </Alert>
+        )}
+        
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {selectedCategory && (
+          {selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id && (
             <Chip
-              label={`دسته‌بندی: ${selectedCategory.name}`}
+              label={`دسته ‌بندی: ${selectedCategory.name}`}
               onClick={() => handleCategoryChange()}
               color="primary"
               variant="outlined"
@@ -803,11 +902,7 @@ const WorkerFilter = ({
             <Chip
               key={neighborhood.id}
               label={`محله: ${neighborhood.name}`}
-              onDelete={() =>
-                setSelectedNeighborhoods((prev) =>
-                  prev.filter((n) => n.id !== neighborhood.id)
-                )
-              }
+              onDelete={() => handleNeighborhoodRemove(neighborhood.id)}
               color="secondary"
               variant="outlined"
               size="small"
@@ -1081,7 +1176,6 @@ const WorkerFilter = ({
                     {filter.name} ({filter.unit})
                   </Typography>
 
-                  {/* Range inputs */}
                   <Box
                     sx={{
                       display: "flex",
@@ -1090,7 +1184,6 @@ const WorkerFilter = ({
                       position: "relative",
                     }}
                   >
-                    {/* تا (To) - upper limit */}
                     <Box sx={{ flex: 1, position: "relative" }}>
                       <TextField
                         size="small"
@@ -1146,7 +1239,6 @@ const WorkerFilter = ({
                           },
                         }}
                       />
-                      {/* Suggestions for upper limit */}
                       {focusedField === `${filter.id}-high` &&
                         getSuggestions(filter.id).length > 0 && (
                           <Paper
@@ -1212,7 +1304,6 @@ const WorkerFilter = ({
                       تا
                     </Typography>
 
-                    {/* از (From) - lower limit */}
                     <Box sx={{ flex: 1, position: "relative" }}>
                       <TextField
                         size="small"
@@ -1268,7 +1359,6 @@ const WorkerFilter = ({
                           },
                         }}
                       />
-                      {/* Suggestions for lower limit */}
                       {focusedField === `${filter.id}-low` &&
                         getSuggestions(filter.id).length > 0 && (
                           <Paper
@@ -1332,7 +1422,6 @@ const WorkerFilter = ({
                     </Box>
                   </Box>
 
-                  {/* Number in words display */}
                   {(rangeFilter.low !== "" || rangeFilter.high !== "") && (
                     <Box
                       sx={{
@@ -1375,67 +1464,70 @@ const WorkerFilter = ({
 
   return (
     <>
-      {/* Filter & Sort Buttons */}
-      <Box
-       sx={{
-        position: "fixed",
-        top: isMobile ? 75 : 80,
-        // Conditionally set position: right for mobile, left for desktop
-        left: isMobile ? "auto" : 16,
-        right: isMobile ? 16 : "auto",
-        zIndex: 15,
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-       
-      }}
+   <Box
+  sx={{
+    position: "fixed",
+    top: isMobile ? 82 : 80,
+    left: isMobile ? 24 : 16, // Increased from 16 to 24 on mobile
+    right: isMobile ? 24 : "auto", // Increased from 16 to 24 on mobile
+    zIndex: 15,
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
+    width: isMobile ? "calc(100% - 48px)" : "auto", // Updated from 32px to 48px (24+24)
+  }}
+>
+  <Button
+    onClick={() => setIsFilterOpen(true)}
+    variant="contained"
+    sx={{
+      width: isMobile ? "100%" : 100,
+      minWidth: isMobile ? "auto" : 100,
+      height: isMobile ? 40 : 48,
+      borderRadius: "24px",
+      background: "linear-gradient(135deg, #a92b31 0%, #d45b61 100%)",
+      color: "white",
+      boxShadow: "0 4px 15px rgba(169, 43, 49, 0.3)",
+      px: isMobile ? 4 : 2, // Increased from 3 to 4 on mobile
+      py: 1,
+      fontFamily: "'Vazir', 'Segoe UI', sans-serif",
+      fontWeight: 600,
+      fontSize: "14px",
+      letterSpacing: "0.5px",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      textTransform: "none",
+      "&:hover": {
+        background: "linear-gradient(135deg, #8c2328 0%, #c2494f 100%)",
+        boxShadow: "0 6px 20px rgba(169, 43, 49, 0.4)",
+        transform: "translateY(-2px)",
+      },
+      "&:active": {
+        transform: "translateY(0)",
+        boxShadow: "0 2px 10px rgba(169, 43, 49, 0.3)",
+      },
+    }}
+  >
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: isMobile ? "center" : "flex-start", 
+      gap: 1, 
+      width: "100%" 
+    }}>
+      <Tune sx={{ fontSize: 20 }} />
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          fontWeight: 600,
+          fontSize: "14px"
+        }}
       >
-        <Button
-          onClick={() => setIsFilterOpen(true)}
-          variant="contained"
-          sx={{
-            width: "auto",
-            minWidth: 100,
-            height: isMobile ? 30 : 48,
-            borderRadius: "24px",
-            background: "linear-gradient(135deg, #a92b31 0%, #d45b61 100%)",
-            color: "white",
-            boxShadow: "0 4px 15px rgba(169, 43, 49, 0.3)",
-            px: 3,
-            py: 1.5,
-            fontFamily: "'Vazir', 'Segoe UI', sans-serif",
-            fontWeight: 600,
-            fontSize: "14px",
-            letterSpacing: "0.5px",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            textTransform: "none",
-            "&:hover": {
-              background: "linear-gradient(135deg, #8c2328 0%, #c2494f 100%)",
-              boxShadow: "0 6px 20px rgba(169, 43, 49, 0.4)",
-              transform: "translateY(-2px)",
-            },
-            "&:active": {
-              transform: "translateY(0)",
-              boxShadow: "0 2px 10px rgba(169, 43, 49, 0.3)",
-            },
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Tune sx={{ fontSize: 20 }} />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 600,
-                fontSize: "14px"
-              }}
-            >
-              فیلترها
-            </Typography>
-          </Box>
-        </Button>
-      </Box>
+        فیلترها
+      </Typography>
+    </Box>
+  </Button>
+</Box>
 
-      {/* Sort Menu */}
       <Menu
         anchorEl={sortAnchorEl}
         open={Boolean(sortAnchorEl)}
@@ -1461,7 +1553,6 @@ const WorkerFilter = ({
         </MenuItem>
       </Menu>
 
-      {/* Filter Panel */}
       <Box
         sx={{
           position: "fixed",
@@ -1479,7 +1570,6 @@ const WorkerFilter = ({
           flexDirection: "column",
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             background: "linear-gradient(135deg, #b92a31 0%, #e74c3c 100%)",
@@ -1519,15 +1609,12 @@ const WorkerFilter = ({
           </Button>
         </Box>
 
-        {/* Selected Filters - Only show on desktop */}
         {!isMobile && renderSelectedFilters()}
 
-        {/* Content */}
         <Box sx={{ 
   flex: 1, 
   overflow: "auto", 
   mb: 3,
-  // Add bottom padding when button is fixed at bottom on mobile
   pb: isMobile && filterLevel === "base" && isFilterOpen ? "100px" : "0"
 }}>
           {filterLevel === "category" ? (
@@ -1605,7 +1692,7 @@ const WorkerFilter = ({
                             flex: 1,
                           }}
                         >
-                          {category.name}
+                          {category.name} 
                         </Typography>
                       </Box>
                     </Grid>
@@ -1694,7 +1781,6 @@ const WorkerFilter = ({
             </Box>
           ) : (
             <Box sx={{ p: 0 }}>
-              {/* Sort Button */}
               <Box
                 sx={{
                   display: "flex",
@@ -1724,7 +1810,6 @@ const WorkerFilter = ({
               </Box>
               <Divider />
 
-              {/* Category Selection */}
               <Box
                 sx={{
                   display: "flex",
@@ -1747,17 +1832,16 @@ const WorkerFilter = ({
                     }
                   }}
                 >
-                  {selectedCategory ? "تغییر" : "انتخاب"}
+                  {selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id ? "تغییر" : "انتخاب"}
                 </Button>
                 <span>
                   {selectedCategory
-                    ? `دسته بندی: ${selectedCategory.name}`
+                    ? `دسته بندی: ${selectedCategory.name}` 
                     : "انتخاب دسته بندی"}
                 </span>
               </Box>
               <Divider />
 
-              {/* Neighborhood Selection */}
               <Box
                 sx={{
                   display: "flex",
@@ -1794,25 +1878,19 @@ const WorkerFilter = ({
               </Box>
               <Divider />
 
-             
-
-              {/* Features Section */}
               {renderFeatures()}
 
-               {/* Range Filters Section */}
-               {renderRangeFilters()}
+              {renderRangeFilters()}
             </Box>
           )}
         </Box>
 
-        {/* Footer */}
         {filterLevel === "base" && isFilterOpen && (
   <Box
     sx={{
       p: 2,
       borderTop: "1px solid #e0e0e0",
       bgcolor: "#f5f5f5",
-      // Fixed positioning for mobile
       position: isMobile ? "fixed" : "static",
       bottom: isMobile ? 0 : "auto",
       left: 0,
@@ -1821,10 +1899,17 @@ const WorkerFilter = ({
       boxShadow: isMobile ? "0 -4px 20px rgba(0, 0, 0, 0.1)" : "none",
     }}
   >
+    {filterError && (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {filterError}
+      </Alert>
+    )}
+    
     <Button
       variant="contained"
       fullWidth
-      onClick={handleModalClose}
+      onClick={applyServerSideFilters}
+      disabled={filterLoading}
       sx={{
         background: "linear-gradient(135deg, #b92a31 0%, #e74c3c 100%)",
         color: "white",
@@ -1836,15 +1921,24 @@ const WorkerFilter = ({
         "&:hover": {
           background: "linear-gradient(135deg, #a01c22 0%, #c0392b 100%)",
         },
+        "&:disabled": {
+          background: "linear-gradient(135deg, #cccccc 0%, #aaaaaa 100%)",
+        }
       }}
     >
-      نمایش {applyFilters().length} آگهی
+      {filterLoading ? (
+        <>
+          <CircularProgress size={20} sx={{ color: "white", mr: 1 }} />
+          در حال اعمال فیلترها...
+        </>
+      ) : (
+        "اعمال فیلترها"
+      )}
     </Button>
   </Box>
 )}
       </Box>
 
-      {/* Overlay for mobile */}
       {isFilterOpen && isMobile && (
         <Box
           sx={{
@@ -1853,69 +1947,67 @@ const WorkerFilter = ({
             left: 0,
             right: 0,
             bottom: 0,
-            bgcolor: "rgba(0, 0, 0, 0.5)",
+            // bgcolor: "rgba(0, 0, 0, 0.5)",
             zIndex: 1199,
           }}
           onClick={handleModalClose}
         />
       )}
 
-      {/* Mobile Filter Tags Bar - Fixed below header */}
-      {isMobile && (
+      
+      {(isMobile || 1) && (
         <Box
-          sx={{
-            position: "fixed",
-            top: 70,
-            left: 0,
-            right: 0,
-            p: 1,
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            maxHeight: "100px",
-            overflow: "auto",
-            bgcolor: "background.paper",
-            zIndex: 10,
-            display:
-              selectedCategory ||
-              selectedNeighborhoods.length > 0 ||
-              selectedFeatures.length > 0 ||
-              rangeFilters.some((f) => f.low !== "" || f.high !== "")
-                ? "block"
-                : "none",
-          }}
-        >
+        sx={{
+          position: "fixed",
+          top: 120,
+          left: isMobile ? 24 : 0, // Added mobile spacing
+          right: isMobile ? 24 : 0, // Added mobile spacing
+          p: 1,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          maxHeight: "100px",
+          overflow: "auto",
+          // bgcolor: "background.paper",
+          zIndex: 10,
+          display:
+            (selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id) ||
+            selectedNeighborhoods.length > 0 ||
+            selectedFeatures.length > 0 ||
+            rangeFilters.some((f) => f.low !== "" || f.high !== "")
+              ? "block"
+              : "none",
+        }}
+      >
           <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-            {selectedCategory && (
+            {selectedCategory && selectedCategory.id !== initialCategoryRef.current?.id && (
               <Chip
-                label={selectedCategory.name}
-                onDelete={() => {
-                  setSelectedCategory(null);
-                  if (onCategoryChange) onCategoryChange(null);
-                }}
-                size="small"
-                variant="outlined"
-                sx={{
-                  borderColor: '#b92a31',
-                  color: '#b92a31',
-                  '&:hover': {
-                    backgroundColor: 'rgba(185, 42, 49, 0.04)',
-                  }
-                }}
-              />
+              label={selectedCategory.name}
+              onDelete={() => {
+                setSelectedCategory(initialCategoryRef.current);
+                if (onCategoryChange) onCategoryChange(initialCategoryRef.current);
+              }}
+              size="small"
+              variant="outlined"
+              sx={{
+                borderColor: '#b92a31',
+                color: '#b92a31',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                '&:hover': {
+                  backgroundColor: 'rgba(185, 42, 49, 0.1)',
+                }
+              }}
+            />
             )}
 
             {selectedNeighborhoods.map((neighborhood) => (
               <Chip
                 key={neighborhood.id}
                 label={neighborhood.name}
-                onDelete={() =>
-                  setSelectedNeighborhoods((prev) =>
-                    prev.filter((n) => n.id !== neighborhood.id)
-                  )
-                }
+                onDelete={() => handleNeighborhoodRemove(neighborhood.id)} 
                 size="small"
                 variant="outlined"
                 sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
                   borderColor: '#b92a31',
                   color: '#b92a31',
                   '&:hover': {
@@ -1937,6 +2029,7 @@ const WorkerFilter = ({
                 size="small"
                 variant="outlined"
                 sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
                   borderColor: '#b92a31',
                   color: '#b92a31',
                   '&:hover': {

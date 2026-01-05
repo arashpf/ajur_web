@@ -1,9 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Styles from "../styles/WorkerMedia.module.css";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
+import dynamic from "next/dynamic";
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Link from "next/link";
+
+// Dynamically import Swiper (keep for compatibility but won't use for now)
+const Swiper = dynamic(
+  () => import("swiper/react").then(mod => mod.Swiper),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+);
+
+const SwiperSlide = dynamic(
+  () => import("swiper/react").then(mod => mod.SwiperSlide),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+);
 
 export default function WorkerMedia({ images = [], virtual_tours = [], videos = [] }) {
   const [activeTab, setActiveTab] = useState("images");
@@ -11,292 +27,391 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [thumbnailSwiperInstance, setThumbnailSwiperInstance] = useState(null);
-  const [mainImageSwiperInstance, setMainImageSwiperInstance] = useState(null);
-  const [isClient, setIsClient] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
+  
+  const mediaContainerRef = useRef(null);
+  const cleanupRef = useRef([]);
 
-  // Initialize client-side state
+  // Simple memoization
+  const memoizedImages = useMemo(() => images || [], [images?.length || 0]);
+  const memoizedVideos = useMemo(() => videos || [], [videos?.length || 0]);
+  const memoizedTours = useMemo(() => virtual_tours || [], [virtual_tours?.length || 0]);
+
+  // Initialize
   useEffect(() => {
-    setIsClient(true);
+    setHasMounted(true);
+    
+    return () => {
+      cleanupRef.current.forEach(cleanup => cleanup?.());
+      cleanupRef.current = [];
+      if (hasMounted) {
+        document.body.style.overflow = "";
+      }
+    };
   }, []);
 
-  const openLightbox = (index) => {
+  // Image URL optimization
+  const getOptimizedImageUrl = useCallback((url, size = "medium") => {
+    if (!url) return url;
+    
+    const params = new URLSearchParams();
+    
+    if (size === "thumbnail") {
+      params.set("w", "300");
+      params.set("h", "200");
+    } else if (size === "medium") {
+      params.set("w", "800");
+      params.set("h", "600");
+    } else if (size === "large") {
+      params.set("w", "1200");
+      params.set("h", "900");
+    }
+    
+    params.set("fm", "webp");
+    params.set("auto", "format");
+    
+    if (url.includes("?")) {
+      return `${url}&${params.toString()}`;
+    }
+    
+    return `${url}?${params.toString()}`;
+  }, []);
+
+  // Lightbox functions
+  const openLightbox = useCallback((index) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
-    // prevent background scroll
-    document.body.style.overflow = "hidden";
-    try {
-      if (typeof window !== 'undefined') {
-        window.history.pushState({ ajur_lightbox: true }, '');
-      }
-    } catch (err) {
-      console.warn('history.pushState failed', err);
+    if (hasMounted) {
+      document.body.style.overflow = "hidden";
     }
-  };
+  }, [hasMounted]);
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    document.body.style.overflow = "";
-    try {
-      if (typeof window !== 'undefined' && window.history.state && window.history.state.ajur_lightbox) {
-        window.history.back();
-      }
-    } catch (err) {
-      console.warn('history.back failed', err);
+    if (hasMounted) {
+      document.body.style.overflow = "";
     }
-  };
+  }, [hasMounted]);
 
   const showPrev = useCallback(() => {
-    if (images.length > 0) {
-      setLightboxIndex((i) => (i - 1 + images.length) % images.length);
+    if (memoizedImages.length > 0) {
+      setLightboxIndex(prev => (prev - 1 + memoizedImages.length) % memoizedImages.length);
     }
-  }, [images.length]);
+  }, [memoizedImages.length]);
 
   const showNext = useCallback(() => {
-    if (images.length > 0) {
-      setLightboxIndex((i) => (i + 1) % images.length);
+    if (memoizedImages.length > 0) {
+      setLightboxIndex(prev => (prev + 1) % memoizedImages.length);
     }
-  }, [images.length]);
+  }, [memoizedImages.length]);
 
+  // Keyboard navigation
   useEffect(() => {
-    if (!lightboxOpen || !isClient) return;
+    if (!lightboxOpen || !hasMounted) return;
     
-    const onKey = (e) => {
+    const handleKeyDown = (e) => {
       if (e.key === "Escape") {
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          closeLightbox();
-        }
+        closeLightbox();
+      } else if (e.key === "ArrowLeft") {
+        showPrev();
+      } else if (e.key === "ArrowRight") {
+        showNext();
       }
-      if (e.key === "ArrowLeft") showPrev();
-      if (e.key === "ArrowRight") showNext();
     };
     
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, showPrev, showNext, isFullscreen, isClient]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, showPrev, showNext, hasMounted, closeLightbox]);
 
-  // Handle browser back button to close fullscreen first, then the grid modal
-  useEffect(() => {
-    const onPop = (e) => {
-      const state = (e && e.state) || window.history.state;
+  // Render functions
+  const renderImageSlide = useCallback((item, index) => (
+    <img
+      src={getOptimizedImageUrl(item.url, "medium")}
+      alt={`Image ${index + 1}`}
+      className={Styles.mainImage}
+      onClick={() => openLightbox(index)}
+      style={{ cursor: "pointer" }}
+      loading={index === 0 ? "eager" : "lazy"}
+      width="800"
+      height="600"
+    />
+  ), [getOptimizedImageUrl, openLightbox]);
 
-      if (isFullscreen) {
-        // If the new state still contains ajur_lightbox (grid), only exit fullscreen
-        if (state && state.ajur_lightbox) {
-          setIsFullscreen(false);
-          return;
-        }
-        // Otherwise close everything
-        setIsFullscreen(false);
-        setLightboxOpen(false);
-        document.body.style.overflow = "";
-        return;
-      }
+  const renderVirtualTourSlide = useCallback((item, index) => (
+    <iframe
+      src={item.url}
+      title={`Virtual Tour ${index + 1}`}
+      className={Styles.iframe}
+      allowFullScreen
+      loading="lazy"
+      referrerPolicy="no-referrer"
+    />
+  ), []);
 
-      if (lightboxOpen) {
-        // If the new state still has ajur_lightbox, keep modal open
-        if (state && state.ajur_lightbox) {
-          return;
-        }
-        setLightboxOpen(false);
-        document.body.style.overflow = "";
-      }
-    };
+  const renderVideoSlide = useCallback((item, index) => (
+    <video 
+      controls 
+      className={Styles.video}
+      playsInline
+      preload="metadata"
+    >
+      <source src={item.absolute_path} type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  ), []);
 
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, [isFullscreen, lightboxOpen]);
-
-  const renderSlider = (mediaList, type) => {
-    // Don't render Swiper on server-side
-    if (!isClient) {
-      return <div className={Styles.swiperContainer}>Loading...</div>;
-    }
-
-    // Import Swiper modules dynamically for client-side only
-    const swiperConfig = {
-      spaceBetween: 10,
-      slidesPerView: 1,
-      pagination: { 
-        clickable: true,
-        renderBullet: (index, className) => {
-          return `<span class="${className}">${index + 1}</span>`;
-        }
-      },
-      onSwiper: (swiper) => {
-        if (type === "images") {
-          setMainImageSwiperInstance(swiper);
-        }
-      },
-      onSlideChange: (swiper) => {
-        if (type === "images") {
-          setMainImageIndex(swiper.activeIndex);
-          // Scroll thumbnail into view when main image changes
-          if (thumbnailSwiperInstance) {
-            try {
-              thumbnailSwiperInstance.slideTo(swiper.activeIndex);
-            } catch (err) {
-              console.warn("Thumbnail swiper error:", err);
-            }
-          }
-        }
-      },
-      className: Styles.swiperContainer
-    };
-
-    // Add autoplay only for videos and only if on client side
-    if (type === "videos" && isClient) {
-      swiperConfig.autoplay = {
-        delay: 3000,
-        disableOnInteraction: false,
-      };
-    }
-
+  // FIXED: Simple static render function that shows multiple images with manual navigation
+  const renderImageContent = useCallback(() => {
+    if (!memoizedImages || memoizedImages.length === 0) return null;
+    
     return (
-      <Swiper {...swiperConfig}>
-        {mediaList.map((item, index) => (
-          <SwiperSlide key={index}>
-            {type === "images" && (
-              <img
-                src={item.url}
-                alt={`Image ${index}`}
-                className={Styles.mainImage}
-                onClick={() => openLightbox(index)}
-                style={{ cursor: "pointer" }}
-              />
-            )}
-            {type === "virtual_tours" && (
-              <iframe
-                src={item.url}
-                title={`Virtual Tour ${index}`}
-                className={Styles.iframe}
-                allowFullScreen
-                loading="lazy"
-              />
-            )}
-            {type === "videos" && isClient && (
-              <video 
-                controls 
-                className={Styles.video}
-                playsInline
-                // Don't set autoplay here, let user control it
-              >
-                <source src={item.absolute_path} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            )}
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    );
-  };
-
-  // Don't render interactive elements on server
-  if (!isClient) {
-    return (
-      <div className={Styles.wrapper}>
-        <div className={Styles.mediaContainer}>
-          <div className={Styles.mainImageWrapper}>
-            <div className={Styles.swiperContainer}>
-              {images.length > 0 && (
-                <img
-                  src={images[0].url}
-                  alt="Preview"
-                  className={Styles.mainImage}
-                />
-              )}
+      <div className={Styles.swiperContainer}>
+        <div className={Styles.mainImageWrapper}>
+          {/* Show all images but only display the active one */}
+          {memoizedImages.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                display: index === mainImageIndex ? 'block' : 'none',
+                width: '100%',
+                height: '100%',
+                position: index === mainImageIndex ? 'relative' : 'absolute',
+                top: 0,
+                left: 0
+              }}
+            >
+              {renderImageSlide(item, index)}
             </div>
-          </div>
+          ))}
         </div>
       </div>
     );
-  }
+  }, [memoizedImages, mainImageIndex, renderImageSlide]);
 
+  // Render static content for tours and videos
+  const renderStaticContent = useCallback((mediaList, type) => {
+    if (!mediaList || mediaList.length === 0) return null;
+    
+    const firstItem = mediaList[0];
+    let content;
+    
+    if (type === "virtual_tours") {
+      content = renderVirtualTourSlide(firstItem, 0);
+    } else if (type === "videos") {
+      content = renderVideoSlide(firstItem, 0);
+    }
+    
+    return (
+      <div className={Styles.swiperContainer}>
+        <div className={Styles.mainImageWrapper}>
+          {content}
+        </div>
+      </div>
+    );
+  }, [renderVirtualTourSlide, renderVideoSlide]);
+
+  // FIXED: Pagination indicators that actually work with manual navigation
+  const paginationIndicators = useMemo(() => {
+    if (memoizedImages.length <= 1 || !hasMounted) return null;
+    
+    return (
+      <div className={Styles.paginationIndicators}>
+        {memoizedImages.map((_, index) => (
+          <button
+            key={index}
+            className={`${Styles.indicator} ${mainImageIndex === index ? Styles.active : ""}`}
+            onClick={() => {
+              setMainImageIndex(index);
+            }}
+            aria-label={`Go to image ${index + 1}`}
+            type="button"
+          />
+        ))}
+      </div>
+    );
+  }, [memoizedImages, mainImageIndex, hasMounted]);
+
+  // MAIN RENDER - Always consistent structure
   return (
     <div className={Styles.wrapper}>
-      <div className={Styles.mediaContainer}>
-        {activeTab === "images" && images.length > 0 && (
+      <div className={Styles.mediaContainer} ref={mediaContainerRef}>
+        {/* Images Tab - Now with working manual pagination */}
+        {activeTab === "images" && memoizedImages.length > 0 && (
           <div className={Styles.mainImageWrapper}>
-            {renderSlider(images, "images")}
-            {/* Pagination Indicators */}
-            {images.length > 1 && (
-              <div className={Styles.paginationIndicators}>
-                {images.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`${Styles.indicator} ${
-                      mainImageIndex === index ? Styles.active : ""
-                    }`}
-                    onClick={() => {
-                      setMainImageIndex(index);
-                      if (mainImageSwiperInstance && typeof mainImageSwiperInstance.slideTo === 'function') {
-                        mainImageSwiperInstance.slideTo(index);
-                      }
-                    }}
-                  />
-                ))}
-              </div>
+            {renderImageContent()}
+            {hasMounted && paginationIndicators}
+            
+            {/* Manual navigation arrows for images */}
+            {hasMounted && memoizedImages.length > 1 && (
+              <>
+                <button
+                  aria-label="Previous image"
+                  onClick={() => {
+                    setMainImageIndex(prev => 
+                      prev === 0 ? memoizedImages.length - 1 : prev - 1
+                    );
+                  }}
+                  style={{
+                    position: "absolute",
+                    left: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 10,
+                    background: "rgba(255,255,255,0.8)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  aria-label="Next image"
+                  onClick={() => {
+                    setMainImageIndex(prev => 
+                      (prev + 1) % memoizedImages.length
+                    );
+                  }}
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    zIndex: 10,
+                    background: "rgba(255,255,255,0.8)",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    cursor: "pointer",
+                    fontSize: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  ›
+                </button>
+              </>
             )}
           </div>
         )}
-        {activeTab === "virtual_tours" && virtual_tours.length > 0 && renderSlider(virtual_tours, "virtual_tours")}
-        {activeTab === "videos" && videos.length > 0 && renderSlider(videos, "videos")}
+        
+        {/* Virtual Tours Tab */}
+        {activeTab === "virtual_tours" && memoizedTours.length > 0 && (
+          <div className={Styles.mainImageWrapper}>
+            {renderStaticContent(memoizedTours, "virtual_tours")}
+          </div>
+        )}
+        
+        {/* Videos Tab */}
+        {activeTab === "videos" && memoizedVideos.length > 0 && (
+          <div className={Styles.mainImageWrapper}>
+            {renderStaticContent(memoizedVideos, "videos")}
+          </div>
+        )}
+        
+        {/* No Media Fallback */}
+        {memoizedImages.length === 0 && 
+         memoizedTours.length === 0 && 
+         memoizedVideos.length === 0 && (
+          <div className={Styles.swiperContainer}>
+            <div className={Styles.mainImageWrapper}>
+              <div style={{
+                width: '100%',
+                height: '400px',
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px'
+              }}>
+                <span>No media available</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Thumbnail Carousel Below Main Image - Only show if ONLY images exist */}
-
+      {/* Media Box Row - Always visible */}
       <div className={Styles.mediaBoxRow}>
-        {images.length > 0 && (
+        {memoizedImages.length > 0 && (
           <div
             className={Styles.mediaBox}
-            style={{ cursor: "pointer" }}
             onClick={() => {
-              // Open the images grid modal instead of switching inline
-              openLightbox(0);
-              setIsFullscreen(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              setActiveTab("images");
+              if (memoizedImages.length > 0) {
                 openLightbox(0);
-                setIsFullscreen(false);
               }
             }}
-            role="button"
-            tabIndex={0}
+            style={{ cursor: "pointer" }}
           >
             <div className={Styles.thumbnailContainer}>
               <img
-                src={images[0]?.url}
+                src={getOptimizedImageUrl(memoizedImages[0]?.url, "thumbnail")}
                 alt="Preview"
                 className={Styles.thumbnail}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                loading="eager"
+                width="300"
+                height="200"
               />
-              <div className={Styles.mediaCounter}>{images.length} عکس</div>
+              <div className={Styles.mediaCounter}>{memoizedImages.length} عکس</div>
             </div>
           </div>
         )}
 
-        {virtual_tours.length > 0 && (
-          <div className={Styles.mediaBox} onClick={() => setActiveTab("virtual_tours")}>
+        {memoizedTours.length > 0 && (
+          <div 
+            className={Styles.mediaBox}
+            onClick={() => setActiveTab("virtual_tours")}
+            style={{ cursor: "pointer" }}
+          >
             <Link
-              href={`/virtual-tour/${virtual_tours[0].worker_id}/`}
-              as={`/virtual-tour/${virtual_tours[0].worker_id}/`}
+              href={`/virtual-tour/${memoizedTours[0].worker_id}/`}
+              as={`/virtual-tour/${memoizedTours[0].worker_id}/`}
               passHref
+              legacyBehavior
             >
-              <div className={Styles.thumbnailContainer}>
-                <img src={virtual_tours[0]?.thumbnail_url} alt="Preview" className={Styles.thumbnail} />
-                <div className={Styles.mediaCounter}>بازدید مجازی</div>
-              </div>
+              <a style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div className={Styles.thumbnailContainer}>
+                  <img 
+                    src={getOptimizedImageUrl(memoizedTours[0]?.thumbnail_url, "thumbnail")} 
+                    alt="Preview" 
+                    className={Styles.thumbnail}
+                    loading="lazy"
+                    width="300"
+                    height="200"
+                  />
+                  <div className={Styles.mediaCounter}>بازدید مجازی</div>
+                </div>
+              </a>
             </Link>
           </div>
         )}
 
-        {videos.length > 0 && (
-          <div className={Styles.mediaBox} onClick={() => setActiveTab("videos")}>
+        {memoizedVideos.length > 0 && (
+          <div 
+            className={Styles.mediaBox}
+            onClick={() => setActiveTab("videos")}
+            style={{ cursor: "pointer" }}
+          >
             <div className={Styles.thumbnailContainer}>
-              <img src={images[1]?.url || images[0]?.url} alt="Preview" className={Styles.thumbnail} />
+              <img 
+                src={getOptimizedImageUrl(memoizedImages[0]?.url, "thumbnail")} 
+                alt="Preview" 
+                className={Styles.thumbnail}
+                loading="lazy"
+                width="300"
+                height="200"
+              />
               <div className={Styles.mediaCounterVideo}>
                 <PlayArrowIcon className={Styles.playIcon} />
               </div>
@@ -304,20 +419,22 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
           </div>
         )}
 
-        {/* Empty slots to maintain 1/3 grid */}
-        {images.length === 0 && (
-          <div className={Styles.mediaBox} style={{ visibility: "hidden" }} />
-        )}
-        {virtual_tours.length === 0 && (
-          <div className={Styles.mediaBox} style={{ visibility: "hidden" }} />
-        )}
-        {videos.length === 0 && (
-          <div className={Styles.mediaBox} style={{ visibility: "hidden" }} />
-        )}
+        {/* Empty slots for consistent layout */}
+        {Array.from({ length: 3 - [
+          memoizedImages.length > 0 ? 1 : 0,
+          memoizedTours.length > 0 ? 1 : 0,
+          memoizedVideos.length > 0 ? 1 : 0
+        ].filter(Boolean).length }).map((_, i) => (
+          <div 
+            key={`empty-${i}`} 
+            className={Styles.mediaBox} 
+            style={{ visibility: "hidden" }}
+          />
+        ))}
       </div>
 
-      {/* Lightbox overlay */}
-      {lightboxOpen && images && images.length > 0 && (
+      {/* Lightbox - Only render on client */}
+      {hasMounted && lightboxOpen && memoizedImages.length > 0 && (
         <div
           role="dialog"
           aria-modal="true"
@@ -338,29 +455,18 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              if (isFullscreen) {
-                setIsFullscreen(false);
-              } else {
-                closeLightbox();
-              }
+              closeLightbox();
             }
           }}
         >
+          {/* Your existing lightbox UI - unchanged */}
           {isFullscreen ? (
             <>
-              {/* Fullscreen View */}
               <button
                 aria-label="Exit fullscreen"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsFullscreen(false);
-                  try {
-                    if (typeof window !== 'undefined' && window.history.state && window.history.state.ajur_lightbox_full) {
-                      window.history.back();
-                    }
-                  } catch (err) {
-                    console.warn('history.back failed', err);
-                  }
                 }}
                 style={{
                   position: "fixed",
@@ -383,120 +489,94 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
                 ×
               </button>
 
-              {/* Fullscreen Image */}
               <img
-                src={images[lightboxIndex]?.url}
+                src={getOptimizedImageUrl(memoizedImages[lightboxIndex]?.url, "large")}
                 alt={`Fullscreen ${lightboxIndex}`}
                 style={{
                   maxWidth: "95vw",
                   maxHeight: "95vh",
                   objectFit: "contain",
                 }}
+                loading="eager"
               />
 
-              {/* Left Arrow */}
-              {images.length > 1 && (
-                <button
-                  aria-label="Previous"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    showPrev();
-                  }}
-                  style={{
-                    position: "fixed",
-                    left: 20,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    zIndex: 4002,
-                    background: "rgba(255,255,255,0.9)",
-                    border: "none",
-                    borderRadius: 4,
-                    width: 50,
-                    height: 50,
-                    cursor: "pointer",
-                    fontSize: 28,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.background = "rgba(255,255,255,1)";
-                    e.target.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.background = "rgba(255,255,255,0.9)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                >
-                  ‹
-                </button>
+              {memoizedImages.length > 1 && (
+                <>
+                  <button
+                    aria-label="Previous"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showPrev();
+                    }}
+                    style={{
+                      position: "fixed",
+                      left: 20,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      zIndex: 4002,
+                      background: "rgba(255,255,255,0.9)",
+                      border: "none",
+                      borderRadius: 4,
+                      width: 50,
+                      height: 50,
+                      cursor: "pointer",
+                      fontSize: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    aria-label="Next"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showNext();
+                    }}
+                    style={{
+                      position: "fixed",
+                      right: 20,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      zIndex: 4002,
+                      background: "rgba(255,255,255,0.9)",
+                      border: "none",
+                      borderRadius: 4,
+                      width: 50,
+                      height: 50,
+                      cursor: "pointer",
+                      fontSize: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ›
+                  </button>
+                </>
               )}
 
-              {/* Right Arrow */}
-              {images.length > 1 && (
-                <button
-                  aria-label="Next"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    showNext();
-                  }}
-                  style={{
-                    position: "fixed",
-                    right: 20,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    zIndex: 4002,
-                    background: "rgba(255,255,255,0.9)",
-                    border: "none",
-                    borderRadius: 4,
-                    width: 50,
-                    height: 50,
-                    cursor: "pointer",
-                    fontSize: 28,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.background = "rgba(255,255,255,1)";
-                    e.target.style.boxShadow = "0 4px 16px rgba(0,0,0,0.3)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.background = "rgba(255,255,255,0.9)";
-                    e.target.style.boxShadow = "none";
-                  }}
-                >
-                  ›
-                </button>
-              )}
-
-              {/* Bottom Counter */}
-              {(videos.length > 0 || virtual_tours.length > 0) && (
-                <div
-                  style={{
-                    position: "fixed",
-                    bottom: 20,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    zIndex: 4002,
-                    background: "rgba(0,0,0,0.6)",
-                    color: "#fff",
-                    padding: "10px 20px",
-                    borderRadius: 4,
-                    fontSize: 14,
-                    fontWeight: 600,
-                  }}
-                >
-                  {lightboxIndex + 1} / {images.length}
-                </div>
-              )}
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: 20,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  zIndex: 4002,
+                  background: "rgba(0,0,0,0.6)",
+                  color: "#fff",
+                  padding: "10px 20px",
+                  borderRadius: 4,
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                {lightboxIndex + 1} / {memoizedImages.length}
+              </div>
             </>
           ) : (
             <>
-              {/* Grid View */}
-              {/* Close button */}
               <button
                 aria-label="Close"
                 onClick={closeLightbox}
@@ -516,55 +596,30 @@ export default function WorkerMedia({ images = [], virtual_tours = [], videos = 
                   alignItems: "center",
                   justifyContent: "center",
                   boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.transform = "scale(1.1)";
-                  e.target.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.transform = "scale(1)";
-                  e.target.style.boxShadow = "0 2px 12px rgba(0,0,0,0.15)";
                 }}
               >
                 ×
               </button>
 
-              {/* Grid View of all images - responsive large pictures */}
               <div className={Styles.gridGallery} onClick={(e) => e.stopPropagation()}>
-                {images.map((img, idx) => (
+                {memoizedImages.map((img, idx) => (
                   <div
                     key={idx}
-                    role="button"
-                    tabIndex={0}
                     className={Styles.gridItem}
                     onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxIndex(idx);
-                        setIsFullscreen(true);
-                        try {
-                          if (typeof window !== 'undefined') {
-                            window.history.pushState({ ajur_lightbox_full: true }, '');
-                          }
-                        } catch (err) {
-                          console.warn('history.pushState failed', err);
-                        }
-                      }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        setLightboxIndex(idx);
-                        setIsFullscreen(true);
-                        try {
-                          if (typeof window !== 'undefined') {
-                            window.history.pushState({ ajur_lightbox_full: true }, '');
-                          }
-                        } catch (err) {
-                          console.warn('history.pushState failed', err);
-                        }
-                      }
+                      e.stopPropagation();
+                      setLightboxIndex(idx);
+                      setIsFullscreen(true);
                     }}
                   >
-                    <img src={img.url} alt={`Image ${idx}`} className={Styles.gridImage} />
+                    <img 
+                      src={getOptimizedImageUrl(img.url, "medium")} 
+                      alt={`Image ${idx}`} 
+                      className={Styles.gridImage}
+                      loading="lazy"
+                      width="400"
+                      height="300"
+                    />
                   </div>
                 ))}
               </div>

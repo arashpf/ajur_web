@@ -1,58 +1,52 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
-
 import styles from "../../styles/Home.module.css";
-
 import Cookies from "js-cookie";
 import axios from "axios";
 import { useRouter } from "next/router";
 import Grid from "@mui/material/Grid";
-import Link from "next/link";
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import LazyLoader from "../../components/lazyLoader/Loading";
-
 import WorkerCard from "../../components/cards/WorkerCard";
-import { useTheme } from "@emotion/react";
-import { useMediaQuery } from "@mui/material";
 
 const favoritesIndex = (props) => {
   const router = useRouter();
-
   const [is_have_favorited, set_is_have_favorited] = useState(false);
   const [loading, set_loading] = useState(true);
   const [workers, set_workers] = useState([]);
 
   useEffect(() => {
     var faviorited = Cookies.get("favorited");
-
     if (!faviorited) {
+      set_loading(false);
       return;
     }
 
-    // const newProduct = JSON.parse(faviorited);
     const newProduct = JSON.parse(faviorited);
-
+    
     axios({
       method: "get",
       url: "https://api.ajur.app/api/history-workers",
       params: {
         workers_holder: newProduct,
       },
-    }).then(function (response) {
-      set_workers(response.data);
-      set_loading(false);
-      if (response.data.length == 0) {
-        console.log("trigered no post error");
+    })
+      .then(function (response) {
+        set_workers(response.data);
+        set_loading(false);
+        if (response.data.length == 0) {
+          set_is_have_favorited(false);
+        } else {
+          set_is_have_favorited(true);
+        }
+      })
+      .catch(function (error) {
+        console.error("Error fetching favorites:", error);
+        set_loading(false);
         set_is_have_favorited(false);
-      } else {
-        set_is_have_favorited(true);
-      }
-      console.log("the data now is+++++++++++++++++++++ ");
-      console.log(response.data);
-    });
-
-    // alert(newProduct);
+      });
   }, []);
 
   const searchOnFiles = () => {
@@ -62,56 +56,53 @@ const favoritesIndex = (props) => {
   const renderFavoritedWorkers = () => {
     if (Array.isArray(workers) && workers.length > 0) {
       return (
-        <LazyLoader
-          items={workers} // whole array of workers
-          itemsPerPage={6} // adjust as needed
-          delay={800}
-          renderItem={(worker) => (
-            // <Link
-            //   href={`/worker/${worker.id}?slug=${worker.slug}`}
-            //   key={worker.id}
-            // >
-            //   <Grid item md={4} xs={12} key={worker.id}>
-            //     <WorkerCard worker={worker} />
-            //   </Grid>
-            // </Link>
-
-            <Grid item md={4} xs={12} key={worker.id}>
-          <a
-              href={`/worker/${worker.id}?slug=${worker.slug}`}
-               key={worker.id}
-          >
-            {/* <WorkerCard worker={worker} /> */}
-            <WorkerCard worker={worker} />
-          </a>
-        </Grid>
-          )}
-          loadingComponent={
-            <p style={{ textAlign: "center" }}>در حال بارگذاری...</p>
-          }
-          endComponent={
-            <p style={{ textAlign: "center" }}>همه فایل‌ها بارگذاری شدند✅</p>
-          }
-          grid={true}
-          gridProps={{ spacing: 2 }}
-          itemProps={{ xl: 3, md: 4, xs: 12 }}
-        />
+        <>
+          {workers.map((worker) => (
+            <Grid 
+              item 
+              xs={12}        // Full width on mobile
+              sm={6}         // 2 columns on tablet
+              md={4}         // 3 columns on desktop
+              lg={3}         // 4 columns on large screens
+              key={worker.id}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: { xs: '8px!important', sm: '12px!important' }
+              }}
+            >
+              <a
+                href={`/worker/${worker.id}?slug=${worker.slug}`}
+                style={{ 
+                  width: '100%',
+                  textDecoration: 'none',
+                  display: 'block'
+                }}
+              >
+                <WorkerCard worker={worker} />
+              </a>
+            </Grid>
+          ))}
+        </>
       );
     } else {
       return (
-        <Grid item md={12} xs={12} style={{ background: "white" }}>
-          <p style={{ textAlign: "center", padding: 20 }}>
-            متاسفانه موردی یافت نشد
-          </p>
-          <div className="not-found-wrapper">
-            <img
-              className="not-found-image"
-              src="/logo/not-found.png"
-              alt="ملکی پیدا نشد"
-              width={200}
-              height={120}
-            />
-          </div>
+        <Grid item xs={12} style={{ background: "white" }}>
+          <Box sx={{ textAlign: "center", padding: "40px 20px" }}>
+            <p style={{ marginBottom: 20, fontSize: 18, color: "#666" }}>
+              متاسفانه موردی یافت نشد
+            </p>
+            <div className="not-found-wrapper">
+              <img
+                className="not-found-image"
+                src="/logo/not-found.png"
+                alt="ملکی پیدا نشد"
+                width={200}
+                height={120}
+                style={{ margin: "0 auto" }}
+              />
+            </div>
+          </Box>
         </Grid>
       );
     }
@@ -120,73 +111,150 @@ const favoritesIndex = (props) => {
   const renderFavotited = () => {
     if (is_have_favorited) {
       return (
-        <Box sx={{ padding: "10px 2px", flexGrow: 1, marginBottom: "70px" }}>
+        <Container 
+          maxWidth="xl"
+          sx={{ 
+            px: { xs: 2, sm: 3, md: 4 },
+            margin: '0 auto',
+            paddingBottom: "70px"
+          }}
+        >
           <h1
             style={{
               textAlign: "right",
-              padding: 10,
+              padding: "20px 0",
               color: "#555",
               fontSize: 22,
               fontFamily: "iransans",
-              padding: 20,
+              margin: 0
             }}
           >
             فایل های مورد پسند شما در آجر
           </h1>
-          <Grid container spacing={2}>
-            <Box sx={{ flexGrow: 1, py: 3, px: 3 }}>
-              <Grid container spacing={2}>
-                {renderFavoritedWorkers()}
-              </Grid>
-              {/* <FileRequest /> */}
-            </Box>
-          </Grid>
-        </Box>
+          
+          <Box sx={{ flexGrow: 1, py: 3 }}>
+            <Grid 
+              container 
+              spacing={{ xs: 2, sm: 3 }}
+              justifyContent={{ xs: "center", sm: "flex-start" }}
+              sx={{ margin: '0 auto' }}
+            >
+              {renderFavoritedWorkers()}
+            </Grid>
+          </Box>
+        </Container>
       );
     } else {
       return (
-        <div className={styles["no-favorites-wrapper"]}>
-          <Grid container>
-            <Grid item xs={0} md={3} spacing={1}></Grid>
-            <Grid item xs={12} md={6} spacing={1}>
-              <div>
-                <Image
-                  height={99}
-                  width={100}
-                  // src="/logo/heart-dance.gif"
-                  src="/logo/half-heart.png"
-                  alt="ajur half heart"
-                />
-                <h3>شما هنوز ملکی را نپسندیده اید</h3>
-                <p>
-                  با استفاده از آیکون قلب در فایل ها میتوانید آنها را به این
-                  صفحه اضافه کنید ، تا از آخرین تغییرات قیمت ، تغییر وضعیت و
-                  فایل های مشابه آگاه شوید
-                </p>
-              </div>
-
-              <div
-                className={styles["search-on-files"]}
-                onClick={searchOnFiles}
-              >
-                <p>جستجو در فایل ها</p>
-              </div>
-            </Grid>
-          </Grid>
-        </div>
+        <Container 
+          maxWidth="md"
+          sx={{ 
+            px: { xs: 2, sm: 3 },
+            margin: '0 auto',
+            paddingTop: '40px',
+            paddingBottom: '60px'
+          }}
+        >
+          <Box sx={{ 
+            textAlign: 'center',
+            padding: { xs: '20px 10px', sm: '40px 20px' },
+            backgroundColor: '#f9f9f9',
+            borderRadius: '12px',
+            border: '1px solid #eee'
+          }}>
+            <Box sx={{ marginBottom: '24px' }}>
+              <Image
+                height={120}
+                width={120}
+                src="/logo/half-heart.png"
+                alt="ajur half heart"
+                style={{ margin: '0 auto' }}
+              />
+            </Box>
+            
+            <h3 style={{ 
+              color: "#555",
+              fontSize: 20,
+              marginBottom: 16,
+              fontFamily: "iransans"
+            }}>
+              شما هنوز ملکی را نپسندیده اید
+            </h3>
+            
+            <p style={{ 
+              color: "#666",
+              fontSize: 16,
+              lineHeight: 1.6,
+              marginBottom: 32,
+              maxWidth: '500px',
+              margin: '0 auto 32px'
+            }}>
+              با استفاده از آیکون قلب در فایل ها میتوانید آنها را به این
+              صفحه اضافه کنید ، تا از آخرین تغییرات قیمت ، تغییر وضعیت و
+              فایل های مشابه آگاه شوید
+            </p>
+            
+            <Box
+              onClick={searchOnFiles}
+              sx={{
+                display: 'inline-block',
+                backgroundColor: "#b92a31",
+                color: "white",
+                padding: "12px 32px",
+                borderRadius: "24px",
+                cursor: "pointer",
+                fontSize: 16,
+                fontWeight: 600,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "#a01c22",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 4px 12px rgba(185, 42, 49, 0.3)"
+                }
+              }}
+            >
+              جستجو در فایل ها
+            </Box>
+          </Box>
+        </Container>
       );
     }
   };
+
+  const renderSpinner = () => {
+    return (
+      <Container 
+        maxWidth="xl"
+        sx={{ 
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '50vh',
+          px: { xs: 2, sm: 3, md: 4 }
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <img
+            src="/logo/ajour-gif.gif"
+            alt="در حال بارگذاری"
+            style={{ height: "60px", width: "auto" }}
+          />
+          <p style={{ marginTop: "10px", color: "#666" }}>در حال بارگذاری علاقه‌مندی‌ها...</p>
+        </Box>
+      </Container>
+    );
+  };
+
   return (
-    <div>
+    <div style={{ minHeight: '100vh' }}>
       <Head>
         <meta charSet="UTF-8" />
         <meta name="robots" content="max-image-preview:large" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        ></meta>
-        <title> آجر : فایل های مورد پسند شما </title>
+        />
+        <title>آجر : فایل های مورد پسند شما</title>
         <meta
           name="description"
           content="فایل های مورد پسند شما در آجر در این صفحه نمایش داده میشوند"
@@ -197,15 +265,13 @@ const favoritesIndex = (props) => {
         />
         <meta property="og:locale" content="fa_IR" />
         <meta property="og:type" content="website" />
-        <meta property="og:locale" content="fa_IR" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="آجر :  فایل های مورد پسند شما " />
+        <meta property="og:title" content="آجر : فایل های مورد پسند شما" />
         <meta
           property="og:description"
           content="فایل های مورد پسند شما در آجر در این صفحه نمایش داده میشوند"
         />
-        <meta property="og:url" content="https://ajur.app" />
-        <meta property="og:site_name" content="آجر : مشاور املاک هوشمند " />
+        <meta property="og:url" content="https://ajur.app/favorites" />
+        <meta property="og:site_name" content="آجر : مشاور املاک هوشمند" />
         <meta
           property="article:published_time"
           content="2023-05-19T21:34:43+00:00"
@@ -224,10 +290,10 @@ const favoritesIndex = (props) => {
         <meta name="twitter:label1" content="Written by" />
         <meta name="twitter:data1" content="آرش پیمانی فر" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="canonical" href="https://ajur.app" />
+        <link rel="canonical" href="https://ajur.app/favorites" />
       </Head>
 
-      {renderFavotited()}
+      {loading ? renderSpinner() : renderFavotited()}
     </div>
   );
 };

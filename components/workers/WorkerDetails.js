@@ -105,19 +105,25 @@ function WorkerDetails(props) {
   };
 
   // Extract key features from properties
+  // const getFeatureValue = (key) => {
+  //   const property = properties.find((p) => p.key?.includes(key));
+  //   return property ? property.value : null;
+  // };
+
+
   const getFeatureValue = (key) => {
-    const property = properties.find((p) => p.key?.includes(key));
+    const property = properties.find((p) => p.key === key);
     return property ? property.value : null;
   };
 
   // Get main features
-  const area = getFeatureValue("متراژ") || getFeatureValue("مساحت");
+  const area = getFeatureValue("متراژ کل") || getFeatureValue("مساحت");
   const rooms = getFeatureValue("اتاق") || getFeatureValue("خواب");
   const yearMade = getFeatureValue("سال ساخت") || getFeatureValue("ساخت");
-  const price =
-    getFeatureValue("قیمت") ||
-    getFeatureValue("قیمت کل") ||
-    getFeatureValue("price");
+  const price = getFeatureValue("قیمت");
+  const price_per_m = getFeatureValue("قیمت هر متر");
+
+
   const deposit = getFeatureValue("پول پیش") || getFeatureValue("پیش پرداخت");
   const monthlyRent =
     getFeatureValue("اجاره ماهیانه") || getFeatureValue("اجاره");
@@ -397,8 +403,8 @@ function WorkerDetails(props) {
                 }}
               >
                 قیمت: {Number(price).toLocaleString("en-US")} تومان
-              </div>
-              {area && (
+              </div> 
+              {price_per_m && (
                 <div
                   style={{
                     fontSize: "22px",
@@ -408,7 +414,7 @@ function WorkerDetails(props) {
                   }}
                 >
                   قیمت هر متر:{" "}
-                  {(Number(price) / parseInt(area)).toLocaleString("en-US", {
+                  {(parseInt(price_per_m)).toLocaleString("en-US", {
                     maximumFractionDigits: 0,
                   })}
                 </div>

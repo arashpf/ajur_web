@@ -1,21 +1,19 @@
 import { getServerSideSitemap } from "next-sitemap";
 
 export const getServerSideProps = async (ctx) => {
-  // let posts = await fetch("https://jsonplaceholder.typicode.com/posts");
   let cities = await fetch("https://api.ajur.app/api/search-cities");
-  let type_pre = '';
   cities = await cities.json();
+  
+  const baseUrl = 'https://ajur.app'; // Hardcoded domain
+  
   const newsSitemaps = cities.items.map((item) => ({
-    loc: `${process.env.NEXT_PUBLIC_DOMAIN_URL}`+type_pre+`${item.slug.toString()}`,
+    loc: `${baseUrl}/${item.slug.toString()}`, // Added slash between domain and slug
     lastmod: item.updated_at,
     changefreq: 'weekly',
-    priority: .9,
-
+    priority: 0.9,
   }));
 
-  const fields = [...newsSitemaps];
-
-  return getServerSideSitemap(ctx, fields);
+  return getServerSideSitemap(ctx, newsSitemaps);
 };
 
 export default function Site() {}

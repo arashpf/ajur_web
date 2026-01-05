@@ -856,29 +856,28 @@ function Home(props) {
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 max-w-6xl mx-auto px-4 sm:px-6">
-                {subCats
-                  .filter((c) => clickedAction === "buy" ? c.type === "sell" : c.type === "rent")
-                  .map((cat, idx) => (
-                  
-
-                    <DealButton
-                    key={cat.id}
-                    title={cat.name}
-                    src={`/cats_image/sub-cats/${cat.id}.png`}
-                    onClick={() => {
-                      setLoading(true);
-                      const city = props.trigeredcity || renderDefaultCity();
-                      router.push(
-                        `/${encodeURIComponent(city)}/${encodeURIComponent(cat.eng_name)}`
-                      );
-                    }}
-                    style={{ animationDelay: `${idx * 70}ms` }}
-                  />
-                  ))}
-              </div>
-            </div>
+            <div className="p-2 md:p-4 lg:p-6">
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 md:gap-4 max-w-6xl mx-auto px-3 md:px-6">
+  {subCats
+    .filter((c) => clickedAction === "buy" ? c.type === "sell" : c.type === "rent")
+    .map((cat, idx) => (
+      <div key={cat.id} className="aspect-square">
+        <DealButton
+          title={cat.name}
+          src={`/cats_image/sub-cats/${cat.id}.png`}
+          onClick={() => {
+            setLoading(true);
+            const city = props.trigeredcity || renderDefaultCity();
+            router.push(
+              `/${encodeURIComponent(city)}/${encodeURIComponent(cat.eng_name)}`
+            );
+          }}
+          style={{ animationDelay: `${idx * 70}ms` }}
+        />
+      </div>
+    ))}
+</div>
+</div>
           </div>
         )}
 

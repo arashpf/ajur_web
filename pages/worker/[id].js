@@ -3,31 +3,28 @@ import PropTypes from "prop-types";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import dynamic from "next/dynamic";
-import axios from "axios";
 import Cookies from "js-cookie";
 import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
-import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import IconButton from "@mui/material/IconButton";
 import CloseIcon from "@mui/icons-material/Close";
 import DirectionsIcon from "@mui/icons-material/Directions";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Link from "next/link";
 
-// Components - IMPORTANT: Enable SSR for critical components
+// Components - Fixed: Remove loading prop from WorkerMedia
 const WorkerMedia = dynamic(() => import("../../components/workers/WorkerMedia"), {
-  ssr: true, // Changed from false to true for better LCP
+  ssr: true,
   loading: () => <div style={{ height: 400, backgroundColor: '#f5f5f5' }} />,
 });
 
 const WorkerDetails = dynamic(() => import("../../components/workers/WorkerDetails"), { 
-  ssr: true, // Changed from false to true
+  ssr: true,
   loading: () => <div style={{ height: 300, backgroundColor: '#f5f5f5' }} />,
 });
 
@@ -40,7 +37,6 @@ const LocationNoSsr = dynamic(() => import("../../components/map/Location"), {
 // Import other components
 import WorkerCard from "../../components/cards/WorkerCard";
 import WorkerRealstateCard from "../../components/cards/realestate/WorkerRealstateCard";
-import WorkerShare from "../../components/workers/WorkerShare";
 import LazyLoader from "../../components/lazyLoader/Loading";
 import Breadcrumb from "../../components/common/Breadcrumb";
 
@@ -67,19 +63,20 @@ const Item = React.memo(styled(Paper)(({ theme }) => ({
 })));
 
 const WorkerSingle = (props) => {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false since we have server data
   const [isFavorite, setIsFavorite] = useState(false);
   const [mapModalOpen, setMapModalOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
   const router = useRouter();
   const { slug, id } = router.query;
 
-  // Set client-side flag
+  // Set hydration flag
   useEffect(() => {
-    setIsClient(true);
+    setHasHydrated(true);
   }, []);
 
-  // OPTIMIZATION: Memoize all cleaned data
+  // OPTIMIZATION: Memoize all cleaned data - FIXED: Remove JSON.stringify
   const { details, cleanRealstate, images, videos, virtual_tours, properties, relateds } = useMemo(() => {
     const {
       details: rawDetails,
@@ -119,12 +116,11 @@ const WorkerSingle = (props) => {
     };
   }, [props]);
 
-  // OPTIMIZATION: Split useEffect to reduce blocking time
+  // OPTIMIZATION: Only run on client after hydration
   useEffect(() => {
-    // Non-critical initialization (cookies, favorites) - can be deferred
+    if (!hasHydrated) return;
+    
     const timeoutId = setTimeout(() => {
-      if (!isClient) return;
-      
       try {
         // Check favorites
         const favorited = Cookies.get("favorited");
@@ -147,21 +143,10 @@ const WorkerSingle = (props) => {
       } catch (error) {
         console.error("Cookie operation failed:", error);
       }
-    }, 100); // Delay non-critical operations
+    }, 100);
 
     return () => clearTimeout(timeoutId);
-  }, [details.id, isClient]);
-
-  // OPTIMIZATION: Critical loading state - set false immediately for server-rendered content
-  useEffect(() => {
-    if (details && isClient) {
-      // Small delay to ensure paint happens
-      const timer = setTimeout(() => {
-        setLoading(false);
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [details, isClient]);
+  }, [details.id, hasHydrated]);
 
   // OPTIMIZATION: Memoize toggleFavorite
   const toggleFavorite = useCallback(() => {
@@ -344,7 +329,7 @@ const WorkerSingle = (props) => {
             <Link 
               href={`/worker/${worker.id}?slug=${worker.slug}`}
               style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-              prefetch={false} // Disable prefetch for better performance
+              prefetch={false}
             >
               <WorkerCard worker={worker} />
             </Link>
@@ -363,8 +348,8 @@ const WorkerSingle = (props) => {
     );
   }, [relateds]);
 
-  // OPTIMIZATION: Simplified loading state
-  if (loading && isClient) {
+  // Don't show loading state if we have server data
+  if (!hasHydrated) {
     return (
       <div style={{ 
         minHeight: "60vh", 
@@ -373,7 +358,6 @@ const WorkerSingle = (props) => {
         justifyContent: "center",
         backgroundColor: '#f5f5f5'
       }}>
-        {/* Use simple CSS loader instead of GIF for faster load */}
         <div style={{
           width: 100,
           height: 100,
@@ -399,8 +383,6 @@ const WorkerSingle = (props) => {
       <div 
         className={`${Styles["scroll-div"]} ${Styles["worker-single"]} worker-single-page`} 
         style={{ margin: "0 20px" }}
-        // Add inert attribute to prevent focus during loading
-        {...(loading ? { inert: true } : {})}
       >
         {/* Breadcrumb Navigation */}
         <Breadcrumb
@@ -419,11 +401,11 @@ const WorkerSingle = (props) => {
           <Grid container spacing={1}>
             <Grid item xs={12} md={5}>
               <div className={Styles["media-wrapper"]}>
+                {/* FIXED: Remove loading prop */}
                 <WorkerMedia
                   images={images}
                   videos={videos}
                   virtual_tours={virtual_tours}
-                  loading={loading}
                 />
                 <div 
                   className={Styles["favorite-icon"]} 
@@ -612,7 +594,6 @@ WorkerSingle.propTypes = {
   relateds: PropTypes.array.isRequired,
 };
 
-// OPTIMIZATION: Improved getServerSideProps with caching and timeout
 export async function getServerSideProps(context) {
   const { params, res } = context;
   const id = params.id;
@@ -621,9 +602,8 @@ export async function getServerSideProps(context) {
   res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
 
   try {
-    // Use AbortController for timeout
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(`https://api.ajur.app/api/posts/${id}`, {
       signal: controller.signal,
@@ -640,7 +620,6 @@ export async function getServerSideProps(context) {
 
     const data = await res.json();
 
-    // Use the same cleanText function
     const cleanText = (text) => {
       if (!text || typeof text !== 'string') return '';
       return text
@@ -680,7 +659,6 @@ export async function getServerSideProps(context) {
   } catch (error) {
     console.error("Error fetching worker data:", error);
     
-    // Return minimal props instead of 404 for better UX
     return {
       props: {
         details: { id, name: '', category_name: '' },

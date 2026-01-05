@@ -22,16 +22,23 @@ export default function RabatKarimApartmentsPage() {
       
       let apts = [];
       if (Array.isArray(data)) {
-        apts = data.slice(0, 12);
+        apts = data;
       } else if (data.apartments && Array.isArray(data.apartments)) {
-        apts = data.apartments.slice(0, 12);
+        apts = data.apartments;
       } else if (data.items && Array.isArray(data.items)) {
-        apts = data.items.slice(0, 12);
+        apts = data.items;
       } else if (data.data && Array.isArray(data.data)) {
-        apts = data.data.slice(0, 12);
+        apts = data.data;
       }
       
-      setApartments(apts);
+      // FILTER: Only apartments under 2 billion
+      const filteredApts = apts.filter(apt => {
+        // Assuming price is in a property like apt.price, apt.cost, etc.
+        const price = apt.price || apt.cost || apt.amount || 0;
+        return price < 2000000000; // 2 billion
+      }).slice(0, 12); // Keep only first 12
+      
+      setApartments(filteredApts);
     } catch (error) {
       console.error('Error:', error);
       setApartments([]);
@@ -45,8 +52,8 @@ export default function RabatKarimApartmentsPage() {
   return (
     <>
       <Head>
-        <title>آپارتمان‌های رباط کریم | مجموعه‌ای منتخب از بهترین واحدها</title>
-        <meta name="description" content={`${availableCount} آپارتمان منتخب در رباط کریم با قیمت ۳ تا ۸ میلیارد تومان. قیمت‌های به‌روز، مشخصات کامل و امکان رزرو آنلاین.`} />
+        <title>آپارتمان‌های زیر ۲ میلیارد در رباط کریم | قیمت استثنایی از ۱.۱ میلیارد</title>
+        <meta name="description" content={`${availableCount} آپارتمان نوساز با قیمت زیر ۲ میلیارد تومان در رباط کریم. شروع قیمت از ۱.۱ میلیارد تومان، آماده سکونت، سند تک‌برگ. امکان بازدید فوری و مشاوره رایگان.`} />
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
         <meta name="robots" content="index, follow" />
@@ -98,7 +105,7 @@ export default function RabatKarimApartmentsPage() {
             padding: 12px 16px;
             box-shadow: 0 -2px 20px rgba(0,0,0,0.15);
             z-index: 9999;
-            border-top: 2px solid #f59e0b;
+            border-top: 2px solid #059669; /* Green instead of orange */
             display: flex;
             gap: 12px;
           }
@@ -116,7 +123,7 @@ export default function RabatKarimApartmentsPage() {
             gap: 8px;
           }
           .sticky-footer-cta .call-btn {
-            background: #a92b31; /* ✅ Your brand red */
+            background: #059669; /* Green for affordable pricing */
             color: white;
           }
           .sticky-footer-cta .whatsapp-btn {
@@ -140,27 +147,25 @@ export default function RabatKarimApartmentsPage() {
 
       {/* STICKY FOOTER CTA - Always visible on mobile */}
       <div className="sticky-footer-cta">
-  <button 
-    onClick={() => window.location.href = 'tel:+989382740488'}
-    className="call-btn"
-    style={{ fontWeight: '600', fontSize: '1rem' }}
-  >
-    تماس با کارشناس
-  </button>
-  <button 
-    onClick={() => window.open('https://wa.me/989382740488', '_blank')}
-    className="whatsapp-btn"
-    style={{ fontWeight: '600', fontSize: '1rem' }}
-  >
-    مشاوره در واتساپ
-  </button>
-</div>
+        <button 
+          onClick={() => window.location.href = 'tel:+989382740488'}
+          className="call-btn"
+          style={{ fontWeight: '600', fontSize: '1rem' }}
+        >
+          تماس برای قیمت استثنایی
+        </button>
+        <button 
+          onClick={() => window.open('https://wa.me/989382740488', '_blank')}
+          className="whatsapp-btn"
+          style={{ fontWeight: '600', fontSize: '1rem' }}
+        >
+          لیست واحدها در واتساپ
+        </button>
+      </div>
 
       {/* Hero Section - SUPER COMPACT */}
       <Box sx={{ 
-       
-        background: 'linear-gradient(135deg, #a92b31 0%, #8c2227 100%)',
-        
+        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', /* Green theme */
         color: 'white',
         py: { xs: 3, md: 4 },
         px: 2,
@@ -177,18 +182,15 @@ export default function RabatKarimApartmentsPage() {
             justifyContent: 'center',
             gap: '0.5rem'
           }}>
-           
-            
-            <span>مشاور املاک هوشمند</span>
-            <span>:</span>
-            <span style={{ color: '#f59e0b' }}>آجر</span>
+            <span>آپارتمان‌های زیر ۲ میلیارد تومان</span>
           </div>
           <div style={{ 
             fontSize: '0.85rem',
             opacity: 0.9,
-            marginTop: '0.25rem'
+            marginTop: '0.25rem',
+            direction: 'rtl'
           }}>
-            آپارتمان‌های کارشناسی شده رباط کریم
+            شروع قیمت از ۱.۱ میلیارد | نوساز و آماده سکونت در رباط کریم
           </div>
         </div>
       </Box>
@@ -207,7 +209,7 @@ export default function RabatKarimApartmentsPage() {
               width: '40px', 
               height: '40px', 
               border: '3px solid #e2e8f0',
-              borderTopColor: '#1e40af',
+              borderTopColor: '#059669', /* Green */
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               margin: '0 auto 1rem'
@@ -246,12 +248,13 @@ export default function RabatKarimApartmentsPage() {
                       آپارتمان‌های رباط کریم ({availableCount} واحد)
                     </h1>
                     <p className="persian-text" style={{
-                      color: '#64748b',
+                      color: '#059669', /* Green for price */
                       margin: 0,
                       textAlign: 'right',
-                      fontSize: '0.9rem'
+                      fontSize: '0.9rem',
+                      fontWeight: '600'
                     }}>
-                      قیمت: ۳ تا ۸ میلیارد تومان
+                      قیمت: زیر ۲ میلیارد تومان | شروع از ۱.۱ میلیارد
                     </p>
                   </div>
                 </div>
@@ -261,176 +264,176 @@ export default function RabatKarimApartmentsPage() {
                   {apartments.map((apartment) => (
                     <Grid item xs={12} sm={6} md={4} key={apartment.id}>
                       <div className="apartment-card-hover" style={{ 
-  transition: 'all 0.3s ease',
-  height: '100%',
-  marginBottom: '1rem'
-}}>
-  <Link 
-    href={`/worker/${apartment.id}?slug=${apartment.slug || ''}`}
-    passHref
-    legacyBehavior
-  >
-    <a style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-      <WorkerCard worker={apartment} />
-    </a>
-  </Link>
-</div>
+                        transition: 'all 0.3s ease',
+                        height: '100%',
+                        marginBottom: '1rem'
+                      }}>
+                        <Link 
+                          href={`/worker/${apartment.id}?slug=${apartment.slug || ''}`}
+                          passHref
+                          legacyBehavior
+                        >
+                          <a style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+                            <WorkerCard worker={apartment} />
+                          </a>
+                        </Link>
+                      </div>
                     </Grid>
                   ))}
                 </Grid>
 
                 {/* Quick Stats After Apartments - RTL Fixed */}
-{availableCount > 0 && (
-  <Box sx={{ 
-    bgcolor: '#f8fafc',
-    py: 3,
-    borderRadius: '8px',
-    mt: 4,
-    border: '1px solid #e2e8f0'
-  }}>
-    <div style={{ 
-      maxWidth: '800px', 
-      margin: '0 auto',
-      direction: 'rtl'  // Added RTL direction
-    }}>
-      <Grid container spacing={1}>
-        {[
-          { value: availableCount, label: 'واحد کارشناسی شده' },
-          { value: '۶۰-۲۰۰ متر', label: 'متراژ متنوع' },
-          { value: '۲۴ ساعته', label: 'پاسخگویی' },  // Fixed Persian ۲۴
-          { value: '۳-۸ میلیارد', label: 'قیمت' }
-        ].map((stat, index) => (
-          <Grid item xs={6} sm={3} key={index}>
-            <div style={{ 
-              fontSize: '0.8rem', 
-              color: '#64748b',
-              fontWeight: '500',
-              marginBottom: '0.25rem',
-              textAlign: 'right',  // Explicit right alignment
-              direction: 'rtl'     // RTL for text
-            }}>
-              {stat.label}
-            </div>
-            <div style={{ 
-              fontSize: '1.2rem', 
-              fontWeight: 'bold', 
-              color: '#1e40af',
-              textAlign: 'right',  // Explicit right alignment
-              direction: 'rtl'     // RTL for numbers
-            }}>
-              {stat.value}
-            </div>
-          </Grid>
-        ))}
-      </Grid>
-    </div>
-  </Box>
-)}
+                {availableCount > 0 && (
+                  <Box sx={{ 
+                    bgcolor: '#f0fdf4', /* Light green background */
+                    py: 3,
+                    borderRadius: '8px',
+                    mt: 4,
+                    border: '1px solid #bbf7d0'
+                  }}>
+                    <div style={{ 
+                      maxWidth: '800px', 
+                      margin: '0 auto',
+                      direction: 'rtl'
+                    }}>
+                      <Grid container spacing={1}>
+                        {[
+                          { value: availableCount, label: 'واحد کارشناسی شده' },
+                          { value: '۵۰-۱۰۰ متر', label: 'متراژ اقتصادی' },
+                          { value: '۲۴ ساعته', label: 'پاسخگویی' },
+                          { value: '۱.۱-۲ میلیارد', label: 'قیمت' }
+                        ].map((stat, index) => (
+                          <Grid item xs={6} sm={3} key={index}>
+                            <div style={{ 
+                              fontSize: '0.8rem', 
+                              color: '#475569',
+                              fontWeight: '500',
+                              marginBottom: '0.25rem',
+                              textAlign: 'right',
+                              direction: 'rtl'
+                            }}>
+                              {stat.label}
+                            </div>
+                            <div style={{ 
+                              fontSize: '1.2rem', 
+                              fontWeight: 'bold', 
+                              color: '#059669', /* Green */
+                              textAlign: 'right',
+                              direction: 'rtl'
+                            }}>
+                              {stat.value}
+                            </div>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </div>
+                  </Box>
+                )}
 
                 {/* Social Proof - AFTER Apartments */}
                 <Box sx={{ 
-  py: 4,
-  bgcolor: '#f8fafc',
-  borderRadius: '12px',
-  mt: 6,
-  border: '1px solid #e2e8f0',
-  direction: 'rtl'  // Added RTL direction to container
-}}>
-  <div style={{ 
-    maxWidth: '1200px', 
-    margin: '0 auto', 
-    px: { xs: 2, md: 3 },
-  }}>
-    <h3 style={{ 
-      textAlign: 'center',
-      color: '#1e293b',
-      fontSize: '1.2rem',
-      fontWeight: '600',
-      marginBottom: '1.5rem',
-      direction: 'rtl'  // RTL for heading
-    }}>
-      چرا آپارتمان‌های آجر؟
-    </h3>
-    
-    <Grid container spacing={2} sx={{ textAlign: 'center', direction: 'rtl' }}>
-      {[
-        { value: '۹۵٪', label: 'رضایت مشتریان', icon: '⭐' },
-        { value: '+۱۰۰۰', label: 'واحد کارشناسی شده', icon: '🏢' },
-        { value: '۲۴ ساعته', label: 'پاسخگویی مستقیم', icon: '📞' },
-        { value: '۱۰۰٪', label: 'تضمین قیمت', icon: '✅' }
-      ].map((stat, index) => (
-        <Grid item xs={6} sm={3} key={index}>
-          <div style={{ 
-            padding: '0.75rem 0.5rem',
-            background: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <div style={{ 
-              fontSize: '1.3rem',
-              marginBottom: '0.5rem'
-            }}>
-              {stat.icon}
-            </div>
-            <div style={{ 
-              fontSize: '1.3rem', 
-              fontWeight: 'bold', 
-              color: '#1e40af',
-              marginBottom: '0.25rem',
-              direction: 'rtl'  // RTL for values like "۹۵٪"
-            }}>
-              {stat.value}
-            </div>
-            <div style={{ 
-              fontSize: '0.8rem', 
-              color: '#475569',
-              fontWeight: '500',
-              lineHeight: 1.4,
-              textAlign: 'center',  // Center text but RTL direction
-              direction: 'rtl'      // Proper Persian text flow
-            }}>
-              {stat.label}
-            </div>
-          </div>
-        </Grid>
-      ))}
-    </Grid>
-  </div>
-</Box>
+                  py: 4,
+                  bgcolor: '#f0fdf4', /* Light green */
+                  borderRadius: '12px',
+                  mt: 6,
+                  border: '1px solid #bbf7d0',
+                  direction: 'rtl'
+                }}>
+                  <div style={{ 
+                    maxWidth: '1200px', 
+                    margin: '0 auto', 
+                    px: { xs: 2, md: 3 },
+                  }}>
+                    <h3 style={{ 
+                      textAlign: 'center',
+                      color: '#065f46',
+                      fontSize: '1.2rem',
+                      fontWeight: '600',
+                      marginBottom: '1.5rem',
+                      direction: 'rtl'
+                    }}>
+                      مزایای خرید از آجر
+                    </h3>
+                    
+                    <Grid container spacing={2} sx={{ textAlign: 'center', direction: 'rtl' }}>
+                      {[
+                        { value: 'نوساز', label: 'آماده سکونت', icon: '🏠' },
+                        { value: 'تک برگ', label: 'سند رسمی', icon: '📄' },
+                        { value: '۱.۱ میلیارد', label: 'شروع قیمت', icon: '💰' },
+                        { value: 'ضمانت', label: 'تضمین اصالت', icon: '✅' }
+                      ].map((stat, index) => (
+                        <Grid item xs={6} sm={3} key={index}>
+                          <div style={{ 
+                            padding: '0.75rem 0.5rem',
+                            background: 'white',
+                            borderRadius: '8px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <div style={{ 
+                              fontSize: '1.3rem',
+                              marginBottom: '0.5rem'
+                            }}>
+                              {stat.icon}
+                            </div>
+                            <div style={{ 
+                              fontSize: '1.3rem', 
+                              fontWeight: 'bold', 
+                              color: '#059669',
+                              marginBottom: '0.25rem',
+                              direction: 'rtl'
+                            }}>
+                              {stat.value}
+                            </div>
+                            <div style={{ 
+                              fontSize: '0.8rem', 
+                              color: '#475569',
+                              fontWeight: '500',
+                              lineHeight: 1.4,
+                              textAlign: 'center',
+                              direction: 'rtl'
+                            }}>
+                              {stat.label}
+                            </div>
+                          </div>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </div>
+                </Box>
 
-                {/* Desktop Only CTA Section (hidden on mobile because we have sticky footer) */}
+                {/* Desktop Only CTA Section (hidden on mobile) */}
                 <Box sx={{
                   mt: 6,
                   p: 4,
-                  bgcolor: '#f0f9ff',
+                  bgcolor: '#f0fdf4', /* Light green */
                   borderRadius: '12px',
-                  border: '1px solid #bae6fd',
+                  border: '1px solid #86efac',
                   textAlign: 'center',
                   display: { xs: 'none', md: 'block' }
                 }}>
                   <h3 className="persian-text" style={{ 
                     margin: '0 0 1rem 0',
-                    color: '#0369a1',
+                    color: '#065f46',
                     fontSize: '1.4rem',
                     fontWeight: '600',
                     textAlign: 'right'
                   }}>
-                    برای بازدید حضوری تماس بگیرید
+                    فرصت محدود: خانه‌دار شوید!
                   </h3>
                   <p className="persian-text" style={{ 
-                    color: '#64748b', 
+                    color: '#475569', 
                     marginBottom: '1.5rem',
                     maxWidth: '500px',
                     margin: '0 auto',
                     textAlign: 'right',
                     fontSize: '1rem'
                   }}>
-                    کارشناسان آجر آماده پاسخگویی و هماهنگی بازدید هستند
+                    آپارتمان‌های نوساز زیر ۲ میلیارد با شروع قیمت ۱.۱ میلیارد تومان
                   </p>
                   <div style={{ 
                     display: 'flex', 
@@ -443,7 +446,7 @@ export default function RabatKarimApartmentsPage() {
                     <button 
                       onClick={() => window.location.href = 'tel:+989382740488'}
                       style={{
-                        background: '#10b981',
+                        background: '#059669',
                         color: 'white',
                         border: 'none',
                         padding: '14px 24px',
@@ -459,7 +462,7 @@ export default function RabatKarimApartmentsPage() {
                       }}
                       className="cta-button"
                     >
-                      📞 تماس مستقیم
+                      📞 تماس برای قیمت
                     </button>
                     <button 
                       onClick={() => window.open('https://wa.me/989382740488', '_blank')}
@@ -480,7 +483,7 @@ export default function RabatKarimApartmentsPage() {
                       }}
                       className="cta-button"
                     >
-                      💬 گفتگو در واتساپ
+                      💬 لیست کامل در واتساپ
                     </button>
                   </div>
                 </Box>
@@ -507,7 +510,7 @@ export default function RabatKarimApartmentsPage() {
                   fontSize: '1.2rem',
                   textAlign: 'right'
                 }}>
-                  آپارتمانی برای نمایش وجود ندارد
+                  آپارتمانی در این بازه قیمتی موجود نیست
                 </h3>
                 <p className="persian-text" style={{ 
                   color: '#64748b', 
@@ -518,7 +521,7 @@ export default function RabatKarimApartmentsPage() {
                   textAlign: 'right',
                   fontSize: '0.9rem'
                 }}>
-                  همین حالا تماس بگیرید تا کارشناسان ما بهترین گزینه‌ها را معرفی کنند
+                  برای اطلاع از آپارتمان‌های زیر ۲ میلیارد تماس بگیرید
                 </p>
                 <div style={{ 
                   display: 'flex', 
@@ -529,7 +532,7 @@ export default function RabatKarimApartmentsPage() {
                   <button 
                     onClick={() => window.location.href = 'tel:+989382740488'}
                     style={{
-                      background: '#10b981',
+                      background: '#059669',
                       color: 'white',
                       border: 'none',
                       padding: '10px 20px',
@@ -542,7 +545,7 @@ export default function RabatKarimApartmentsPage() {
                       fontSize: '0.9rem'
                     }}
                   >
-                    📞 تماس بگیرید
+                    📞 اطلاع از موجودی
                   </button>
                   <button 
                     onClick={() => window.open('https://wa.me/989382740488', '_blank')}
@@ -571,7 +574,7 @@ export default function RabatKarimApartmentsPage() {
           <Box sx={{
             py: 6,
             px: 3,
-            background: 'linear-gradient(135deg, #a92b31 0%, #8c2227 100%)',
+            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
             color: 'white',
             textAlign: 'center',
             marginTop: '2rem',
@@ -583,7 +586,7 @@ export default function RabatKarimApartmentsPage() {
                 fontWeight: '600',
                 marginBottom: '1rem'
               }}>
-                همین حالا برای مشاوره رایگان اقدام کنید
+                همین حالا خانه‌دار شوید!
               </h2>
               <p className="persian-text" style={{ 
                 fontSize: '1rem',
@@ -592,7 +595,7 @@ export default function RabatKarimApartmentsPage() {
                 maxWidth: '500px',
                 margin: '0 auto'
               }}>
-                کارشناسان آجر آماده ارائه مشاوره تخصصی و هماهنگی بازدید هستند
+                آپارتمان‌های نوساز زیر ۲ میلیارد با شروع قیمت ۱.۱ میلیارد تومان
               </p>
               <div style={{ 
                 display: 'flex', 
@@ -618,7 +621,7 @@ export default function RabatKarimApartmentsPage() {
                   }}
                   className="cta-button"
                 >
-                  📞 تماس برای مشاوره
+                  📞 تماس برای خرید
                 </button>
               </div>
             </div>
@@ -633,7 +636,7 @@ export default function RabatKarimApartmentsPage() {
             textAlign: 'center',
             borderTop: '1px solid #334155',
             position: 'relative',
-            zIndex: 1 // Lower than sticky footer (9999)
+            zIndex: 1
           }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
               <div className="persian-text" style={{ 
@@ -644,7 +647,7 @@ export default function RabatKarimApartmentsPage() {
                 flexWrap: 'wrap'
               }}>
                 <a href="tel:+989382740488" style={{ 
-                  color: '#60a5fa', 
+                  color: '#4ade80', 
                   textDecoration: 'none',
                   fontWeight: '500',
                   display: 'flex',
@@ -655,7 +658,7 @@ export default function RabatKarimApartmentsPage() {
                   📞 ۰۹۳۸۲۷۴۰۴۸۸
                 </a>
                 <a href="https://ajur.app" style={{ 
-                  color: '#60a5fa', 
+                  color: '#4ade80', 
                   textDecoration: 'none',
                   fontWeight: '500',
                   fontSize: '1rem'
@@ -672,7 +675,7 @@ export default function RabatKarimApartmentsPage() {
                 marginTop: '0.75rem',
                 textAlign: 'right'
               }}>
-                © {new Date().getFullYear()} آجر - مشاور املاک هوشمند. تمامی حقوق محفوظ است.
+                © {new Date().getFullYear()} آجر - آپارتمان‌های اقتصادی رباط کریم. تمامی حقوق محفوظ است.
               </p>
             </div>
           </Box>
